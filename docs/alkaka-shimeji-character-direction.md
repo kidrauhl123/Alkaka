@@ -19,9 +19,10 @@ Alkaka 桌宠要从“应用 logo / mascot”变成 true Shimeji-style desktop c
 
 **Visual Keywords:**
 
-- cream body / warm outline / orange inner ears / blue core gem
-- big head, tiny body, clear silhouette
-- rounded paws and curled tail
+- restrained warm-gray body / dark warm outline / muted inner ears / subtle blue core gem
+- compact desktop companion, not a baby mascot
+- intelligent, slightly aloof, quietly capable expression
+- readable ears/tail/paws, but avoid oversized eyes, heavy blush, candy colors, or infant proportions
 - small “assistant core” gem on chest, representing Alkaka task/agent identity
 - reads well at 64–128px
 
@@ -45,14 +46,14 @@ Alkaka 桌宠要从“应用 logo / mascot”变成 true Shimeji-style desktop c
 
 | Token | Color | Use |
 | --- | --- | --- |
-| body | `#ffefd6` | main fur/body |
-| body-highlight | `#fff8e8` | belly/highlight |
-| outline | `#58392a` | warm brown outline |
-| accent | `#f97316` | nose / warm Alkaka accent |
-| accent-soft | `#ffc679` | inner ears / tail highlight |
-| core | `#60a5fa` | chest gem / agent-core identity |
-| eye | `#27251f` | eyes |
-| cheek | `#ffa5ae` @ 55% | cheeks |
+| body | `#e8dcc8` | restrained warm-gray fur/body |
+| body-highlight | `#f3eadb` | subtle belly/highlight |
+| outline | `#4a3428` | dark warm outline |
+| accent | `#9a5a33` | nose / muted warm accent |
+| accent-soft | `#b77b54` | inner ears / tail tone |
+| core | `#3b82f6` | subtle chest gem / agent-core identity |
+| eye | `#1f242b` | smaller calmer eyes |
+| cheek | avoid by default | no heavy blush; keep expression mature |
 
 ## 5. Required Action Frames
 
@@ -80,6 +81,9 @@ The v1 concept pack contains 13 frames:
 public/pets/alkaka-shimeji/alkaka-shimeji-atlas.svg
 public/pets/alkaka-shimeji/alkaka-shimeji-contact-sheet.svg
 public/pets/alkaka-shimeji/alkaka-shimeji-concept-v1.json
+public/pets/alkaka-shimeji/alkaka-shimeji-atlas-v2.svg
+public/pets/alkaka-shimeji/alkaka-shimeji-contact-sheet-v2.svg
+public/pets/alkaka-shimeji/alkaka-shimeji-concept-v2.json
 ```
 
 ### Atlas
@@ -91,6 +95,8 @@ public/pets/alkaka-shimeji/alkaka-shimeji-concept-v1.json
 ```
 
 This is still concept art, not final polished production PNG. It exists to give 九妹 a concrete manifest-backed visual pack that can be wired into her frontend work later.
+
+`v2` is the preferred direction after user feedback: less babyish / less overtly moe, with muted colors, smaller calmer eyes, no cheek blush, and a more competent desktop-companion personality.
 
 ### Contact Sheet
 
