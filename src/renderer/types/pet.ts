@@ -30,6 +30,27 @@ export interface ShimejiAnimationState {
   elapsedMs: number;
 }
 
+export interface ShimejiAssetFrame {
+  id: string;
+  action: ShimejiAction;
+  pose: ShimejiPose;
+  durationMs: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  anchorX: number;
+  anchorY: number;
+}
+
+export interface ShimejiCharacterPack {
+  id: string;
+  displayName: string;
+  frameSize: number;
+  spriteSheetUrl: string;
+  frames: ShimejiAssetFrame[];
+}
+
 export type PetStatusTone = 'neutral' | 'active' | 'warning' | 'danger';
 
 export interface PetStatusPresentation {
