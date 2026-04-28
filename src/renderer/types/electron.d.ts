@@ -1022,6 +1022,7 @@ interface PetStatusSnapshot {
 
 interface IPetElectronAPI {
   openMainWindow: () => Promise<void>;
+  openSession: (sessionId: string) => Promise<{ success: boolean; error?: string }>;
   hidePet: () => Promise<void>;
   quitApp: () => Promise<void>;
   showContextMenu: (position?: { x: number; y: number }) => Promise<void>;

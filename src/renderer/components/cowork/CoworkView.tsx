@@ -36,9 +36,10 @@ export interface CoworkViewProps {
   onToggleSidebar?: () => void;
   onNewChat?: () => void;
   updateBadge?: React.ReactNode;
+  petOpenedSessionId?: string | null;
 }
 
-const CoworkView: React.FC<CoworkViewProps> = ({ onRequestAppSettings, onShowSkills, isSidebarCollapsed, onToggleSidebar, onNewChat, updateBadge }) => {
+const CoworkView: React.FC<CoworkViewProps> = ({ onRequestAppSettings, onShowSkills, isSidebarCollapsed, onToggleSidebar, onNewChat, updateBadge, petOpenedSessionId }) => {
   const dispatch = useDispatch();
   const isMac = window.electron.platform === 'darwin';
   const [isInitialized, setIsInitialized] = useState(false);
@@ -561,9 +562,15 @@ const CoworkView: React.FC<CoworkViewProps> = ({ onRequestAppSettings, onShowSki
 
   // When there's a current session, show the session detail view
   if (currentSession) {
+    const openedFromPet = petOpenedSessionId === currentSession.id;
     return (
       <div className="flex-1 flex flex-col h-full">
         {engineStatusBanner}
+        {openedFromPet ? (
+          <div className="shrink-0 px-4 py-2 text-xs bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-200 border-b border-amber-200/70 dark:border-amber-800/50">
+            🐣 从桌宠快速任务跳转而来
+          </div>
+        ) : null}
         <CoworkSessionDetail
           onManageSkills={() => onShowSkills?.()}
           onContinue={handleContinueSession}

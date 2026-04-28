@@ -13,6 +13,11 @@ import { DEFAULT_SHIMEJI_CHARACTER_PACK } from '../../utils/shimejiDefaultPack';
 import { createInitialShimejiWorld, tickShimejiWorld } from '../../utils/shimejiWorld';
 import { createQuickTaskPayload } from './petQuickTask';
 import {
+  createPetTaskJumpRequest,
+  getPetTaskDetailButtonLabel,
+  hasOpenablePetSession,
+} from './petTaskJump';
+import {
   createInitialPetStatus,
   reducePetStatus,
   type PetStatusPhase,
@@ -98,6 +103,22 @@ export default function PetView({
     lastScreenY: 0,
   });
   const visualStatus = behaviorDemo ? previewStatus : mapPetStatusPhaseToShimejiStatus(petStatus.phase);
+  const canOpenPetTask = hasOpenablePetSession(petStatus);
+  const detailButtonLabel = getPetTaskDetailButtonLabel(petStatus);
+
+  const openPetSessionDetail = useCallback(async () => {
+    const request = createPetTaskJumpRequest(petStatus);
+    if (!request) {
+      await window.petElectron?.openMainWindow?.();
+      return;
+    }
+
+    const response = await window.petElectron?.openSession?.(request.sessionId);
+    if (response && !response.success) {
+      setStatus('error');
+      setStatusText(response.error || '打开任务详情失败');
+    }
+  }, [petStatus]);
 
   useEffect(() => {
     let cancelled = false;
@@ -386,9 +407,14 @@ export default function PetView({
             </p>
           ) : null}
           <div className="pet-quick-input-actions">
-            <button type="button" className="pet-quick-secondary" onClick={() => window.petElectron?.openMainWindow()}>
-              打开主窗口
+            <button type="button" className="pet-quick-secondary" onClick={openPetSessionDetail}>
+              {detailButtonLabel}
             </button>
+            {canOpenPetTask ? (
+              <button type="button" className="pet-quick-secondary" onClick={() => window.petElectron?.openMainWindow()}>
+                主窗口
+              </button>
+            ) : null}
             <button type="submit" className="pet-quick-primary" disabled={status === 'sending'}>
               {status === 'sending' ? '发送中…' : '发送'}
             </button>

@@ -48,6 +48,7 @@ const App: React.FC = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [settingsOptions, setSettingsOptions] = useState<SettingsOpenOptions>({});
   const [mainView, setMainView] = useState<'cowork' | 'skills' | 'scheduledTasks' | 'mcp' | 'agents'>('cowork');
+  const [petOpenedSessionId, setPetOpenedSessionId] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const [initError, setInitError] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -304,6 +305,7 @@ const App: React.FC = () => {
     const shouldClearInput = mainView === 'cowork' && !currentSessionId;
     coworkService.clearSession();
     dispatch(clearSelection());
+    setPetOpenedSessionId(null);
     setMainView('cowork');
     window.setTimeout(() => {
       window.dispatchEvent(new CustomEvent('cowork:focus-input', {
@@ -316,6 +318,7 @@ const App: React.FC = () => {
     dispatch(setDraftPrompt({ sessionId: '__home__', draft: i18nService.t('skillCreatorPrompt') }));
     coworkService.clearSession();
     dispatch(clearSelection());
+    setPetOpenedSessionId(null);
     setMainView('cowork');
   }, [dispatch]);
 
@@ -575,6 +578,27 @@ const App: React.FC = () => {
   }, [handleNewChat]);
 
   useEffect(() => {
+    const unsubscribe = window.electron.ipcRenderer.on('app:openCoworkSession', (payload?: { sessionId?: unknown }) => {
+      const sessionId = typeof payload?.sessionId === 'string' ? payload.sessionId.trim() : '';
+      if (!sessionId) {
+        showToast('无法打开任务详情');
+        return;
+      }
+
+      setMainView('cowork');
+      void coworkService.loadSession(sessionId).then((session) => {
+        if (!session) {
+          showToast('任务详情不存在或已被删除');
+          return;
+        }
+        setPetOpenedSessionId(sessionId);
+        showToast('已从桌宠打开任务详情');
+      });
+    });
+    return unsubscribe;
+  }, [showToast]);
+
+  useEffect(() => {
     if (!isInitialized) return;
 
     // Enterprise mode: completely skip update detection
@@ -773,6 +797,7 @@ const App: React.FC = () => {
                 onToggleSidebar={handleToggleSidebar}
                 onNewChat={handleNewChat}
                 updateBadge={isSidebarCollapsed ? updateBadge : null}
+                petOpenedSessionId={petOpenedSessionId}
               />
             )}
           </div>

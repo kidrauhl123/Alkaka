@@ -4990,6 +4990,33 @@ if (!gotTheLock) {
     createWindow();
   };
 
+  const sendMainWindowWhenReady = (win: BrowserWindow, channel: string, payload?: unknown): void => {
+    const send = () => {
+      if (!win.isDestroyed() && !win.webContents.isDestroyed()) {
+        win.webContents.send(channel, payload);
+      }
+    };
+
+    if (win.webContents.isLoadingMainFrame()) {
+      win.webContents.once('did-finish-load', send);
+      return;
+    }
+
+    send();
+  };
+
+  const openCoworkSessionFromPet = (sessionId: string) => {
+    createWindow();
+    if (!mainWindow || mainWindow.isDestroyed()) {
+      return { success: false, error: '主窗口不可用' };
+    }
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    if (!mainWindow.isVisible()) mainWindow.show();
+    if (!mainWindow.isFocused()) mainWindow.focus();
+    sendMainWindowWhenReady(mainWindow, 'app:openCoworkSession', { sessionId });
+    return { success: true };
+  };
+
   const getPetWindowFromSender = (sender: WebContents): BrowserWindow | null => {
     const senderWindow = BrowserWindow.fromWebContents(sender);
     const pet = getPetWindow();
@@ -5037,6 +5064,20 @@ if (!gotTheLock) {
   ipcMain.handle('pet:openMainWindow', (event) => {
     if (!getPetWindowFromSender(event.sender)) return;
     showMainWindow();
+  });
+
+  ipcMain.handle('pet:openCoworkSession', (event, input: unknown) => {
+    if (!getPetWindowFromSender(event.sender)) {
+      return { success: false, error: 'Invalid sender' };
+    }
+    const sessionId = typeof input === 'object' && input !== null
+      ? (input as { sessionId?: unknown }).sessionId
+      : undefined;
+    const normalizedSessionId = typeof sessionId === 'string' ? sessionId.trim() : '';
+    if (!normalizedSessionId || normalizedSessionId.startsWith('temp-')) {
+      return { success: false, error: 'Invalid session id' };
+    }
+    return openCoworkSessionFromPet(normalizedSessionId);
   });
 
   ipcMain.handle('pet:hide', (event) => {
