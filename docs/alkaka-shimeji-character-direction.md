@@ -15,16 +15,19 @@ Alkaka 桌宠要从“应用 logo / mascot”变成 true Shimeji-style desktop c
 
 **Name:** Alkaka Shimeji / 小咔
 
-**Species:** soft fox-cat desktop spirit
+**Species:** hornless hooded desktop companion template
 
 **Visual Keywords:**
 
-- restrained warm-gray body / dark warm outline / muted inner ears / subtle blue core gem
+- restrained warm-gray body / dark warm outline / subtle blue core gem
+- no top horns and no top ear-like protrusions
+- smooth hood-like head silhouette with only low side panels if a lateral accent is needed
 - compact desktop companion, not a baby mascot
 - intelligent, slightly aloof, quietly capable expression
-- readable ears/tail/paws, but avoid oversized eyes, heavy blush, candy colors, or infant proportions
+- readable tail/paws and action silhouettes, but avoid oversized eyes, heavy blush, candy colors, infant proportions, or horn/ear shapes on top of the head
 - small “assistant core” gem on chest, representing Alkaka task/agent identity
 - reads well at 64–128px
+- template-ready parts so users can generate many custom Shimeji appearances
 
 ## 3. Shape Language
 
@@ -37,10 +40,12 @@ Alkaka 桌宠要从“应用 logo / mascot”变成 true Shimeji-style desktop c
 
 ### Silhouette Rules
 
-- Ears must remain visible in most upright poses.
-- Tail should create asymmetry so walking direction is readable.
+- The top of the head must stay smooth: no horns, no horn-like ears, no crown-like protrusions.
+- Low side panels or side fins are allowed only if they do not read as top horns.
+- Tail/back accent should create asymmetry so walking direction is readable.
 - Chest gem should remain visible in idle/walk/sit, but may rotate/disappear in fall/hang.
 - Drag/hang/fall can break upright silhouette; these are required for Shimeji authenticity.
+- Custom species variants must preserve frame anchors and action readability instead of randomly changing the whole body.
 
 ## 4. Palette
 
@@ -84,6 +89,10 @@ public/pets/alkaka-shimeji/alkaka-shimeji-concept-v1.json
 public/pets/alkaka-shimeji/alkaka-shimeji-atlas-v2.svg
 public/pets/alkaka-shimeji/alkaka-shimeji-contact-sheet-v2.svg
 public/pets/alkaka-shimeji/alkaka-shimeji-concept-v2.json
+public/pets/alkaka-shimeji/alkaka-shimeji-atlas-v3.svg
+public/pets/alkaka-shimeji/alkaka-shimeji-contact-sheet-v3.svg
+public/pets/alkaka-shimeji/alkaka-shimeji-concept-v3.json
+docs/shimeji-template-customization-plan.md
 ```
 
 ### Atlas
@@ -97,6 +106,8 @@ public/pets/alkaka-shimeji/alkaka-shimeji-concept-v2.json
 This is still concept art, not final polished production PNG. It exists to give 九妹 a concrete manifest-backed visual pack that can be wired into her frontend work later.
 
 `v2` is the preferred direction after user feedback: less babyish / less overtly moe, with muted colors, smaller calmer eyes, no cheek blush, and a more competent desktop-companion personality.
+
+`v3` supersedes v2 for silhouette: it removes the disliked two top horn/ear-like shapes and switches to a smooth hooded head. It also starts the template-ready direction by recording `templateTokens` in the concept manifest and adding `docs/shimeji-template-customization-plan.md`.
 
 ### Contact Sheet
 
