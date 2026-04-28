@@ -1,0 +1,18 @@
+{
+  "id": "night-egg",
+  "displayName": "Night Egg",
+  "templateId": "alkaka-base-egg-template",
+  "author": "Alkaka Official",
+  "tokens": {
+    "bodyColor": "#2f2a35",
+    "bodyHighlight": "#4b4354",
+    "outlineColor": "#1e1a22",
+    "accentColor": "#7b6f8c",
+    "coreColor": "#63d7ff",
+    "eyeColor": "#f3efe7",
+    "species": "egg-companion",
+    "accessory": "side-pin",
+    "personality": "focused"
+  },
+  "description": "Token-only official demo skin showing how a dark restrained variant can be shared without changing runtime UI."
+}

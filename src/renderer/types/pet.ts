@@ -43,12 +43,54 @@ export interface ShimejiAssetFrame {
   anchorY: number;
 }
 
+export interface ShimejiSkinMetadata {
+  templateId: string;
+  appearanceId: string;
+  author?: string;
+  tokens: Record<string, string>;
+}
+
 export interface ShimejiCharacterPack {
   id: string;
   displayName: string;
   frameSize: number;
   spriteSheetUrl: string;
   frames: ShimejiAssetFrame[];
+  skin?: ShimejiSkinMetadata;
+}
+
+export type ShimejiTemplateTokenType = 'color' | 'enum' | 'string';
+
+export interface ShimejiTemplateTokenDefinition {
+  id: string;
+  label: string;
+  type: ShimejiTemplateTokenType;
+  defaultValue: string;
+  allowedValues?: string[];
+}
+
+export interface ShimejiTemplateFrame extends ShimejiAssetFrame {
+  layers: string[];
+}
+
+export interface ShimejiCharacterTemplate {
+  id: string;
+  displayName: string;
+  basePackId: string;
+  frameSize: number;
+  spriteSheetUrl: string;
+  requiredActions: ShimejiAction[];
+  tokens: ShimejiTemplateTokenDefinition[];
+  frames: ShimejiTemplateFrame[];
+}
+
+export interface ShimejiSkinAppearance {
+  id: string;
+  displayName: string;
+  templateId: string;
+  author?: string;
+  spriteSheetUrl?: string;
+  tokens: Record<string, string>;
 }
 
 export type PetStatusTone = 'neutral' | 'active' | 'warning' | 'danger';

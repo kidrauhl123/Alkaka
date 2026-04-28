@@ -1,0 +1,12 @@
+{
+  "version": "0.1.0",
+  "defaultTemplateId": "alkaka-base-egg-template",
+  "templates": [
+    "/pets/templates/alkaka-base-egg-template.json"
+  ],
+  "officialAppearances": [
+    "/pets/official/base-egg.appearance.json",
+    "/pets/official/night-egg.appearance.json"
+  ],
+  "runtimeContract": "Resolve template + appearance into ShimejiCharacterPack before rendering."
+}
