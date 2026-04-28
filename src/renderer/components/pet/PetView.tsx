@@ -86,7 +86,7 @@ export default function PetView({ status = 'idle', appearance }: PetViewProps) {
         onMouseMove={handleMouseMove}
         onMouseLeave={stopDrag}
       >
-        <PetCharacter appearance={appearance} />
+        <PetCharacter appearance={appearance} status={status} />
       </button>
     </div>
   );
