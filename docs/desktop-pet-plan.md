@@ -64,6 +64,24 @@
 
 ## 三、当前真实进度
 
+### 文档维护规则
+
+- 每个可验收 checkpoint 必须同步更新本文件的“当前真实进度”和阶段表，记录验证命令、截图/日志证据、commit SHA 与下一步。
+- 只要涉及产品方向、阶段优先级或验收口径变化，也必须在本文件落地，避免进度只停留在对话里。
+
+### 当前 checkpoint（2026-04-28 18:54 CST）
+
+- 当前分支：`main`，跟踪 `alkaka/main`，工作区干净。
+- 最新提交：`0e8e332 feat: add desktop pet quick input`，已推送到 `alkaka/main`。
+- 已完成到：**Phase 3A.2 桌宠快速输入面板**。
+- 最新真实 smoke 截图：`/tmp/alkaka-phase3a2/phase3a2-quick-input-smoke.png`。
+- 最新验证：
+  - `npx vitest run src/renderer/components/pet/petQuickTask.test.ts src/main/trayManager.test.ts src/main/libs/agentEngine/openclawRuntimeAdapter.test.ts`：25/25 通过
+  - `npm run compile:electron -- --pretty false`：通过
+  - `npm run build`：通过
+  - `npm run electron:dev:openclaw`：真实 Electron/OpenClaw smoke 通过，gateway `/health` 为 `live`，快速输入面板可见
+- 下一优先级：**3A.3 桌宠状态机**，先把桌宠从“能输入”推进到“能反馈 Agent 生命周期状态”。
+
 ### ✅ 已完成
 
 - **2026-04-27** 项目改名 LobsterAI → Alkaka，源码 NetEase/Youdao 字面引用全清
@@ -180,9 +198,31 @@ alkaka-marketplace/
 |---|------|--------|------|
 | 3A.1 | 桌宠默认启动与可见性策略 | ✅ checkpoint | 启动优先显示桌宠；主窗口按需显示，但暂保留隐藏 renderer bootstrap 承载旧启动副作用 |
 | 3A.2 | 桌宠快速输入面板 | ✅ checkpoint | 点击桌宠展开轻量输入框，经安全 preload IPC 直接创建 OpenClaw/Cowork 任务；后续补全快捷键和继续现有任务 |
-| 3A.3 | 桌宠状态机 | 2 天 | idle / listening / thinking / working / needs-approval / error / done |
-| 3A.4 | 主窗口轻量化导航 | 2-3 天 | 把主窗口从“默认首页”改成历史/详情/设置，减少启动压迫感 |
-| 3A.5 | 桌宠 ↔ 主窗口任务跳转 | 1 天 | 桌宠任务可打开对应详情；主窗口详情可回到桌宠状态 |
+| 3A.3 | 桌宠状态机 | 下一步 / 2 天 | 建立 idle / ready / sending / working / needs-approval / error / done 状态源；从 Cowork/OpenClaw session 生命周期同步到桌宠 UI |
+| 3A.4 | 主窗口轻量化导航 | 后续 / 2-3 天 | 把主窗口从“默认首页”改成历史/详情/设置，减少启动压迫感 |
+| 3A.5 | 桌宠 ↔ 主窗口任务跳转 | 后续 / 1 天 | 桌宠任务可打开对应详情；主窗口详情可回到桌宠状态 |
+
+#### 3A.3 具体执行计划：桌宠状态机
+
+目标：桌宠不仅能创建任务，还能在任务创建、Agent 思考/工作、等待用户确认、完成、失败时给出即时状态反馈。
+
+1. **盘点现有 session / cowork 事件源**
+   - 文件：`src/main/main.ts`、`src/main/libs/agentEngine/openclawRuntimeAdapter.ts`、`src/renderer/services/cowork.ts`、`src/renderer/components/cowork/*`
+   - 输出：确认主进程已有哪类 session update / stream / permission / error 事件可复用。
+2. **定义桌宠状态模型**
+   - 新增或修改：`src/renderer/components/pet/petState.ts`
+   - 状态先收敛为：`idle`、`ready`、`sending`、`working`、`needs-approval`、`error`、`done`。
+   - TDD：覆盖事件到状态的 reducer，不先做复杂动画。
+3. **主进程向桌宠窗口广播任务状态**
+   - 修改：`src/main/main.ts`、`src/main/petPreload.ts`、`src/renderer/types/electron.d.ts`
+   - 原则：继续保持 pet preload 最小暴露面，只给桌宠订阅经过裁剪的状态快照，不泄露完整 Cowork API。
+4. **桌宠 UI 展示状态**
+   - 修改：`src/renderer/components/pet/PetView.tsx`、`src/renderer/index.css`
+   - 先做轻量版本：状态文案、小圆点/光晕、错误提示、完成提示；动画放到 3B.7。
+5. **端到端验证**
+   - 单测：pet reducer / preload 类型 / 关键 IPC sender guard。
+   - 构建：`npm run compile:electron -- --pretty false`、`npm run build`。
+   - 真实 smoke：`npm run electron:dev:openclaw`，从桌宠创建任务后确认状态能从发送中变为工作中/完成或错误，并截图记录。
 
 #### Phase 3B：桌宠工具集
 
