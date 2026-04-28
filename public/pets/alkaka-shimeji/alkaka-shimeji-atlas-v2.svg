@@ -1,0 +1,263 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1664" height="128" viewBox="0 0 1664 128"><style>
+.body{fill:#e8dcc8}.outline{stroke:#4a3428;stroke-width:4;stroke-linejoin:round;stroke-linecap:round}.thin{stroke-width:3}.inner{fill:#b77b54;opacity:.8}.belly{fill:#f3eadb;opacity:.78}.tail{stroke:#4a3428;stroke-width:7;stroke-linecap:round;fill:none}.limb{stroke:#4a3428;stroke-width:6;stroke-linecap:round;fill:none}.eye{fill:#1f242b}.eye-line{stroke:#1f242b;stroke-width:3;stroke-linecap:round;fill:none}.nose{fill:#9a5a33}.mouth{stroke:#4a3428;stroke-width:2;stroke-linecap:round;fill:none}.core{fill:#3b82f6;stroke:#4a3428;stroke-width:2;stroke-linejoin:round;opacity:.9}
+</style>
+<g transform="translate(0 0)">
+ <rect width="128" height="128" fill="none"/><ellipse cx="64" cy="116" rx="27" ry="4" fill="#1d2430" opacity=".13"/>
+ <g transform="rotate(0 64 66)">
+  <path d="M88 92 C112.0 84 102.0 58 86 51" class="tail"/>
+  <path d="M42 38 L31 14 L52 26 Z" class="body outline"/>
+  <path d="M86 38 L97 14 L76 26 Z" class="body outline"/>
+  <path d="M41 30 L35 19 L47 25 Z" class="inner"/>
+  <path d="M87 30 L93 19 L81 25 Z" class="inner"/>
+  <ellipse cx="64" cy="64" rx="24" ry="33.0" class="body outline"/>
+  <path d="M48 88 q16 10 32 0 q-5 17 -16 17 q-11 0 -16 -17" class="belly"/>
+  <path d="M44 78 Q36 84.0 29 89.0" class="limb"/>
+  <path d="M84 78 Q92 84.0 99 89.0" class="limb"/>
+  <ellipse cx="53.0" cy="102" rx="8" ry="5" class="body outline thin"/>
+  <ellipse cx="75.0" cy="102" rx="8" ry="5" class="body outline thin"/>
+  <ellipse cx="54" cy="57" rx="3.2" ry="4.6" class="eye"/><ellipse cx="74" cy="57" rx="3.2" ry="4.6" class="eye"/>
+  <path d="M61 67 L67 67 L64 70 Z" class="nose"/>
+  <path d="M60 75 Q64 77 68 75" class="mouth"/>
+  <path d="M56 90 L64 95 L72 90 L64 86 Z" class="core"/>
+ </g>
+</g>
+<g transform="translate(128 0)">
+ <rect width="128" height="128" fill="none"/><ellipse cx="64" cy="116" rx="27" ry="4" fill="#1d2430" opacity=".13"/>
+ <g transform="rotate(0 63 66)">
+  <path d="M87 92 C112.25 84 101.6 58 85 51" class="tail"/>
+  <path d="M41 38 L30 14 L51 26 Z" class="body outline"/>
+  <path d="M85 38 L96 14 L75 26 Z" class="body outline"/>
+  <path d="M40 30 L34 19 L46 25 Z" class="inner"/>
+  <path d="M86 30 L92 19 L80 25 Z" class="inner"/>
+  <ellipse cx="63" cy="64" rx="24" ry="33.0" class="body outline"/>
+  <path d="M47 88 q16 10 32 0 q-5 17 -16 17 q-11 0 -16 -17" class="belly"/>
+  <path d="M43 78 Q35 84.0 28 89.0" class="limb"/>
+  <path d="M83 78 Q91 84.0 98 89.0" class="limb"/>
+  <ellipse cx="52.0" cy="102" rx="8" ry="5" class="body outline thin"/>
+  <ellipse cx="74.0" cy="102" rx="8" ry="5" class="body outline thin"/>
+  <path d="M49 58 L57 58 M69 58 L77 57" class="eye-line"/>
+  <path d="M60 67 L66 67 L63 70 Z" class="nose"/>
+  <path d="M59 75 Q63 77 67 75" class="mouth"/>
+  <path d="M55 90 L63 95 L71 90 L63 86 Z" class="core"/>
+ </g>
+</g>
+<g transform="translate(256 0)">
+ <rect width="128" height="128" fill="none"/><ellipse cx="64" cy="116" rx="27" ry="4" fill="#1d2430" opacity=".13"/>
+ <g transform="rotate(0 60 65)">
+  <path d="M84 91 C105.5 83 96.8 57 82 50" class="tail"/>
+  <path d="M38 37 L27 13 L48 25 Z" class="body outline"/>
+  <path d="M82 37 L93 13 L72 25 Z" class="body outline"/>
+  <path d="M37 29 L31 18 L43 24 Z" class="inner"/>
+  <path d="M83 29 L89 18 L77 24 Z" class="inner"/>
+  <ellipse cx="60" cy="63" rx="24" ry="33.0" class="body outline"/>
+  <path d="M44 87 q16 10 32 0 q-5 17 -16 17 q-11 0 -16 -17" class="belly"/>
+  <path d="M40 77 Q32 82.0 25 85.8" class="limb"/>
+  <path d="M80 77 Q88 84.2 95 90.64" class="limb"/>
+  <ellipse cx="45.75" cy="101" rx="8" ry="5" class="body outline thin"/>
+  <ellipse cx="73.0" cy="101" rx="8" ry="5" class="body outline thin"/>
+  <ellipse cx="50" cy="56" rx="3.2" ry="4.6" class="eye"/><ellipse cx="70" cy="56" rx="3.2" ry="4.6" class="eye"/>
+  <path d="M57 66 L63 66 L60 69 Z" class="nose"/>
+  <path d="M56 74 Q60 76 64 74" class="mouth"/>
+  <path d="M52 89 L60 94 L68 89 L60 85 Z" class="core"/>
+ </g>
+</g>
+<g transform="translate(384 0)">
+ <rect width="128" height="128" fill="none"/><ellipse cx="64" cy="116" rx="27" ry="4" fill="#1d2430" opacity=".13"/>
+ <g transform="rotate(0 64 64)">
+  <path d="M88 90 C112.75 82 102.36 56 86 49" class="tail"/>
+  <path d="M42 36 L31 12 L52 24 Z" class="body outline"/>
+  <path d="M86 36 L97 12 L76 24 Z" class="body outline"/>
+  <path d="M41 28 L35 17 L47 23 Z" class="inner"/>
+  <path d="M87 28 L93 17 L81 23 Z" class="inner"/>
+  <ellipse cx="64" cy="62" rx="24" ry="33.0" class="body outline"/>
+  <path d="M48 86 q16 10 32 0 q-5 17 -16 17 q-11 0 -16 -17" class="belly"/>
+  <path d="M44 76 Q36 82.0 29 87.0" class="limb"/>
+  <path d="M84 76 Q92 82.0 99 87.0" class="limb"/>
+  <ellipse cx="53.0" cy="100" rx="8" ry="5" class="body outline thin"/>
+  <ellipse cx="75.0" cy="100" rx="8" ry="5" class="body outline thin"/>
+  <ellipse cx="54" cy="55" rx="3.2" ry="4.6" class="eye"/><ellipse cx="74" cy="55" rx="3.2" ry="4.6" class="eye"/>
+  <path d="M61 65 L67 65 L64 68 Z" class="nose"/>
+  <path d="M60 73 Q64 75 68 73" class="mouth"/>
+  <path d="M56 88 L64 93 L72 88 L64 84 Z" class="core"/>
+ </g>
+</g>
+<g transform="translate(512 0)">
+ <rect width="128" height="128" fill="none"/><ellipse cx="64" cy="116" rx="27" ry="4" fill="#1d2430" opacity=".13"/>
+ <g transform="rotate(0 68 65)">
+  <path d="M92 91 C119.0 83 107.44 57 90 50" class="tail"/>
+  <path d="M46 37 L35 13 L56 25 Z" class="body outline"/>
+  <path d="M90 37 L101 13 L80 25 Z" class="body outline"/>
+  <path d="M45 29 L39 18 L51 24 Z" class="inner"/>
+  <path d="M91 29 L97 18 L85 24 Z" class="inner"/>
+  <ellipse cx="68" cy="63" rx="24" ry="33.0" class="body outline"/>
+  <path d="M52 87 q16 10 32 0 q-5 17 -16 17 q-11 0 -16 -17" class="belly"/>
+  <path d="M48 77 Q40 84.2 33 90.64" class="limb"/>
+  <path d="M88 77 Q96 82.0 103 85.8" class="limb"/>
+  <ellipse cx="59.5" cy="101" rx="8" ry="5" class="body outline thin"/>
+  <ellipse cx="75.75" cy="101" rx="8" ry="5" class="body outline thin"/>
+  <ellipse cx="58" cy="56" rx="3.2" ry="4.6" class="eye"/><ellipse cx="78" cy="56" rx="3.2" ry="4.6" class="eye"/>
+  <path d="M65 66 L71 66 L68 69 Z" class="nose"/>
+  <path d="M64 74 Q68 76 72 74" class="mouth"/>
+  <path d="M60 89 L68 94 L76 89 L68 85 Z" class="core"/>
+ </g>
+</g>
+<g transform="translate(640 0)">
+ <rect width="128" height="128" fill="none"/><ellipse cx="64" cy="116" rx="27" ry="4" fill="#1d2430" opacity=".13"/>
+ <g transform="rotate(0 65 65)">
+  <path d="M89 91 C109.0 83 101.08 57 87 50" class="tail"/>
+  <path d="M43 37 L32 13 L53 25 Z" class="body outline"/>
+  <path d="M87 37 L98 13 L77 25 Z" class="body outline"/>
+  <path d="M42 29 L36 18 L48 24 Z" class="inner"/>
+  <path d="M88 29 L94 18 L82 24 Z" class="inner"/>
+  <ellipse cx="65" cy="63" rx="24" ry="33.0" class="body outline"/>
+  <path d="M49 87 q16 10 32 0 q-5 17 -16 17 q-11 0 -16 -17" class="belly"/>
+  <path d="M45 77 Q37 84.5 30 91.3" class="limb"/>
+  <path d="M85 77 Q93 84.2 100 90.64" class="limb"/>
+  <ellipse cx="52.5" cy="101" rx="8" ry="5" class="body outline thin"/>
+  <ellipse cx="77.5" cy="101" rx="8" ry="5" class="body outline thin"/>
+  <path d="M51 57 L59 57 M71 57 L79 56" class="eye-line"/>
+  <path d="M62 66 L68 66 L65 69 Z" class="nose"/>
+  <path d="M61 74 Q65 76 69 74" class="mouth"/>
+  <path d="M57 89 L65 94 L73 89 L65 85 Z" class="core"/>
+ </g>
+</g>
+<g transform="translate(768 0)">
+ <rect width="128" height="128" fill="none"/><ellipse cx="64" cy="116" rx="27" ry="4" fill="#1d2430" opacity=".13"/>
+ <g transform="rotate(0 64 73)">
+  <path d="M88 99 C117.0 91 104.4 65 86 58" class="tail"/>
+  <path d="M42 45 L31 21 L52 33 Z" class="body outline"/>
+  <path d="M86 45 L97 21 L76 33 Z" class="body outline"/>
+  <path d="M41 37 L35 26 L47 32 Z" class="inner"/>
+  <path d="M87 37 L93 26 L81 32 Z" class="inner"/>
+  <ellipse cx="64" cy="71" rx="24" ry="27.1" class="body outline"/>
+  <path d="M48 95 q16 10 32 0 q-5 17 -16 17 q-11 0 -16 -17" class="belly"/>
+  <path d="M44 85 Q36 89.6 29 92.92" class="limb"/>
+  <path d="M84 85 Q92 92.2 99 98.64" class="limb"/>
+  <ellipse cx="48.5" cy="109" rx="8" ry="5" class="body outline thin"/>
+  <ellipse cx="79.5" cy="109" rx="8" ry="5" class="body outline thin"/>
+  <ellipse cx="54" cy="64" rx="3.2" ry="4.6" class="eye"/><ellipse cx="74" cy="64" rx="3.2" ry="4.6" class="eye"/>
+  <path d="M61 74 L67 74 L64 77 Z" class="nose"/>
+  <path d="M60 82 Q64 84 68 82" class="mouth"/>
+  <path d="M56 97 L64 102 L72 97 L64 93 Z" class="core"/>
+ </g>
+</g>
+<g transform="translate(896 0)">
+ <rect width="128" height="128" fill="none"/><ellipse cx="64" cy="116" rx="27" ry="4" fill="#1d2430" opacity=".13"/>
+ <g transform="rotate(-28 64 68)">
+  <path d="M88 94 C118.0 86 104.88 60 86 53" class="tail"/>
+  <path d="M42 40 L31 16 L52 28 Z" class="body outline"/>
+  <path d="M86 40 L97 16 L76 28 Z" class="body outline"/>
+  <path d="M41 32 L35 21 L47 27 Z" class="inner"/>
+  <path d="M87 32 L93 21 L81 27 Z" class="inner"/>
+  <ellipse cx="64" cy="66" rx="24" ry="30.4" class="body outline"/>
+  <path d="M48 90 q16 10 32 0 q-5 17 -16 17 q-11 0 -16 -17" class="belly"/>
+  <path d="M44 80 Q36 83.0 29 84.4" class="limb"/>
+  <path d="M84 80 Q92 88.8 99 97.16" class="limb"/>
+  <ellipse cx="57.5" cy="104" rx="8" ry="5" class="body outline thin"/>
+  <ellipse cx="71.0" cy="104" rx="8" ry="5" class="body outline thin"/>
+  <path d="M49 58 L58 60 M70 60 L79 58" class="eye-line"/>
+  <path d="M61 69 L67 69 L64 72 Z" class="nose"/>
+  <path d="M60 77 Q64 79 68 77" class="mouth"/>
+  <path d="M56 92 L64 97 L72 92 L64 88 Z" class="core"/>
+ </g>
+</g>
+<g transform="translate(1024 0)">
+ <rect width="128" height="128" fill="none"/>
+ <g transform="rotate(0 64 55)">
+  <path d="M88 81 C116.5 73 104.16 47 86 40" class="tail"/>
+  <path d="M42 27 L31 3 L52 15 Z" class="body outline"/>
+  <path d="M86 27 L97 3 L76 15 Z" class="body outline"/>
+  <path d="M41 19 L35 8 L47 14 Z" class="inner"/>
+  <path d="M87 19 L93 8 L81 14 Z" class="inner"/>
+  <ellipse cx="64" cy="53" rx="24" ry="31.7" class="body outline"/>
+  <path d="M48 77 q16 10 32 0 q-5 17 -16 17 q-11 0 -16 -17" class="belly"/>
+  <path d="M44 67 Q36 69.8 29 70.96" class="limb"/>
+  <path d="M84 67 Q92 76.2 99 85.04" class="limb"/>
+  <ellipse cx="56.0" cy="91" rx="8" ry="5" class="body outline thin"/>
+  <ellipse cx="72.0" cy="91" rx="8" ry="5" class="body outline thin"/>
+  <path d="M49 45 L58 47 M70 47 L79 45" class="eye-line"/>
+  <path d="M61 56 L67 56 L64 59 Z" class="nose"/>
+  <path d="M60 64 Q64 66 68 64" class="mouth"/>
+  <path d="M56 79 L64 84 L72 79 L64 75 Z" class="core"/>
+ </g>
+</g>
+<g transform="translate(1152 0)">
+ <rect width="128" height="128" fill="none"/><ellipse cx="64" cy="116" rx="27" ry="4" fill="#1d2430" opacity=".13"/>
+ <g transform="rotate(8 67 62)">
+  <path d="M91 88 C109.5 80 102.36 54 89 47" class="tail"/>
+  <path d="M45 34 L34 10 L55 22 Z" class="body outline"/>
+  <path d="M89 34 L100 10 L79 22 Z" class="body outline"/>
+  <path d="M44 26 L38 15 L50 21 Z" class="inner"/>
+  <path d="M90 26 L96 15 L84 21 Z" class="inner"/>
+  <ellipse cx="67" cy="60" rx="24" ry="33.0" class="body outline"/>
+  <path d="M51 84 q16 10 32 0 q-5 17 -16 17 q-11 0 -16 -17" class="belly"/>
+  <path d="M47 74 Q39 76.2 32 76.64" class="limb"/>
+  <path d="M87 74 Q95 78.0 102 80.6" class="limb"/>
+  <ellipse cx="51.0" cy="98" rx="8" ry="5" class="body outline thin"/>
+  <ellipse cx="82.0" cy="98" rx="8" ry="5" class="body outline thin"/>
+  <path d="M52 52 L61 54 M73 54 L82 52" class="eye-line"/>
+  <path d="M64 63 L70 63 L67 66 Z" class="nose"/>
+  <path d="M63 71 Q67 73 71 71" class="mouth"/>
+  <path d="M59 86 L67 91 L75 86 L67 82 Z" class="core"/>
+ </g>
+</g>
+<g transform="translate(1280 0)">
+ <rect width="128" height="128" fill="none"/><ellipse cx="64" cy="116" rx="27" ry="4" fill="#1d2430" opacity=".13"/>
+ <g transform="rotate(12 69 66)">
+  <path d="M93 92 C111.0 84 104.12 58 91 51" class="tail"/>
+  <path d="M47 38 L36 14 L57 26 Z" class="body outline"/>
+  <path d="M91 38 L102 14 L81 26 Z" class="body outline"/>
+  <path d="M46 30 L40 19 L52 25 Z" class="inner"/>
+  <path d="M92 30 L98 19 L86 25 Z" class="inner"/>
+  <ellipse cx="69" cy="64" rx="24" ry="33.0" class="body outline"/>
+  <path d="M53 88 q16 10 32 0 q-5 17 -16 17 q-11 0 -16 -17" class="belly"/>
+  <path d="M49 78 Q41 81.2 34 82.84" class="limb"/>
+  <path d="M89 78 Q97 81.2 104 82.84" class="limb"/>
+  <ellipse cx="61.0" cy="102" rx="8" ry="5" class="body outline thin"/>
+  <ellipse cx="77.0" cy="102" rx="8" ry="5" class="body outline thin"/>
+  <path d="M54 56 L63 58 M75 58 L84 56" class="eye-line"/>
+  <path d="M66 67 L72 67 L69 70 Z" class="nose"/>
+  <path d="M65 75 Q69 77 73 75" class="mouth"/>
+  <path d="M61 90 L69 95 L77 90 L69 86 Z" class="core"/>
+ </g>
+</g>
+<g transform="translate(1408 0)">
+ <rect width="128" height="128" fill="none"/>
+ <g transform="rotate(180 64 71)">
+  <path d="M88 97 C112.0 89 102.0 63 86 56" class="tail"/>
+  <path d="M42 43 L31 19 L52 31 Z" class="body outline"/>
+  <path d="M86 43 L97 19 L76 31 Z" class="body outline"/>
+  <path d="M41 35 L35 24 L47 30 Z" class="inner"/>
+  <path d="M87 35 L93 24 L81 30 Z" class="inner"/>
+  <ellipse cx="64" cy="69" rx="24" ry="33.0" class="body outline"/>
+  <path d="M48 93 q16 10 32 0 q-5 17 -16 17 q-11 0 -16 -17" class="belly"/>
+  <path d="M44 83 Q36 86.2 29 87.84" class="limb"/>
+  <path d="M84 83 Q92 91.8 99 100.16" class="limb"/>
+  <ellipse cx="51.0" cy="107" rx="8" ry="5" class="body outline thin"/>
+  <ellipse cx="77.0" cy="107" rx="8" ry="5" class="body outline thin"/>
+  <ellipse cx="54" cy="62" rx="3.2" ry="4.6" class="eye"/><ellipse cx="74" cy="62" rx="3.2" ry="4.6" class="eye"/>
+  <path d="M61 72 L67 72 L64 75 Z" class="nose"/>
+  <path d="M60 80 Q64 82 68 80" class="mouth"/>
+  <path d="M56 95 L64 100 L72 95 L64 91 Z" class="core"/>
+ </g>
+</g>
+<g transform="translate(1536 0)">
+ <rect width="128" height="128" fill="none"/><ellipse cx="64" cy="116" rx="27" ry="4" fill="#1d2430" opacity=".13"/>
+ <g transform="rotate(0 64 77)">
+  <path d="M88 103 C119.0 95 105.36 69 86 62" class="tail"/>
+  <path d="M42 49 L31 25 L52 37 Z" class="body outline"/>
+  <path d="M86 49 L97 25 L76 37 Z" class="body outline"/>
+  <path d="M41 41 L35 30 L47 36 Z" class="inner"/>
+  <path d="M87 41 L93 30 L81 36 Z" class="inner"/>
+  <ellipse cx="64" cy="75" rx="24" ry="22.4" class="body outline"/>
+  <path d="M48 99 q16 10 32 0 q-5 17 -16 17 q-11 0 -16 -17" class="belly"/>
+  <path d="M44 89 Q36 94.6 29 99.12" class="limb"/>
+  <path d="M84 89 Q92 95.5 99 101.1" class="limb"/>
+  <ellipse cx="49.5" cy="113" rx="8" ry="5" class="body outline thin"/>
+  <ellipse cx="78.5" cy="113" rx="8" ry="5" class="body outline thin"/>
+  <path d="M51 69 q5 4 10 0 M67 69 q5 4 10 0" class="eye-line"/>
+  <path d="M61 78 L67 78 L64 81 Z" class="nose"/>
+  <path d="M60 86 Q64 88 68 86" class="mouth"/>
+  <path d="M56 101 L64 106 L72 101 L64 97 Z" class="core"/>
+ </g>
+</g></svg>
