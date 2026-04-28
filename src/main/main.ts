@@ -1819,13 +1819,19 @@ const applyProxyPreference = async (useSystemProxy: boolean): Promise<void> => {
 };
 
 const emitWindowState = () => {
+  if (isQuitting) return;
   if (!mainWindow || mainWindow.isDestroyed()) return;
   if (mainWindow.webContents.isDestroyed()) return;
-  mainWindow.webContents.send('window:state-changed', {
-    isMaximized: mainWindow.isMaximized(),
-    isFullscreen: mainWindow.isFullScreen(),
-    isFocused: mainWindow.isFocused(),
-  });
+
+  try {
+    mainWindow.webContents.send('window:state-changed', {
+      isMaximized: mainWindow.isMaximized(),
+      isFullscreen: mainWindow.isFullScreen(),
+      isFocused: mainWindow.isFocused(),
+    });
+  } catch (error) {
+    console.debug('[Main] Skipped window state emit:', String(error));
+  }
 };
 
 const showSystemMenu = (position?: { x?: number; y?: number }) => {

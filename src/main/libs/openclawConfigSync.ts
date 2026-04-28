@@ -65,6 +65,7 @@ const mapExecutionModeToSandboxMode = (
  */
 export const OPENCLAW_AGENT_TIMEOUT_SECONDS = 3600;
 const DINGTALK_OPENCLAW_CHANNEL = 'dingtalk-connector';
+const ACPX_PLUGIN_ID = 'acpx';
 
 function shouldUseOpenAIResponsesApi(providerName?: string, baseURL?: string): boolean {
   if (providerName !== ProviderName.OpenAI) return false;
@@ -1163,7 +1164,7 @@ export class OpenClawConfigSync {
           // Disable acpx (ACP agent runtime) — Alkaka does not use ACP and
           // the embedded probe adds ~11s to gateway startup while it waits for
           // a process that always fails.  See openclaw/openclaw#62588.
-          'acpx': { enabled: false },
+          [ACPX_PLUGIN_ID]: { enabled: false },
         };
 
         return Object.keys(pluginEntries).length > 0
@@ -2376,7 +2377,15 @@ export class OpenClawConfigSync {
       gateway: {
         mode: 'local',
       },
-      // Don't enable plugins in minimal config — plugin loading via jiti happens
+      // Keep the ACPX runtime plugin explicitly disabled even before a model is
+      // configured. It is enabled by default in OpenClaw's bundled manifests,
+      // and otherwise performs a Codex ACP probe that Alkaka does not use.
+      plugins: {
+        entries: {
+          [ACPX_PLUGIN_ID]: { enabled: false },
+        },
+      },
+      // Don't enable optional channel plugins in minimal config — plugin loading via jiti happens
       // synchronously BEFORE the HTTP server binds, and can block gateway startup
       // for minutes on a fresh install.  Plugins will be enabled when the user
       // configures an API model and a full config sync runs.
@@ -2415,6 +2424,14 @@ export class OpenClawConfigSync {
         // Malformed JSON — overwrite with base minimal config.
       }
     }
+
+    mergedConfig.plugins = {
+      ...((mergedConfig.plugins as Record<string, unknown>) || {}),
+      entries: {
+        ...(((mergedConfig.plugins as Record<string, unknown>)?.entries as Record<string, unknown>) || {}),
+        [ACPX_PLUGIN_ID]: { enabled: false },
+      },
+    };
 
     const nextContent = `${JSON.stringify(mergedConfig, null, 2)}\n`;
 

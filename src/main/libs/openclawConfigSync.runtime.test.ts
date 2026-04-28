@@ -14,11 +14,8 @@ vi.mock('electron', () => ({
   },
 }));
 
-vi.mock('./claudeSettings', () => ({
-  getAllServerModelMetadata: () => [],
-  resolveAllEnabledProviderConfigs: () => [],
-  resolveAllProviderApiKeys: () => ({}),
-  resolveRawApiConfig: () => ({
+const mockRawApiConfigResult = vi.hoisted(() => ({
+  current: {
     config: {
       baseURL: 'https://api.openai.com/v1',
       apiKey: 'sk-test',
@@ -31,7 +28,14 @@ vi.mock('./claudeSettings', () => ({
       supportsImage: false,
       modelName: 'GPT Test',
     },
-  }),
+  } as unknown,
+}));
+
+vi.mock('./claudeSettings', () => ({
+  getAllServerModelMetadata: () => [],
+  resolveAllEnabledProviderConfigs: () => [],
+  resolveAllProviderApiKeys: () => ({}),
+  resolveRawApiConfig: () => mockRawApiConfigResult.current,
 }));
 
 vi.mock('./openclawLocalExtensions', () => ({
@@ -45,6 +49,20 @@ describe('OpenClawConfigSync runtime config output', () => {
   let stateDir: string;
 
   beforeEach(() => {
+    mockRawApiConfigResult.current = {
+      config: {
+        baseURL: 'https://api.openai.com/v1',
+        apiKey: 'sk-test',
+        model: 'gpt-test',
+        apiType: 'openai',
+      },
+      providerMetadata: {
+        providerName: 'openai',
+        codingPlanEnabled: false,
+        supportsImage: false,
+        modelName: 'GPT Test',
+      },
+    };
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'openclaw-config-sync-'));
     stateDir = path.join(tmpDir, 'state');
     configPath = path.join(stateDir, 'openclaw.json');
@@ -55,6 +73,50 @@ describe('OpenClawConfigSync runtime config output', () => {
     fs.rmSync(tmpDir, { recursive: true, force: true });
     const { setSystemProxyEnabled } = await import('./systemProxy');
     setSystemProxyEnabled(false);
+  });
+
+  test('writes minimal config with acpx disabled when no API model is configured', async () => {
+    mockRawApiConfigResult.current = { config: null };
+    const { OpenClawConfigSync } = await import('./openclawConfigSync');
+
+    const sync = new OpenClawConfigSync({
+      engineManager: {
+        getConfigPath: () => configPath,
+        getGatewayToken: () => 'gateway-token',
+        getStateDir: () => stateDir,
+        getBaseDir: () => tmpDir,
+      } as never,
+      getCoworkConfig: () => ({
+        workingDirectory: tmpDir,
+        systemPrompt: '',
+        executionMode: 'local',
+        agentEngine: 'openclaw',
+        memoryEnabled: false,
+        memoryImplicitUpdateEnabled: false,
+        memoryLlmJudgeEnabled: false,
+        memoryGuardLevel: 'balanced',
+        memoryUserMemoriesMaxItems: 100,
+        skipMissedJobs: false,
+      }),
+      isEnterprise: () => false,
+      getTelegramInstances: () => [],
+      getDiscordOpenClawConfig: () => null,
+      getDingTalkInstances: () => [],
+      getFeishuInstances: () => [],
+      getQQInstances: () => [],
+      getWecomConfig: () => null,
+      getWecomInstances: () => [],
+      getWeixinConfig: () => null,
+      getIMSettings: () => null,
+      getSkillsList: () => [],
+      getAgents: () => [],
+    });
+
+    const result = sync.sync('test:no-api');
+    expect(result.ok).toBe(true);
+
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    expect(config.plugins.entries.acpx).toEqual({ enabled: false });
   });
 
   test('writes model provider env-proxy transport when system proxy is enabled', async () => {
