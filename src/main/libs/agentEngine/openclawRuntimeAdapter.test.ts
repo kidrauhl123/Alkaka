@@ -661,3 +661,36 @@ test('getSessionKeysForSession prefers channel keys before managed fallback', ()
     'agent:main:alkaka:session-1',
   ]);
 });
+
+test('pollChannelSessions suppresses expected in-flight request failure after shutdown', async () => {
+  const { store } = createHistoryStore([]);
+  const adapter = new OpenClawRuntimeAdapter(store, {});
+  let rejectRequest: (error: Error) => void = () => {};
+
+  adapter.setChannelSessionSync({
+    clearCache: () => {},
+    isChannelSessionKey: () => false,
+    isCurrentBindingKey: () => false,
+    resolveOrCreateSession: () => null,
+  } as never);
+  adapter.gatewayClient = {
+    start: () => {},
+    stop: () => {},
+    request: () => new Promise((_resolve, reject) => {
+      rejectRequest = reject;
+    }),
+  };
+
+  const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+  const pollPromise = (adapter as never as { pollChannelSessions: () => Promise<void> }).pollChannelSessions();
+
+  adapter.disconnectGatewayClient();
+  rejectRequest(new Error('gateway not connected'));
+  await pollPromise;
+
+  expect(consoleError).not.toHaveBeenCalledWith(
+    '[ChannelSync] pollChannelSessions: error during polling:',
+    expect.any(Error),
+  );
+  consoleError.mockRestore();
+});

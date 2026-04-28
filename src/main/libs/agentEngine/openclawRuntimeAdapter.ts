@@ -720,6 +720,8 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
   /** Session keys whose origin is "heartbeat" — discovered via polling, used to filter real-time events. */
   private readonly heartbeatSessionKeys = new Set<string>();
   private channelPollingTimer: ReturnType<typeof setInterval> | null = null;
+  /** Incremented whenever channel polling is started/stopped to identify stale in-flight polls. */
+  private channelPollingGeneration = 0;
 
   private static readonly CHANNEL_POLL_INTERVAL_MS = 10_000;
   private static readonly FULL_HISTORY_SYNC_LIMIT = 50;
@@ -1007,6 +1009,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     if (this.channelPollingTimer) { console.log('[ChannelSync] startChannelPolling: already running, skipping'); return; }
 
     console.log('[ChannelSync] startChannelPolling: starting periodic channel session discovery');
+    this.channelPollingGeneration++;
     // Run once immediately, then at interval
     void this.pollChannelSessions();
     this.channelPollingTimer = setInterval(() => {
@@ -1015,6 +1018,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
   }
 
   stopChannelPolling(): void {
+    this.channelPollingGeneration++;
     if (this.channelPollingTimer) {
       clearInterval(this.channelPollingTimer);
       this.channelPollingTimer = null;
@@ -1022,13 +1026,18 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
   }
 
   private async pollChannelSessions(): Promise<void> {
-    if (!this.gatewayClient || !this.channelSessionSync) {
-      console.warn('[ChannelSync] pollChannelSessions: skipped — gatewayClient:', !!this.gatewayClient, 'channelSessionSync:', !!this.channelSessionSync);
+    const pollGeneration = this.channelPollingGeneration;
+    const gatewayClient = this.gatewayClient;
+    if (!gatewayClient || !this.channelSessionSync) {
+      console.warn('[ChannelSync] pollChannelSessions: skipped — gatewayClient:', !!gatewayClient, 'channelSessionSync:', !!this.channelSessionSync);
       return;
     }
     try {
       const params = { activeMinutes: 60, limit: CHANNEL_SESSION_DISCOVERY_LIMIT };
-      const result = await this.gatewayClient.request('sessions.list', params);
+      const result = await gatewayClient.request('sessions.list', params);
+      if (pollGeneration !== this.channelPollingGeneration) {
+        return;
+      }
       const sessions = (result as Record<string, unknown>)?.sessions;
       if (!Array.isArray(sessions)) {
         console.warn('[ChannelSync] pollChannelSessions: sessions.list returned non-array sessions:', typeof sessions, 'full result keys:', Object.keys(result as Record<string, unknown>));
@@ -1111,6 +1120,9 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
         }
       }
     } catch (error) {
+      if (pollGeneration !== this.channelPollingGeneration || !this.gatewayClient) {
+        return;
+      }
       console.error('[ChannelSync] pollChannelSessions: error during polling:', error);
     }
   }

@@ -84,6 +84,7 @@
 - **2026-04-28** **Phase 2.2 OpenClaw runtime 启动链路 checkpoint**——`electron:dev:openclaw` 已实测跑通，OpenClaw gateway health 返回 live；修复 clean host 上 pnpm/sha256sum 构建阻塞，并收敛启动日志中的 secret 泄露风险
 - **2026-04-28** **Phase 2.2 OpenClaw 启动降噪补丁**——默认配置显式禁用 OpenClaw bundled `acpx` 插件，避免无 API/model 配置时触发 Codex ACP runtime probe；补齐退出路径 window state IPC 防护
 - **2026-04-28** **本机用户验收 smoke**——用户在电脑旁实测 `npm run electron:dev:openclaw` 打开的真实 Electron 产品窗口可正常看到/操作，OpenClaw gateway health 为 live；下一步转入 Cowork / IM / 桌宠入口端到端链路验证
+- **2026-04-28** **Cowork/OpenClaw shutdown smoke**——修复 Electron 退出时 channel polling in-flight `sessions.list` 因 gateway 已断开而误报 `pollChannelSessions: error during polling: gateway not connected` 的噪音；新增回归测试，验证 `openclawRuntimeAdapter.test.ts` 21/21 通过、`npm run compile:electron` 通过、`npm run electron:dev:openclaw` 真实窗口可显示且 gateway `/health` 为 live，退出日志不再出现该 ChannelSync 错误
 
 ---
 
