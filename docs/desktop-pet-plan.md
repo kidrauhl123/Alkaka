@@ -69,18 +69,22 @@
 - 每个可验收 checkpoint 必须同步更新本文件的“当前真实进度”和阶段表，记录验证命令、截图/日志证据、commit SHA 与下一步。
 - 只要涉及产品方向、阶段优先级或验收口径变化，也必须在本文件落地，避免进度只停留在对话里。
 
-### 当前 checkpoint（2026-04-28 19:56 CST）
+### 当前 checkpoint（2026-04-28 21:10 CST）
 
-- 当前分支：`main`，跟踪 `alkaka/main`。
-- 最新功能提交：`c156e19 feat: add desktop pet status state machine`。
-- 已完成到：**Phase 3A.3 桌宠状态机**。
-- 最新真实 smoke 截图：`/tmp/alkaka-phase3a3/status-smoke.png`。
+- 当前分支：`feat/integrate-shimeji-pet`（基于 `main` / `alkaka/main`）。
+- 最新功能提交：`7dd2329 feat: integrate shimeji desktop pet art`。
+- 已完成到：**Phase 3A.3b Shimeji v6 默认形象与动画资源合入**。
+- 最新真实 smoke 截图：
+  - `/tmp/alkaka-shimeji-merge/pet-crop.png`：v6 小蛋人 + “随时待命”状态气泡可见。
+  - `/tmp/alkaka-shimeji-merge/expanded-fullscreen-2.png`：快速输入完整展开，发送按钮、小蛋人均在屏幕内。
 - 最新验证：
-  - `npx vitest run src/renderer/components/pet/petState.test.ts src/main/petStatus.test.ts src/renderer/components/pet/petQuickTask.test.ts src/main/trayManager.test.ts src/main/libs/agentEngine/openclawRuntimeAdapter.test.ts`：31/31 通过
+  - `npx vitest run ...`（主分支 pet 状态/quick task/tray/OpenClaw 回归 + 二妹 shimeji 工具测试）：14 files / 66 tests 通过
+  - `npx vitest run src/renderer/components/pet/petState.test.ts src/renderer/utils/shimejiDefaultPack.test.ts src/renderer/utils/shimejiBehavior.test.ts src/renderer/utils/shimejiWorld.test.ts`：13/13 通过
   - `npm run compile:electron -- --pretty false`：通过
   - `npm run build`：通过
   - `git diff --check`：通过
-  - `npm run electron:dev:openclaw`：真实 Electron/OpenClaw smoke 通过，gateway `/health` 返回 `{"ok":true,"status":"live"}`，桌宠状态反馈“随时待命”可见
+  - `npm run electron:dev:openclaw`：真实 Electron/OpenClaw smoke 通过，gateway `/health` 返回 `{"ok":true,"status":"live"}`，桌宠已从旧 logo 替换为 Shimeji v6 小蛋人，状态气泡和快速输入仍可用
+  - 独立 code review 子代理：APPROVED
 - 下一优先级：**3A.5 桌宠 ↔ 主窗口任务跳转**，随后推进 **3A.4 主窗口轻量化导航**。
 
 ### ✅ 已完成
@@ -108,6 +112,7 @@
 - **2026-04-28** **Phase 3A.1 桌宠默认主入口 checkpoint**——启动顺序改为优先创建桌宠窗口；主窗口改为按需显示，同时保留隐藏 renderer bootstrap 承载现有自动更新/网络恢复监听，避免 pet-only 启动跳过旧启动副作用；托盘菜单改为可懒创建主窗口，并等待主窗口加载完成后再发送“新建任务/设置”IPC；新增 `trayManager.test.ts` 覆盖托盘首次打开主窗口时的 IPC 等待逻辑
 - **2026-04-28** **Phase 3A.2 桌宠快速输入 checkpoint**——桌宠支持点击展开轻量输入面板，面板通过 `petPreload` 暴露的最小 IPC 调用 `pet:quickTask:start`，主进程校验 sender 必须来自桌宠窗口后再创建 OpenClaw/Cowork 任务；展开时桌宠窗口从 `220×260` 临时扩展到 `360×420`，收起后恢复尺寸；新增 `petQuickTask.test.ts` 覆盖空输入、标题生成和 prompt 截断，真实 Electron/OpenClaw smoke 验证 gateway `/health` live 且快速输入面板可见
 - **2026-04-28** **Phase 3A.3 桌宠状态机 checkpoint**——新增 main/renderer 双侧桌宠状态模型与测试，主进程把 quick task 创建、Cowork/OpenClaw `message` / `permissionRequest` / `complete` / `error` 生命周期裁剪为 `idle / ready / sending / working / needs-approval / error / done` 快照并通过最小 pet preload API 推送给桌宠；桌宠 UI 增加状态小圆点、状态文案和不同阶段光晕，错误展示使用泛化用户可见文案避免在常驻桌宠里暴露详细错误。
+- **2026-04-28** **Phase 3A.3b Shimeji v6 默认形象合入 checkpoint**——按“功能核心以主分支为准、美术/定格动画以二妹成果为准”的取舍，保留主分支 quick input、状态机、pet preload IPC 与 OpenClaw/Cowork 链路，将旧 `logo.png` 桌宠替换为二妹 v6 小蛋人 `ShimejiSprite` / atlas / manifest / 皮肤模板工具；完整 world behavior 暂不默认启用，只先接入默认形象和状态驱动动作。
 
 ---
 
@@ -201,6 +206,7 @@ alkaka-marketplace/
 | 3A.1 | 桌宠默认启动与可见性策略 | ✅ checkpoint | 启动优先显示桌宠；主窗口按需显示，但暂保留隐藏 renderer bootstrap 承载旧启动副作用 |
 | 3A.2 | 桌宠快速输入面板 | ✅ checkpoint | 点击桌宠展开轻量输入框，经安全 preload IPC 直接创建 OpenClaw/Cowork 任务；后续补全快捷键和继续现有任务 |
 | 3A.3 | 桌宠状态机 | ✅ checkpoint | 建立 idle / ready / sending / working / needs-approval / error / done 状态源；quick task 与 Cowork/OpenClaw 生命周期会同步到桌宠状态反馈 |
+| 3A.3b | Shimeji v6 默认形象与动画资源 | ✅ checkpoint | 合入二妹 v6 小蛋人、sprite atlas、manifest、皮肤模板和工具测试；主分支产品功能壳保持为准 |
 | 3A.4 | 主窗口轻量化导航 | 后续 / 2-3 天 | 把主窗口从“默认首页”改成历史/详情/设置，减少启动压迫感 |
 | 3A.5 | 桌宠 ↔ 主窗口任务跳转 | 后续 / 1 天 | 桌宠任务可打开对应详情；主窗口详情可回到桌宠状态 |
 
