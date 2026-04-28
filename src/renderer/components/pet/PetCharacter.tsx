@@ -1,14 +1,19 @@
 import type { CSSProperties } from 'react';
 
-import type { PetAppearance, PetStatus } from '../../types/pet';
+import type { PetAppearance, PetStatus, ShimejiPose } from '../../types/pet';
 import { getDefaultPetAppearance } from '../../utils/petAppearance';
 
 interface PetCharacterProps {
   appearance?: PetAppearance;
   status?: PetStatus;
+  pose?: ShimejiPose;
 }
 
-export function PetCharacter({ appearance = getDefaultPetAppearance(), status = 'idle' }: PetCharacterProps) {
+export function PetCharacter({
+  appearance = getDefaultPetAppearance(),
+  status = 'idle',
+  pose = 'stand-soft',
+}: PetCharacterProps) {
   const isBunny = appearance.species === 'bunny';
   const showRibbon = appearance.accessory === 'ribbon';
   const showBell = appearance.accessory === 'bell';
@@ -19,7 +24,7 @@ export function PetCharacter({ appearance = getDefaultPetAppearance(), status = 
 
   return (
     <svg
-      className={`pet-character-art pet-character-art--${status}`}
+      className={`pet-character-art pet-character-art--${status} pet-character-art--pose-${pose}`}
       viewBox="0 0 260 260"
       role="img"
       aria-label={`${appearance.name} 桌宠形象`}

@@ -148,6 +148,14 @@ html.pet-window .pet-view {
   pointer-events: none;
 }
 
+.pet-shimeji-sprite {
+  display: inline-flex;
+  width: 226px;
+  height: 226px;
+  align-items: center;
+  justify-content: center;
+}
+
 .pet-character-art__ground {
   fill: rgba(75, 54, 48, 0.13);
   filter: blur(0.4px);
@@ -307,6 +315,99 @@ html.pet-window .pet-view {
   fill: none;
   stroke: rgba(255, 255, 255, 0.65);
   stroke-width: 3;
+}
+
+.pet-character-art--pose-fall-tumble .pet-character-art__float,
+.pet-character-art--pose-drag-lifted .pet-character-art__float,
+.pet-character-art--pose-climb-reach .pet-character-art__float,
+.pet-character-art--pose-climb-pull .pet-character-art__float,
+.pet-character-art--pose-hang-dangle .pet-character-art__float,
+.pet-character-art--pose-sleep-curl .pet-character-art__float {
+  animation: none;
+}
+
+.pet-character-art--pose-stand-blink .pet-character-art__eye,
+.pet-character-art--pose-sit-thinking .pet-character-art__eye,
+.pet-character-art--pose-hang-dangle .pet-character-art__eye,
+.pet-character-art--pose-sleep-curl .pet-character-art__eye {
+  transform: scaleY(0.18);
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.pet-character-art--pose-walk-left-step .pet-character-art__body-group {
+  transform: translate(-5px, -2px) rotate(-4deg);
+}
+
+.pet-character-art--pose-walk-right-step .pet-character-art__body-group {
+  transform: translate(5px, -2px) rotate(4deg);
+}
+
+.pet-character-art--pose-walk-mid-step .pet-character-art__body-group,
+.pet-character-art--pose-walk-turn-step .pet-character-art__body-group {
+  transform: translateY(-6px) scaleY(1.02);
+}
+
+.pet-character-art--pose-walk-left-step .pet-character-art__foot--left,
+.pet-character-art--pose-walk-right-step .pet-character-art__foot--right {
+  transform: translateY(-9px) rotate(-10deg);
+}
+
+.pet-character-art--pose-walk-left-step .pet-character-art__foot--right,
+.pet-character-art--pose-walk-right-step .pet-character-art__foot--left {
+  transform: translateY(5px) rotate(8deg);
+}
+
+.pet-character-art--pose-sit-thinking .pet-character-art__body-group {
+  transform: translateY(16px) scaleY(0.92);
+}
+
+.pet-character-art--pose-sit-thinking .pet-character-art__foot {
+  transform: translateY(8px) scaleX(1.18);
+}
+
+.pet-character-art--pose-fall-tumble .pet-character-art__float {
+  transform: rotate(-24deg) translate(-8px, 16px);
+}
+
+.pet-character-art--pose-drag-lifted .pet-character-art__float {
+  transform: rotate(9deg) translateY(-20px);
+}
+
+.pet-character-art--pose-drag-lifted .pet-character-art__arm--left,
+.pet-character-art--pose-drag-lifted .pet-character-art__arm--right {
+  transform: translateY(-14px) rotate(18deg);
+}
+
+.pet-character-art--pose-climb-reach .pet-character-art__float,
+.pet-character-art--pose-climb-pull .pet-character-art__float {
+  transform: rotate(90deg) translate(10px, -14px);
+}
+
+.pet-character-art--pose-climb-reach .pet-character-art__arm--right,
+.pet-character-art--pose-climb-pull .pet-character-art__arm--left {
+  transform: translateY(-18px) rotate(-22deg);
+}
+
+.pet-character-art--pose-hang-dangle .pet-character-art__float {
+  transform: translateY(-24px) scaleY(1.05);
+}
+
+.pet-character-art--pose-hang-dangle .pet-character-art__arm--left,
+.pet-character-art--pose-hang-dangle .pet-character-art__arm--right {
+  transform: translateY(-22px) rotate(22deg);
+}
+
+.pet-character-art--pose-sleep-curl .pet-character-art__float {
+  transform: rotate(-11deg) translateY(22px) scaleX(1.08) scaleY(0.86);
+}
+
+.pet-character-art__body-group,
+.pet-character-art__foot,
+.pet-character-art__arm,
+.pet-character-art__float {
+  transform-box: fill-box;
+  transform-origin: center;
 }
 
 @keyframes pet-bob {

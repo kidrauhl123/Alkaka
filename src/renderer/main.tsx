@@ -8,6 +8,7 @@ import App from './App';
 import PetView from './components/pet/PetView';
 import { store } from './store';
 import { parsePetAppearanceParams } from './utils/petAppearance';
+import { normalizePetStatus } from './utils/petStatus';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -27,7 +28,7 @@ try {
   ReactDOM.createRoot(rootElement).render(
     <React.StrictMode>
       {isPetWindow ? (
-        <PetView appearance={parsePetAppearanceParams(searchParams)} />
+        <PetView appearance={parsePetAppearanceParams(searchParams)} status={normalizePetStatus(searchParams.get('petStatus'))} />
       ) : (
         <Provider store={store}>
           <App />

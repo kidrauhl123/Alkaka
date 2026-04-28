@@ -1,9 +1,9 @@
 import type { MouseEvent as ReactMouseEvent } from 'react';
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 import type { PetAppearance, PetStatus } from '../../types/pet';
 import { PetBubble } from './PetBubble';
-import { PetCharacter } from './PetCharacter';
+import { ShimejiSprite } from './ShimejiSprite';
 
 const DRAG_THRESHOLD_PX = 3;
 
@@ -13,6 +13,7 @@ interface PetViewProps {
 }
 
 export default function PetView({ status = 'idle', appearance }: PetViewProps) {
+  const [isDragging, setIsDragging] = useState(false);
   const dragStateRef = useRef({
     isDragging: false,
     hasMoved: false,
@@ -24,6 +25,7 @@ export default function PetView({ status = 'idle', appearance }: PetViewProps) {
 
   const stopDrag = useCallback(() => {
     dragStateRef.current.isDragging = false;
+    setIsDragging(false);
   }, []);
 
   const handleMouseDown = (event: ReactMouseEvent<HTMLButtonElement>) => {
@@ -39,6 +41,7 @@ export default function PetView({ status = 'idle', appearance }: PetViewProps) {
     };
 
     window.addEventListener('mouseup', stopDrag, { once: true });
+    setIsDragging(true);
   };
 
   const handleMouseMove = (event: ReactMouseEvent<HTMLButtonElement>) => {
@@ -86,7 +89,7 @@ export default function PetView({ status = 'idle', appearance }: PetViewProps) {
         onMouseMove={handleMouseMove}
         onMouseLeave={stopDrag}
       >
-        <PetCharacter appearance={appearance} status={status} />
+        <ShimejiSprite appearance={appearance} status={status} forcedAction={isDragging ? 'drag' : undefined} />
       </button>
     </div>
   );
