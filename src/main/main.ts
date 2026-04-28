@@ -823,11 +823,19 @@ const getAppUpdateCoordinator = (): AppUpdateCoordinator => {
 };
 
 const forwardOpenClawStatus = (status: OpenClawEngineStatus): void => {
+  // During app shutdown the OpenClaw manager emits final status updates while
+  // Electron is tearing renderer frames down. Calling webContents.send in that
+  // window makes Electron print "Render frame was disposed" errors even when
+  // the send is wrapped in try/catch, and the UI can no longer consume updates.
+  if (isQuitting) return;
+
   const windows = BrowserWindow.getAllWindows();
   windows.forEach((win) => {
     if (win.isDestroyed()) return;
+    const { webContents } = win;
+    if (webContents.isDestroyed()) return;
     try {
-      win.webContents.send('openclaw:engine:onProgress', status);
+      webContents.send('openclaw:engine:onProgress', status);
     } catch (error) {
       console.error('Failed to forward OpenClaw engine status:', error);
     }
