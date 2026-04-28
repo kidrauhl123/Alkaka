@@ -69,21 +69,21 @@
 - 每个可验收 checkpoint 必须同步更新本文件的“当前真实进度”和阶段表，记录验证命令、截图/日志证据、commit SHA 与下一步。
 - 只要涉及产品方向、阶段优先级或验收口径变化，也必须在本文件落地，避免进度只停留在对话里。
 
-### 当前 checkpoint（2026-04-28 21:55 CST）
+### 当前 checkpoint（2026-04-29 00:03 CST）
 
-- 当前分支：`main`（已将 `feat/integrate-shimeji-pet` 合回并 push 到 `alkaka/main`）。
-- 最新功能范围：**Phase 3A.5 桌宠 ↔ 主窗口任务跳转**。
-- 已完成到：桌宠 quick task 成功后保留 `sessionId`，展开面板可一键“查看任务”；主进程新增 `pet:openCoworkSession` 安全 IPC（sender 必须来自桌宠窗口），会按需显示/聚焦主窗口并发送 `app:openCoworkSession`；主窗口收到后加载对应 Cowork session 详情，并显示“从桌宠快速任务跳转而来”提示。
+- 当前分支：`main`（commit `7df4d9b`，准备 push 到 `alkaka/main`）。
+- 最新功能范围：**Phase 3A.4 主窗口轻量化导航**。
+- 已完成到：主窗口默认进入“桌宠主入口模式”的轻量辅助面板；左侧历史/工具栏默认折叠，主窗口首页优先提供“任务历史 / 设置 / 复杂 Cowork / Skills/MCP”等入口；完整 Cowork 输入区默认收起，仅在用户点击“复杂 Cowork”、有 home draft，或外部新建任务快捷事件触发时展开，避免主窗口继续像重型默认工作台。
 - 最新 smoke 证据：
-  - `npm run electron:dev:openclaw`：真实 Electron/OpenClaw 启动；gateway `/health` 返回 `{"ok":true,"status":"live"}`（本轮环境的实际 gateway 端口为 `18789`）。
-  - macOS `screencapture` 在当前远程会话无法从 display `69733248` 创建截图，因此本 checkpoint 的视觉截图沿用上一轮 `/tmp/alkaka-shimeji-merge/*`；本轮重点验证跳转 IPC、构建和 gateway live。
+  - `npm run electron:dev:openclaw`：真实 Electron/OpenClaw 启动；gateway `/health` 返回 `{"ok":true,"status":"live"}`（本轮环境的实际 gateway 端口为 `18789`）；Electron 进程存在。
+  - macOS `screencapture` 在当前远程会话仍无法从 display `69733248` 创建截图，因此本 checkpoint 以真实 Electron/OpenClaw smoke、构建与测试作为证据；视觉截图后续可在本机交互会话补。
 - 验证命令：
-  - targeted vitest（pet 状态/quick task/task jump、OpenClaw runtime adapter、Shimeji 资源/行为/皮肤工具等 15 个文件）：69 tests passed
+  - `npx vitest run src/renderer/components/cowork/mainWindowLiteNav.test.ts src/renderer/components/pet/petTaskJump.test.ts src/renderer/components/pet/petState.test.ts src/main/petStatus.test.ts src/renderer/components/pet/petQuickTask.test.ts`：5 files / 16 tests passed
   - `npm run compile:electron -- --pretty false`：通过
   - `npm run build`：通过
   - `git diff --check`：通过
   - 独立 code review 子代理：APPROVED
-- 下一优先级：**3A.4 主窗口轻量化导航**，把主窗口进一步收敛成任务历史/详情/设置入口；随后补桌宠“回到当前任务/继续任务”和更自然的 Shimeji 行为。
+- 下一优先级：补桌宠“回到当前任务/继续任务”的最近任务记忆与恢复逻辑，然后继续打磨更自然的 Shimeji 行为。
 
 ### ✅ 已完成
 
@@ -112,6 +112,7 @@
 - **2026-04-28** **Phase 3A.3 桌宠状态机 checkpoint**——新增 main/renderer 双侧桌宠状态模型与测试，主进程把 quick task 创建、Cowork/OpenClaw `message` / `permissionRequest` / `complete` / `error` 生命周期裁剪为 `idle / ready / sending / working / needs-approval / error / done` 快照并通过最小 pet preload API 推送给桌宠；桌宠 UI 增加状态小圆点、状态文案和不同阶段光晕，错误展示使用泛化用户可见文案避免在常驻桌宠里暴露详细错误。
 - **2026-04-28** **Phase 3A.3b Shimeji v6 默认形象合入 checkpoint**——按“功能核心以主分支为准、美术/定格动画以二妹成果为准”的取舍，保留主分支 quick input、状态机、pet preload IPC 与 OpenClaw/Cowork 链路，将旧 `logo.png` 桌宠替换为二妹 v6 小蛋人 `ShimejiSprite` / atlas / manifest / 皮肤模板工具；完整 world behavior 暂不默认启用，只先接入默认形象和状态驱动动作。
 - **2026-04-28** **Phase 3A.5 桌宠 ↔ 主窗口任务跳转 checkpoint**——桌宠状态保留可打开的 `sessionId`，展开 quick input 后“查看任务”会通过 `pet:openCoworkSession` 安全 IPC 打开/聚焦主窗口并跳转到对应 Cowork session 详情；主窗口显示“从桌宠快速任务跳转而来”提示，避免用户从桌宠跳转后丢上下文。
+- **2026-04-28** **Phase 3A.4 主窗口轻量化导航 checkpoint**——主窗口首页改为桌宠主入口模式下的轻量辅助面板，默认折叠左侧重导航，优先提供任务历史、设置、复杂 Cowork、Skills/MCP 入口；完整输入区默认收起，只在明确需要复杂 Cowork 或有 draft/快捷事件时展开。
 
 ---
 
@@ -206,7 +207,7 @@ alkaka-marketplace/
 | 3A.2 | 桌宠快速输入面板 | ✅ checkpoint | 点击桌宠展开轻量输入框，经安全 preload IPC 直接创建 OpenClaw/Cowork 任务；后续补全快捷键和继续现有任务 |
 | 3A.3 | 桌宠状态机 | ✅ checkpoint | 建立 idle / ready / sending / working / needs-approval / error / done 状态源；quick task 与 Cowork/OpenClaw 生命周期会同步到桌宠状态反馈 |
 | 3A.3b | Shimeji v6 默认形象与动画资源 | ✅ checkpoint | 合入二妹 v6 小蛋人、sprite atlas、manifest、皮肤模板和工具测试；主分支产品功能壳保持为准 |
-| 3A.4 | 主窗口轻量化导航 | 后续 / 2-3 天 | 把主窗口从“默认首页”改成历史/详情/设置，减少启动压迫感 |
+| 3A.4 | 主窗口轻量化导航 | ✅ checkpoint | 主窗口首页收敛为任务历史/设置/复杂 Cowork/Skills-MCP 入口，完整输入区默认收起，减少启动压迫感 |
 | 3A.5 | 桌宠 ↔ 主窗口任务跳转 | ✅ checkpoint | 桌宠任务可打开对应 Cowork session 详情；主窗口会标识该详情来自桌宠快速任务 |
 
 #### 3A.3 具体执行计划：桌宠状态机

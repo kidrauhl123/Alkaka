@@ -53,7 +53,7 @@ const App: React.FC = () => {
   const [initError, setInitError] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [, forceLanguageRefresh] = useState(0);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
   const [appUpdateState, setAppUpdateState] = useState<AppUpdateRuntimeState>({
     status: AppUpdateStatus.Idle,
     source: null,
@@ -298,6 +298,14 @@ const App: React.FC = () => {
 
   const handleToggleSidebar = useCallback(() => {
     setIsSidebarCollapsed((prev) => !prev);
+  }, []);
+
+  const handleSearchHistory = useCallback(() => {
+    setMainView('cowork');
+    setIsSidebarCollapsed(false);
+    window.setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('cowork:shortcut:search'));
+    }, 0);
   }, []);
 
   const handleNewChat = useCallback(() => {
@@ -796,6 +804,7 @@ const App: React.FC = () => {
                 isSidebarCollapsed={isSidebarCollapsed}
                 onToggleSidebar={handleToggleSidebar}
                 onNewChat={handleNewChat}
+                onSearchHistory={handleSearchHistory}
                 updateBadge={isSidebarCollapsed ? updateBadge : null}
                 petOpenedSessionId={petOpenedSessionId}
               />

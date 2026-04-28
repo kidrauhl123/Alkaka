@@ -11,6 +11,7 @@ import { RootState } from '../../store';
 import {
   selectCoworkConfig,
   selectCurrentSession,
+  selectDraftPrompts,
   selectIsOpenClawEngine,
   selectIsStreaming,
 } from '../../store/selectors/coworkSelectors';
@@ -28,6 +29,12 @@ import WindowTitleBar from '../window/WindowTitleBar';
 import { resolveAgentModelSelection } from './agentModelSelection';
 import CoworkPromptInput, { type CoworkPromptInputRef } from './CoworkPromptInput';
 import CoworkSessionDetail from './CoworkSessionDetail';
+import {
+  buildMainWindowLiteActions,
+  getMainWindowHomeCopy,
+  shouldShowComposerOnMainWindowHome,
+  type MainWindowLiteActionId,
+} from './mainWindowLiteNav';
 
 export interface CoworkViewProps {
   onRequestAppSettings?: (options?: SettingsOpenOptions) => void;
@@ -35,16 +42,18 @@ export interface CoworkViewProps {
   isSidebarCollapsed?: boolean;
   onToggleSidebar?: () => void;
   onNewChat?: () => void;
+  onSearchHistory?: () => void;
   updateBadge?: React.ReactNode;
   petOpenedSessionId?: string | null;
 }
 
-const CoworkView: React.FC<CoworkViewProps> = ({ onRequestAppSettings, onShowSkills, isSidebarCollapsed, onToggleSidebar, onNewChat, updateBadge, petOpenedSessionId }) => {
+const CoworkView: React.FC<CoworkViewProps> = ({ onRequestAppSettings, onShowSkills, isSidebarCollapsed, onToggleSidebar, onNewChat, onSearchHistory, updateBadge, petOpenedSessionId }) => {
   const dispatch = useDispatch();
   const isMac = window.electron.platform === 'darwin';
   const [isInitialized, setIsInitialized] = useState(false);
   const [openClawStatus, setOpenClawStatus] = useState<OpenClawEngineStatus | null>(null);
   const [isRestartingGateway, setIsRestartingGateway] = useState(false);
+  const [isComposerRequested, setIsComposerRequested] = useState(false);
   // Track if we're starting/continuing a session to prevent duplicate submissions
   const isStartingRef = useRef(false);
   const isContinuingRef = useRef(false);
@@ -59,6 +68,7 @@ const CoworkView: React.FC<CoworkViewProps> = ({ onRequestAppSettings, onShowSki
   const promptInputRef = useRef<CoworkPromptInputRef>(null);
 
   const currentSession = useSelector(selectCurrentSession);
+  const homeDraftPrompt = useSelector((state: RootState) => selectDraftPrompts(state).__home__ || '');
   const isStreaming = useSelector(selectIsStreaming);
   const config = useSelector(selectCoworkConfig);
   const isOpenClawEngine = useSelector(selectIsOpenClawEngine);
@@ -439,9 +449,16 @@ const CoworkView: React.FC<CoworkViewProps> = ({ onRequestAppSettings, onShowSki
   };
 
   useEffect(() => {
+    if (currentSession) {
+      setIsComposerRequested(false);
+    }
+  }, [currentSession]);
+
+  useEffect(() => {
     const handleNewSession = () => {
       // Only clear when already on home (no session) — preserve __home__ draft when returning from a session
       const shouldClear = !currentSession;
+      setIsComposerRequested(true);
       dispatch(clearCurrentSession());
       dispatch(clearSelection());
       window.dispatchEvent(new CustomEvent('cowork:focus-input', {
@@ -469,6 +486,24 @@ const CoworkView: React.FC<CoworkViewProps> = ({ onRequestAppSettings, onShowSki
     };
   }, [currentSession, isOpenClawEngine]);
 
+  useEffect(() => {
+    const handleFocusInput = (event: Event) => {
+      if (currentSession) return;
+      if (isComposerRequested || homeDraftPrompt.trim().length > 0) return;
+
+      setIsComposerRequested(true);
+      const detail = (event as CustomEvent).detail;
+      window.setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('cowork:focus-input', { detail }));
+      }, 0);
+    };
+
+    window.addEventListener('cowork:focus-input', handleFocusInput);
+    return () => {
+      window.removeEventListener('cowork:focus-input', handleFocusInput);
+    };
+  }, [currentSession, homeDraftPrompt, isComposerRequested]);
+
   if (!isInitialized) {
     return (
       <div className="flex-1 h-full flex flex-col bg-background">
@@ -489,6 +524,39 @@ const CoworkView: React.FC<CoworkViewProps> = ({ onRequestAppSettings, onShowSki
   const isEngineReady = isOpenClawEngine
     ? isOpenClawReadyForSession(openClawStatus)
     : true;
+  const homeCopy = getMainWindowHomeCopy();
+  const liteActions = buildMainWindowLiteActions({ canResumeSession: Boolean(petOpenedSessionId) });
+  const shouldShowComposer = shouldShowComposerOnMainWindowHome({
+    requestedComposer: isComposerRequested,
+    hasDraftPrompt: homeDraftPrompt.trim().length > 0,
+  });
+
+  const handleLiteAction = (actionId: MainWindowLiteActionId) => {
+    switch (actionId) {
+      case 'resume-current-task':
+        if (petOpenedSessionId) {
+          void coworkService.loadSession(petOpenedSessionId);
+        }
+        return;
+      case 'search-history':
+        onSearchHistory?.();
+        return;
+      case 'open-settings':
+        onRequestAppSettings?.();
+        return;
+      case 'new-complex-task':
+        setIsComposerRequested(true);
+        window.setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('cowork:focus-input', { detail: { clear: false } }));
+        }, 0);
+        return;
+      case 'manage-skills':
+        onShowSkills?.();
+        return;
+      default:
+        return;
+    }
+  };
 
   const homeHeader = (
     <div className="draggable flex h-12 items-center justify-between px-4 border-b border-border shrink-0">
@@ -597,50 +665,95 @@ const CoworkView: React.FC<CoworkViewProps> = ({ onRequestAppSettings, onShowSki
 
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto min-h-0">
-        <div className="max-w-5xl w-full min-w-[320px] mx-auto px-4 pt-[15vh] pb-8 space-y-10">
-          {/* Welcome Section */}
-          <div className="text-center space-y-5">
-            <img src="logo.png" alt="logo" className="w-16 h-16 mx-auto" />
-            <h2 className="text-3xl font-bold tracking-tight text-foreground">
-              {i18nService.t('coworkWelcome')}
-            </h2>
-            <p className="text-sm text-secondary max-w-md mx-auto">
-              {i18nService.t('coworkDescription')}
-            </p>
-          </div>
+        <div className="max-w-4xl w-full min-w-[320px] mx-auto px-4 pt-[12vh] pb-8 space-y-8">
+          <div className="rounded-3xl border border-border bg-surface/70 px-6 py-7 shadow-sm">
+            <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
+              <div className="space-y-3 max-w-xl">
+                <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+                  🐣 桌宠主入口模式
+                </div>
+                <div className="space-y-2">
+                  <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+                    {homeCopy.title}
+                  </h2>
+                  <p className="text-sm leading-6 text-secondary">
+                    {homeCopy.subtitle}
+                  </p>
+                  <p className="text-xs leading-5 text-tertiary">
+                    {homeCopy.hint}
+                  </p>
+                </div>
+              </div>
+              <img src="logo.png" alt="logo" className="hidden md:block h-14 w-14 opacity-80" />
+            </div>
 
-          {/* Prompt Input Area - Large version with folder selector */}
-          <div className="max-w-3xl mx-auto w-full space-y-3">
-            <div className="shadow-glow-accent rounded-2xl">
-              <CoworkPromptInput
-                ref={promptInputRef}
-                onSubmit={handleStartSession}
-                onStop={handleStopSession}
-                isStreaming={isStreaming}
-                disabled={!isEngineReady}
-                placeholder={i18nService.t('coworkPlaceholder')}
-                size="large"
-                workingDirectory={config.workingDirectory}
-                onWorkingDirectoryChange={async (dir: string) => {
-                  await coworkService.updateConfig({ workingDirectory: dir });
-                }}
-                showFolderSelector={true}
-                onManageSkills={() => onShowSkills?.()}
-              />
+            <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {liteActions.map((action) => (
+                <button
+                  key={action.id}
+                  type="button"
+                  onClick={() => handleLiteAction(action.id)}
+                  className={`rounded-2xl border px-4 py-3 text-left transition-all ${
+                    action.tone === 'primary'
+                      ? 'border-primary/40 bg-primary/10 text-foreground hover:bg-primary/15'
+                      : action.tone === 'secondary'
+                        ? 'border-border bg-background hover:border-primary/30 hover:bg-surface-raised'
+                        : 'border-transparent bg-transparent hover:bg-surface-raised'
+                  }`}
+                >
+                  <div className="text-sm font-medium text-foreground">{action.label}</div>
+                  <div className="mt-1 text-xs leading-5 text-secondary">{action.description}</div>
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* Quick Actions */}
-          <div className="max-w-3xl mx-auto w-full space-y-4">
-            {selectedAction ? (
-              <PromptPanel
-                action={selectedAction}
-                onPromptSelect={handleQuickActionPromptSelect}
-              />
-            ) : (
-              <QuickActionBar actions={quickActions} onActionSelect={handleActionSelect} />
-            )}
-          </div>
+          {shouldShowComposer ? (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between px-1">
+                <div>
+                  <h3 className="text-sm font-medium text-foreground">复杂 Cowork 输入</h3>
+                  <p className="text-xs text-secondary">主窗口只在需要长上下文时展开完整输入区。</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsComposerRequested(false)}
+                  className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-secondary hover:bg-surface-raised hover:text-foreground transition-colors"
+                >
+                  收起
+                </button>
+              </div>
+
+              <div className="shadow-glow-accent rounded-2xl">
+                <CoworkPromptInput
+                  ref={promptInputRef}
+                  onSubmit={handleStartSession}
+                  onStop={handleStopSession}
+                  isStreaming={isStreaming}
+                  disabled={!isEngineReady}
+                  placeholder={i18nService.t('coworkPlaceholder')}
+                  size="large"
+                  workingDirectory={config.workingDirectory}
+                  onWorkingDirectoryChange={async (dir: string) => {
+                    await coworkService.updateConfig({ workingDirectory: dir });
+                  }}
+                  showFolderSelector={true}
+                  onManageSkills={() => onShowSkills?.()}
+                />
+              </div>
+
+              <div className="space-y-4">
+                {selectedAction ? (
+                  <PromptPanel
+                    action={selectedAction}
+                    onPromptSelect={handleQuickActionPromptSelect}
+                  />
+                ) : (
+                  <QuickActionBar actions={quickActions} onActionSelect={handleActionSelect} />
+                )}
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
     </div>
