@@ -1,9 +1,16 @@
 import type { MouseEvent as ReactMouseEvent } from 'react';
 import { useCallback, useRef } from 'react';
 
+import type { PetStatus } from '../../types/pet';
+import { PetBubble } from './PetBubble';
+
 const DRAG_THRESHOLD_PX = 3;
 
-export default function PetView() {
+interface PetViewProps {
+  status?: PetStatus;
+}
+
+export default function PetView({ status = 'idle' }: PetViewProps) {
   const dragStateRef = useRef({
     isDragging: false,
     hasMoved: false,
@@ -66,6 +73,7 @@ export default function PetView() {
   return (
     <div className="pet-view" onContextMenu={handleContextMenu}>
       <div className="pet-drag-region" />
+      <PetBubble status={status} />
       <button
         type="button"
         className="pet-character"
