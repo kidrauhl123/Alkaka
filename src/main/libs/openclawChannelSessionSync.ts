@@ -2,7 +2,7 @@
  * OpenClaw Channel Session Sync
  *
  * Discovers and maps sessions created by OpenClaw channel extensions (e.g. Telegram)
- * to local Cowork sessions so that conversations are visible in the LobsterAI UI.
+ * to local Cowork sessions so that conversations are visible in the Alkaka UI.
  */
 
 import { session } from '@electron/remote';
@@ -13,7 +13,7 @@ import { t } from '../i18n';
 import type { IMStore } from '../im/imStore';
 import type { Platform } from '../im/types';
 
-const LOBSTERAI_SESSION_PREFIX = 'lobsterai:';
+const ALKAKA_SESSION_PREFIX = 'alkaka:';
 export const DEFAULT_MANAGED_AGENT_ID = 'main';
 
 export interface ManagedSessionKey {
@@ -27,7 +27,7 @@ export function buildManagedSessionKey(
 ): string {
   const normalizedSessionId = sessionId.trim();
   const normalizedAgentId = agentId.trim() || DEFAULT_MANAGED_AGENT_ID;
-  return `agent:${normalizedAgentId}:lobsterai:${normalizedSessionId}`;
+  return `agent:${normalizedAgentId}:alkaka:${normalizedSessionId}`;
 }
 
 export function parseManagedSessionKey(
@@ -36,8 +36,8 @@ export function parseManagedSessionKey(
   const raw = (sessionKey ?? '').trim();
   if (!raw) return null;
 
-  if (raw.startsWith(LOBSTERAI_SESSION_PREFIX)) {
-    const sessionId = raw.slice(LOBSTERAI_SESSION_PREFIX.length).trim();
+  if (raw.startsWith(ALKAKA_SESSION_PREFIX)) {
+    const sessionId = raw.slice(ALKAKA_SESSION_PREFIX.length).trim();
     return sessionId ? { agentId: null, sessionId } : null;
   }
 
@@ -46,7 +46,7 @@ export function parseManagedSessionKey(
   }
 
   const parts = raw.split(':');
-  if (parts.length < 4 || parts[0] !== 'agent' || parts[2] !== 'lobsterai') {
+  if (parts.length < 4 || parts[0] !== 'agent' || parts[2] !== 'alkaka') {
     return null;
   }
 
@@ -198,7 +198,7 @@ export function extractAccountIdFromKey(sessionKey: string): string | null {
   return null;
 }
 
-const MULTI_INSTANCE_PLATFORMS = new Set<Platform>(['dingtalk', 'feishu', 'qq', 'email', 'nim', 'wecom', 'telegram', 'discord']);
+const MULTI_INSTANCE_PLATFORMS = new Set<Platform>(['dingtalk', 'feishu', 'qq', 'email', 'wecom', 'telegram', 'discord']);
 
 /**
  * Resolve the agent binding for a platform, supporting per-instance bindings.
@@ -257,15 +257,12 @@ function getChannelTitlePrefix(platform: string): string {
     dingtalk: t('channelPrefixDingtalk'),
     wecom: t('channelPrefixWecom'),
     'wecom-openclaw-plugin': t('channelPrefixWecom'),
-    nim: t('channelPrefixNim'),
     weixin: t('channelPrefixWeixin'),
-    'netease-bee': t('channelPrefixNeteaseBee'),
   };
   const staticMap: Record<string, string> = {
     telegram: 'TG',
     discord: 'Discord',
     qq: 'QQ',
-    popo: 'POPO',
     email: t('channelPrefixEmail'),
   };
   const label = i18nMap[platform] ?? staticMap[platform] ?? platform;
@@ -339,9 +336,9 @@ export class OpenClawChannelSessionSync {
    * Returns the local sessionId if the sessionKey belongs to a channel, or null if not.
    */
   resolveOrCreateSession(sessionKey: string): string | null {
-    // 1. Skip LobsterAI-originated sessions
+    // 1. Skip Alkaka-originated sessions
     if (isManagedSessionKey(sessionKey)) {
-      console.log('[ChannelSessionSync] skipped: LobsterAI-originated session');
+      console.log('[ChannelSessionSync] skipped: Alkaka-originated session');
       return null;
     }
 
@@ -443,8 +440,8 @@ export class OpenClawChannelSessionSync {
 
     // 5. Create new Cowork session
     const titlePrefix = getChannelTitlePrefix(parsed.platform);
-    // For conversationIds that look like email addresses (e.g. POPO),
-    // use the local part before '@' as the display name.
+    // For conversationIds that look like email addresses, use the local part
+    // before '@' as the display name.
     const displayId = parsed.conversationId.includes('@')
       ? parsed.conversationId.split('@')[0]
       : parsed.conversationId;

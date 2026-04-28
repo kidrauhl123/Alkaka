@@ -14,5 +14,4 @@ export { default as QwenIcon } from './QwenIcon';
 export { default as StepfunIcon } from './StepfunIcon';
 export { default as VolcengineIcon } from './VolcengineIcon';
 export { default as XiaomiIcon } from './XiaomiIcon';
-export { default as YouDaoZhiYunIcon } from './YouDaoZhiYunIcon';
 export { default as ZhipuIcon } from './ZhipuIcon';

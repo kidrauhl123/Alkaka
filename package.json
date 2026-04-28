@@ -2,7 +2,8 @@
   "name": "alkaka",
   "private": true,
   "author": {
-    "name": "Alkaka"
+    "name": "Alkaka",
+    "email": "alkaka.project@example.com"
   },
   "license": "MIT",
   "version": "2026.4.25",
@@ -29,23 +30,6 @@
         "id": "openclaw-weixin",
         "npm": "@tencent-weixin/openclaw-weixin",
         "version": "2.1.7"
-      },
-      {
-        "id": "moltbot-popo",
-        "npm": "moltbot-popo",
-        "version": "2.1.0",
-        "registry": "https://npm.nie.netease.com",
-        "optional": true
-      },
-      {
-        "id": "openclaw-nim-channel",
-        "npm": "git+https://github.com/netease-im/openclaw-nim-channel.git#1.1.1",
-        "version": "1.1.1"
-      },
-      {
-        "id": "openclaw-netease-bee",
-        "npm": "openclaw-netease-bee",
-        "version": "0.1.3"
       },
       {
         "id": "clawemail-email",
@@ -135,7 +119,6 @@
     "js-yaml": "^4.1.1",
     "katex": "^0.16.21",
     "mermaid": "^10.9.5",
-    "nim-web-sdk-ng": "10.9.77-alpha.4",
     "npm": "^11.11.0",
     "qrcode.react": "^4.2.0",
     "react": "^18.2.0",

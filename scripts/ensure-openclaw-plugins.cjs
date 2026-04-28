@@ -640,7 +640,7 @@ function main() {
     if (needsPatch) {
       // 1. Generate lightweight setup-entry.js (zero require() calls)
       const setupEntryContent = `"use strict";
-// Lightweight setup entry for deferred loading (patched by LobsterAI).
+// Lightweight setup entry for deferred loading (patched by Alkaka).
 // Only static channel metadata — no heavy dependencies.
 // The full plugin (index.js) loads after the HTTP server starts listening.
 exports.plugin = {

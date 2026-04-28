@@ -18,7 +18,6 @@ import {
   StepfunIcon,
   VolcengineIcon,
   XiaomiIcon,
-  YouDaoZhiYunIcon,
   ZhipuIcon,
 } from '../components/icons/providers';
 
@@ -30,7 +29,6 @@ const PROVIDER_ICON_MAP: Record<string, React.ReactNode> = {
   [ProviderName.Moonshot]:     <MoonshotIcon />,
   [ProviderName.Zhipu]:        <ZhipuIcon />,
   [ProviderName.Minimax]:      <MiniMaxIcon />,
-  [ProviderName.Youdaozhiyun]: <YouDaoZhiYunIcon />,
   [ProviderName.Qwen]:         <QwenIcon />,
   [ProviderName.Xiaomi]:       <XiaomiIcon />,
   [ProviderName.StepFun]:      <StepfunIcon />,

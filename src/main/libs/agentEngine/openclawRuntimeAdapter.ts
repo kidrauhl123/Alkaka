@@ -8,7 +8,6 @@ import type { OpenClawSessionPatch } from '../../../common/openclawSession';
 import type { CoworkExecutionMode, CoworkMessage, CoworkSession, CoworkSessionStatus, CoworkStore } from '../../coworkStore';
 import { t } from '../../i18n';
 import { getCommandDangerLevel,isDeleteCommand } from '../commandSafety';
-import { setCoworkProxySessionId } from '../coworkOpenAICompatProxy';
 import { extractOpenClawAssistantStreamText } from '../openclawAssistantText';
 import {
   buildManagedSessionKey,
@@ -208,24 +207,6 @@ const stripFeishuSystemHeader = (text: string): string => {
 };
 
 /**
- * Strip the POPO plugin's system header line from user messages.
- *
- * The moltbot-popo plugin calls enqueueSystemEvent on every inbound message,
- * prepending a one-line header before the user's actual text:
- *   System: [2026-04-14 19:57:42 GMT+8] POPO DM received from user@corp.com
- *   System: [2026-04-14 19:57:42 GMT+8] POPO message received in group <id>
- *
- * Strip it so only the real user text is stored and displayed locally.
- */
-const stripPopoSystemHeader = (text: string): string => {
-  // Match: "System: [timestamp] POPO DM received from ..." or
-  //        "System: [timestamp] POPO message received in group ..."
-  const match = text.match(/^System:\s*\[.*?\]\s+POPO\b.*$/m);
-  if (!match) return text;
-  return text.slice(match.index! + match[0].length).replace(/^\n+/, '').trim();
-};
-
-/**
  * Strip the QQ Bot plugin's injected system prompt prefix from user messages.
  *
  * The QQ plugin prepends context info and capability instructions before the
@@ -282,7 +263,6 @@ const stripQQBotSystemPrompt = (text: string): string => {
 interface PlatformFlags {
   isDiscord: boolean;
   isQQ: boolean;
-  isPopo: boolean;
   isFeishu: boolean;
 }
 
@@ -301,7 +281,6 @@ const normalizeEntryText = (
   if (!result) return result;
   if (flags.isDiscord) result = stripDiscordMentions(result);
   if (flags.isQQ && role === 'user') result = stripQQBotSystemPrompt(result);
-  if (flags.isPopo && role === 'user') result = stripPopoSystemHeader(result);
   if (flags.isFeishu && role === 'user') result = stripFeishuSystemHeader(result);
   return result;
 };
@@ -712,7 +691,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
    * Sessions that were manually stopped by the user via stopSession().
    * Maps sessionId → timestamp of when stop was requested.
    * Used to suppress automatic ActiveTurn re-creation from late-arriving
-   * OpenClaw Gateway events (e.g. POPO/Telegram channel events that arrive
+   * OpenClaw Gateway events (e.g. Telegram channel events that arrive
    * after the user clicked Stop).  Entries expire after STOP_COOLDOWN_MS.
    */
   private readonly stoppedSessions = new Map<string, number>();
@@ -773,7 +752,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
   /**
    * Server-side agent timeout in seconds (mirrors agents.defaults.timeoutSeconds in openclaw config).
    * Used to set a client-side fallback timer that fires slightly after the server timeout,
-   * so LobsterAI can recover even when the gateway fails to deliver the abort event.
+   * so Alkaka can recover even when the gateway fails to deliver the abort event.
    */
   agentTimeoutSeconds = OPENCLAW_AGENT_TIMEOUT_SECONDS;
   private static readonly CLIENT_TIMEOUT_GRACE_MS = 30_000;
@@ -965,7 +944,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
    * Ensure the gateway WebSocket client is connected.
    * Called when IM channels (e.g. Telegram) are enabled in OpenClaw mode
    * so that channel-originated events can be received without waiting
-   * for a LobsterAI-initiated session.
+   * for a Alkaka-initiated session.
    */
   async connectGatewayIfNeeded(): Promise<void> {
     if (this.gatewayClient) {
@@ -1210,7 +1189,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     }
 
     // Record the stop timestamp so that late-arriving gateway events
-    // (e.g. from POPO/Telegram channels) don't re-create the ActiveTurn.
+    // (e.g. from Telegram channels) don't re-create the ActiveTurn.
     this.stoppedSessions.set(sessionId, Date.now());
 
     this.cleanupSessionTurn(sessionId);
@@ -1342,7 +1321,6 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     this.rememberSessionKey(sessionId, sessionKey);
 
     this.store.updateSession(sessionId, { status: 'running' });
-    setCoworkProxySessionId(sessionId);
     await this.ensureGatewayClientReady();
     this.startChannelPolling();
 
@@ -1524,9 +1502,9 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
 
   private buildSystemPromptPrefix(systemPrompt: string): string {
     return [
-      '[LobsterAI system instructions]',
+      '[Alkaka system instructions]',
       'Apply the instructions below as the highest-priority guidance for this session.',
-      'If earlier LobsterAI system instructions exist, replace them with this version.',
+      'If earlier Alkaka system instructions exist, replace them with this version.',
       systemPrompt,
     ].join('\n');
   }
@@ -1573,7 +1551,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     });
 
     return [
-      '[Context bridge from previous LobsterAI conversation]',
+      '[Context bridge from previous Alkaka conversation]',
       'Use this prior context for continuity. Focus your final answer on the current request.',
       ...lines,
     ].join('\n');
@@ -1662,7 +1640,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     const client = new GatewayClient({
       url: connection.url,
       token: connection.token,
-      clientDisplayName: 'LobsterAI',
+      clientDisplayName: 'Alkaka',
       clientVersion: app.getVersion(),
       mode: 'backend',
       caps: [OPENCLAW_GATEWAY_TOOL_EVENTS_CAP],
@@ -2136,7 +2114,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     // Also exclude runIds that have already been terminated (lifecycle phase=error received),
     // which prevents gateway retries from spawning new turns and surfacing duplicate errors.
     if (sessionId && !this.activeTurns.has(sessionId) && sessionKey && stream !== 'error' && !this.terminatedRunIds.has(runId)) {
-      // Desktop sessions (lobsterai:*) that were manually stopped must not be
+      // Desktop sessions (alkaka:*) that were manually stopped must not be
       // re-activated by late-arriving gateway events (e.g. MCP tool results that
       // arrive after the user clicked Stop).  Only channel/cron sessions are
       // allowed to re-create turns after the stop cooldown expires.
@@ -3409,11 +3387,10 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
         && this.channelSessionSync.isChannelSessionKey(sessionKey);
       const isDiscord = sessionKey.includes(':discord:');
       const isQQ = sessionKey.includes(':qqbot:');
-      const isPopo = sessionKey.includes(':moltbot-popo:');
       const isFeishu = sessionKey.includes(':feishu:');
 
       // Platform flags for text normalization (shared by auth + local)
-      const platformFlags: PlatformFlags = { isDiscord, isQQ, isPopo, isFeishu };
+      const platformFlags: PlatformFlags = { isDiscord, isQQ, isFeishu };
 
       // Extract authoritative user/assistant entries from gateway history
       const authoritativeEntries: Array<{ role: 'user' | 'assistant'; text: string }> = [];
@@ -3597,7 +3574,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
         );
         if (isChannel) {
           const latestOnly = this.reCreatedChannelSessionIds.has(sessionId);
-          this.syncChannelUserMessages(sessionId, history.messages, latestOnly, turn.sessionKey.includes(':discord:'), turn.sessionKey.includes(':qqbot:'), turn.sessionKey.includes(':moltbot-popo:'), turn.sessionKey.includes(':feishu:'));
+          this.syncChannelUserMessages(sessionId, history.messages, latestOnly, turn.sessionKey.includes(':discord:'), turn.sessionKey.includes(':qqbot:'), turn.sessionKey.includes(':feishu:'));
         }
 
         if (!this.isCurrentTurnToken(sessionId, turn.turnToken)) {
@@ -3693,7 +3670,6 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     historyMessages: unknown[],
     isDiscord: boolean,
     isQQ: boolean,
-    isPopo: boolean = false,
     isFeishu: boolean = false,
   ): ChannelHistorySyncEntry[] {
     const historyEntries: ChannelHistorySyncEntry[] = [];
@@ -3703,10 +3679,6 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       const role = entry.role;
       if (role !== 'user' && role !== 'assistant') continue;
       let text = entry.text.trim();
-      // POPO's moltbot-popo plugin converts newlines to HTML break tags (<br />),
-      // causing raw <br /> to appear in the UI and AI conversation.
-      if (isPopo) text = text.replace(/<br\s*\/?>/gi, '\n');
-      if (isPopo && role === 'user') text = stripPopoSystemHeader(text);
       if (isDiscord) text = stripDiscordMentions(text);
       if (isQQ && role === 'user') text = stripQQBotSystemPrompt(text);
       if (isFeishu && role === 'user') text = stripFeishuSystemHeader(text);
@@ -3841,7 +3813,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
   /**
    * Sync user messages from gateway chat.history that haven't been added to the local store yet.
    * Used for channel-originated sessions (e.g. Telegram) where user messages arrive via the
-   * gateway rather than the LobsterAI UI.
+   * gateway rather than the Alkaka UI.
    *
    * Called at the start of a new turn (via prefetchChannelUserMessages) so that user messages
    * appear before the assistant's streaming response. Both chat and agent events are buffered
@@ -3851,8 +3823,8 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
    * because OpenClaw's `chat.history` window can slide due to byte limits well before
    * the requested message count is reached.
    */
-  private syncChannelUserMessages(sessionId: string, historyMessages: unknown[], latestOnly = false, isDiscord = false, isQQ = false, isPopo = false, isFeishu = false): void {
-    const historyEntries = this.collectChannelHistoryEntries(historyMessages, isDiscord, isQQ, isPopo, isFeishu);
+  private syncChannelUserMessages(sessionId: string, historyMessages: unknown[], latestOnly = false, isDiscord = false, isQQ = false, isFeishu = false): void {
+    const historyEntries = this.collectChannelHistoryEntries(historyMessages, isDiscord, isQQ, isFeishu);
 
     const cursor = this.channelSyncCursor.get(sessionId) ?? 0;
 
@@ -4064,7 +4036,6 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
       });
     }
     this.activeTurns.delete(sessionId);
-    setCoworkProxySessionId(null);
     // NOTE: Do NOT clear lastSystemPromptBySession here — it must persist
     // across turns so that the system prompt is only injected on the first
     // turn of a session (or when it actually changes).  Cleanup happens in
@@ -4165,7 +4136,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     if (this.activeTurns.has(sessionId)) return;
     // Suppress automatic turn re-creation for sessions that are still within
     // the stop cooldown window.  This prevents late-arriving OpenClaw events
-    // (e.g. from POPO/Telegram) from restarting a stopped session.
+    // (e.g. from Telegram) from restarting a stopped session.
     if (this.isSessionInStopCooldown(sessionId)) {
       console.log('[Debug:ensureActiveTurn] suppressed — session in stop cooldown, sessionId:', sessionId);
       return;
@@ -4175,7 +4146,7 @@ export class OpenClawRuntimeAdapter extends EventEmitter implements CoworkRuntim
     // `manuallyStoppedSessions` (a permanent Set) would block all future
     // channel events for this session until `runTurn` or `onSessionDeleted`
     // happens to clear it.
-    // Only clear for channel/cron sessions.  Desktop sessions (lobsterai:*)
+    // Only clear for channel/cron sessions.  Desktop sessions (alkaka:*)
     // must stay suppressed — the gateway may still push late MCP tool results
     // long after the 10s cooldown expires.
     if (this.manuallyStoppedSessions.has(sessionId)) {

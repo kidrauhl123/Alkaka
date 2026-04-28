@@ -74,7 +74,7 @@ function isIMChannel(channel: string): boolean {
 }
 
 function conversationOptionMatchesValue(
-  channel: string,
+  _channel: string,
   optionConversationId: string,
   selectedValue: string,
 ): boolean {
@@ -82,12 +82,6 @@ function conversationOptionMatchesValue(
   const value = selectedValue.trim();
   if (!optionId || !value) return false;
   if (optionId === value) return true;
-
-  const platform = PlatformRegistry.platformOfChannel(channel);
-  if (platform === 'nim') {
-    if (optionId.endsWith(`:${value}`)) return true;
-    if (optionId.endsWith(`|${value}`)) return true;
-  }
 
   return false;
 }

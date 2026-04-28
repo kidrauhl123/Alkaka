@@ -16,10 +16,6 @@ import {
   DEFAULT_FEISHU_MULTI_INSTANCE_CONFIG,
   DEFAULT_FEISHU_OPENCLAW_CONFIG,
   DEFAULT_IM_SETTINGS,
-  DEFAULT_NETEASE_BEE_CONFIG,
-  DEFAULT_NIM_CONFIG,
-  DEFAULT_NIM_MULTI_INSTANCE_CONFIG,
-  DEFAULT_POPO_CONFIG,
   DEFAULT_QQ_CONFIG,
   DEFAULT_QQ_MULTI_INSTANCE_CONFIG,
   DEFAULT_TELEGRAM_OPENCLAW_CONFIG,
@@ -39,12 +35,7 @@ import {
   IMGatewayConfig,
   IMSessionMapping,
   IMSettings,
-  NeteaseBeeChanConfig,
-  NimConfig,
-  NimInstanceConfig,
-  NimMultiInstanceConfig,
   Platform,
-  PopoOpenClawConfig,
   QQConfig,
   QQInstanceConfig,
   QQMultiInstanceConfig,
@@ -74,27 +65,6 @@ interface SessionMappingRow {
   agent_id: string;
   created_at: number;
   last_active_at: number;
-}
-
-function deriveNimRuntimeAccountIdForInstance(
-  inst: Pick<NimInstanceConfig, 'nimToken' | 'appKey' | 'account'>,
-): string | null {
-  const nimToken = inst.nimToken?.trim();
-  if (nimToken) {
-    const delimiter = nimToken.includes('|') ? '|' : '-';
-    const parts = nimToken.split(delimiter).map((part) => part.trim());
-    if (parts.length === 3 && parts[0] && parts[1]) {
-      return `${parts[0]}:${parts[1]}`;
-    }
-  }
-  if (inst.appKey?.trim() && inst.account?.trim()) {
-    return `${inst.appKey.trim()}:${inst.account.trim()}`;
-  }
-  return null;
-}
-
-function normalizeNimLegacyConversationPrefix(runtimeAccountId: string): string {
-  return runtimeAccountId.replace(/:/g, '-');
 }
 
 export class IMStore {
@@ -498,51 +468,6 @@ export class IMStore {
       }
     }
 
-    // Migrate popo configs that have token but no connectionMode:
-    // These are existing webhook users from before connectionMode was introduced.
-    // Preserve their setup by explicitly setting connectionMode to 'webhook'.
-    const popoRow = this.db.prepare('SELECT value FROM im_config WHERE key = ?').get('popo') as
-      | { value: string }
-      | undefined;
-    if (popoRow) {
-      try {
-        const popoConfig = JSON.parse(popoRow.value) as Partial<PopoOpenClawConfig>;
-        if (popoConfig.token && !popoConfig.connectionMode) {
-          popoConfig.connectionMode = 'webhook';
-          const now = Date.now();
-          this.db
-            .prepare('UPDATE im_config SET value = ?, updated_at = ? WHERE key = ?')
-            .run(JSON.stringify(popoConfig), now, 'popo');
-          console.log(
-            '[IMStore] Migrated popo config: inferred connectionMode=webhook from existing token',
-          );
-        }
-      } catch {
-        // Ignore parse errors
-      }
-    }
-
-    // Migrate 'xiaomifeng' config key to 'netease-bee'
-    const oldXmfRow = this.db
-      .prepare('SELECT value FROM im_config WHERE key = ?')
-      .get('xiaomifeng') as { value: string } | undefined;
-    const newBeeRow = this.db
-      .prepare('SELECT value FROM im_config WHERE key = ?')
-      .get('netease-bee') as { value: string } | undefined;
-    if (oldXmfRow && !newBeeRow) {
-      try {
-        const oldConfig = JSON.parse(oldXmfRow.value) as Partial<NeteaseBeeChanConfig>;
-        const now = Date.now();
-        this.db
-          .prepare('INSERT INTO im_config (key, value, updated_at) VALUES (?, ?, ?)')
-          .run('netease-bee', JSON.stringify({ ...DEFAULT_NETEASE_BEE_CONFIG, ...oldConfig }), now);
-        this.db.prepare('DELETE FROM im_config WHERE key = ?').run('xiaomifeng');
-        console.log('[IMStore] Migrated xiaomifeng config to netease-bee');
-      } catch {
-        // Ignore parse errors
-      }
-    }
-
     // Migrate single QQ config to multi-instance format
     const oldQQRow = this.db.prepare('SELECT value FROM im_config WHERE key = ?').get('qq') as
       | { value: string }
@@ -767,22 +692,15 @@ export class IMStore {
     const dingtalkMulti = this.getDingTalkMultiInstanceConfig();
     const telegramMulti = this.getTelegramMultiInstanceConfig();
     const discordMulti = this.getDiscordMultiInstanceConfig();
-    const nimMulti = this.getNimMultiInstanceConfig();
-    const neteaseBeeChan =
-      this.getConfigValue<NeteaseBeeChanConfig>('netease-bee') ?? DEFAULT_NETEASE_BEE_CONFIG;
     const qqMulti = this.getQQMultiInstanceConfig();
     const feishuMulti = this.getFeishuMultiInstanceConfig();
     const wecomMulti = this.getWecomMultiInstanceConfig();
-    const popo = this.getConfigValue<PopoOpenClawConfig>('popo') ?? DEFAULT_POPO_CONFIG;
     const weixin = this.getConfigValue<WeixinOpenClawConfig>('weixin') ?? DEFAULT_WEIXIN_CONFIG;
     const settings = this.getConfigValue<IMSettings>('settings') ?? DEFAULT_IM_SETTINGS;
     const email = this.getEmailConfig();
 
-    // Resolve enabled field: default to false for safety
-    // User must explicitly enable the service by setting enabled: true
     const resolveEnabled = <T extends { enabled?: boolean }>(stored: T, defaults: T): T => {
       const merged = { ...defaults, ...stored };
-      // If enabled is not explicitly set, default to false (safer behavior)
       if (stored.enabled === undefined) {
         return { ...merged, enabled: false };
       }
@@ -794,11 +712,8 @@ export class IMStore {
       feishu: feishuMulti,
       telegram: telegramMulti,
       discord: discordMulti,
-      nim: nimMulti,
-      'netease-bee': resolveEnabled(neteaseBeeChan, DEFAULT_NETEASE_BEE_CONFIG),
       qq: qqMulti,
       wecom: wecomMulti,
-      popo: resolveEnabled(popo, DEFAULT_POPO_CONFIG),
       weixin: resolveEnabled(weixin, DEFAULT_WEIXIN_CONFIG),
       email,
       settings: { ...DEFAULT_IM_SETTINGS, ...settings },
@@ -818,20 +733,11 @@ export class IMStore {
     if (config.discord) {
       this.setDiscordMultiInstanceConfig(config.discord);
     }
-    if (config.nim) {
-      this.setNimMultiInstanceConfig(config.nim);
-    }
-    if (config['netease-bee']) {
-      this.setNeteaseBeeChanConfig(config['netease-bee']);
-    }
     if (config.qq) {
       this.setQQMultiInstanceConfig(config.qq);
     }
     if (config.wecom) {
       this.setWecomMultiInstanceConfig(config.wecom);
-    }
-    if (config.popo) {
-      this.setPopoConfig(config.popo);
     }
     if (config.weixin) {
       this.setWeixinConfig(config.weixin);
@@ -1066,122 +972,6 @@ export class IMStore {
     }
   }
 
-  // ==================== NIM Config ====================
-
-  private hasMeaningfulNimConfig(config: Partial<NimConfig> | null | undefined): config is NimConfig {
-    return Boolean(config && (config.nimToken || (config.appKey && config.account && config.token)));
-  }
-
-  private buildMigratedNimInstance(config: NimConfig): NimInstanceConfig {
-    return {
-      ...DEFAULT_NIM_CONFIG,
-      ...config,
-      instanceId: randomUUID(),
-      instanceName: 'NIM Bot 1',
-    };
-  }
-
-  getNimConfig(): NimConfig {
-    const stored = this.getConfigValue<NimConfig>('nim');
-    return { ...DEFAULT_NIM_CONFIG, ...stored };
-  }
-
-  setNimConfig(config: Partial<NimConfig>): void {
-    const current = this.getNimConfig();
-    this.setConfigValue('nim', { ...current, ...config });
-  }
-
-  private deleteLegacyNimConfig(): void {
-    this.db.prepare('DELETE FROM im_config WHERE key = ?').run('nim');
-  }
-
-  getNimInstances(): NimInstanceConfig[] {
-    const rows = this.db
-      .prepare('SELECT key, value FROM im_config WHERE key LIKE ?')
-      .all('nim:%') as Array<{ key: string; value: string }>;
-    if (rows.length > 0) {
-      const instances: NimInstanceConfig[] = [];
-      for (const row of rows) {
-        try {
-          const config = JSON.parse(row.value) as NimInstanceConfig;
-          instances.push({ ...DEFAULT_NIM_CONFIG, ...config });
-        } catch {
-          // Ignore parse errors
-        }
-      }
-      return instances;
-    }
-
-    const legacy = this.getConfigValue<NimConfig>('nim');
-    if (!this.hasMeaningfulNimConfig(legacy)) {
-      return [];
-    }
-
-    const migrated = this.buildMigratedNimInstance(legacy);
-    this.setNimInstanceConfig(migrated.instanceId, migrated);
-    return [migrated];
-  }
-
-  getNimInstanceConfig(instanceId: string): NimInstanceConfig | null {
-    const stored = this.getConfigValue<NimInstanceConfig>(`nim:${instanceId}`);
-    if (!stored) return null;
-    return { ...DEFAULT_NIM_CONFIG, ...stored };
-  }
-
-  setNimInstanceConfig(instanceId: string, config: Partial<NimInstanceConfig>): void {
-    this.deleteLegacyNimConfig();
-    const current = this.getNimInstanceConfig(instanceId);
-    if (current) {
-      this.setConfigValue(`nim:${instanceId}`, { ...current, ...config });
-      return;
-    }
-    this.setConfigValue(`nim:${instanceId}`, {
-      ...DEFAULT_NIM_CONFIG,
-      instanceId,
-      instanceName: config.instanceName || 'NIM Bot',
-      ...config,
-    });
-  }
-
-  deleteNimInstance(instanceId: string): void {
-    this.db.prepare('DELETE FROM im_config WHERE key = ?').run(`nim:${instanceId}`);
-    this.db.prepare('DELETE FROM im_session_mappings WHERE platform = ?').run(`nim:${instanceId}`);
-    if (this.getNimInstances().length === 0) {
-      this.deleteLegacyNimConfig();
-    }
-  }
-
-  getNimMultiInstanceConfig(): NimMultiInstanceConfig {
-    const instances = this.getNimInstances();
-    if (instances.length === 0) return DEFAULT_NIM_MULTI_INSTANCE_CONFIG;
-    return { instances };
-  }
-
-  setNimMultiInstanceConfig(config: NimMultiInstanceConfig): void {
-    this.deleteLegacyNimConfig();
-    const nextIds = new Set(config.instances.map((inst) => inst.instanceId));
-    for (const inst of this.getNimInstances()) {
-      if (!nextIds.has(inst.instanceId)) {
-        this.deleteNimInstance(inst.instanceId);
-      }
-    }
-    for (const inst of config.instances) {
-      this.setNimInstanceConfig(inst.instanceId, inst);
-    }
-  }
-
-  // ==================== NeteaseBee Chan Config ====================
-
-  getNeteaseBeeChanConfig(): NeteaseBeeChanConfig {
-    const stored = this.getConfigValue<NeteaseBeeChanConfig>('netease-bee');
-    return { ...DEFAULT_NETEASE_BEE_CONFIG, ...stored };
-  }
-
-  setNeteaseBeeChanConfig(config: Partial<NeteaseBeeChanConfig>): void {
-    const current = this.getNeteaseBeeChanConfig();
-    this.setConfigValue('netease-bee', { ...current, ...config });
-  }
-
   // ==================== Telegram OpenClaw Config ====================
 
   /** @deprecated Use getTelegramMultiInstanceConfig() or getTelegramInstances() instead */
@@ -1394,18 +1184,6 @@ export class IMStore {
     }
   }
 
-  // ==================== POPO ====================
-
-  getPopoConfig(): PopoOpenClawConfig {
-    const stored = this.getConfigValue<PopoOpenClawConfig>('popo');
-    return { ...DEFAULT_POPO_CONFIG, ...stored };
-  }
-
-  setPopoConfig(config: Partial<PopoOpenClawConfig>): void {
-    const current = this.getPopoConfig();
-    this.setConfigValue('popo', { ...current, ...config });
-  }
-
   // ==================== Weixin (微信) ====================
 
   getWeixinConfig(): WeixinOpenClawConfig {
@@ -1530,8 +1308,6 @@ export class IMStore {
     const hasFeishu = config.feishu?.instances?.some(i => !!(i.appId && i.appSecret)) ?? false;
     const hasTelegram = config.telegram?.instances?.some(i => !!i.botToken) ?? false;
     const hasDiscord = config.discord?.instances?.some(i => !!i.botToken) ?? false;
-    const hasNim = config.nim?.instances?.some(i => !!(i.nimToken || (i.appKey && i.account && i.token))) ?? false;
-    const hasNeteaseBeeChan = !!(config['netease-bee']?.clientId && config['netease-bee']?.secret);
     const hasQQ = config.qq?.instances?.some(i => !!(i.appId && i.appSecret)) ?? false;
     const hasWecom = config.wecom?.instances?.some(i => !!(i.botId && i.secret)) ?? false;
     return (
@@ -1539,8 +1315,6 @@ export class IMStore {
       hasFeishu ||
       hasTelegram ||
       hasDiscord ||
-      hasNim ||
-      hasNeteaseBeeChan ||
       hasQQ ||
       hasWecom
     );
@@ -1710,10 +1484,8 @@ export class IMStore {
    * List all session mappings for a platform, optionally filtered by IM bot accountId.
    *
    * The accountId is encoded as the first segment of im_conversation_id before
-   * the peer subtype suffix (for example "c9c41984:direct:ou_xxx" or the legacy
-   * NIM form "appKey-account:direct:peer"). Filtering by accountId therefore
-   * requires no schema migration. NIM additionally accepts the current stable
-   * instance key and matches legacy runtime-derived prefixes for compatibility.
+   * the peer subtype suffix (for example "c9c41984:direct:ou_xxx"). Filtering by
+   * accountId therefore requires no schema migration.
    */
   listSessionMappings(platform?: Platform, accountId?: string): IMSessionMapping[] {
     let query: string;
@@ -1721,16 +1493,6 @@ export class IMStore {
 
     if (platform && accountId) {
       const directPrefixes = new Set<string>([accountId]);
-      if (platform === 'nim') {
-        for (const inst of this.getNimInstances()) {
-          const instanceKey = inst.instanceId?.slice(0, 8);
-          if (instanceKey !== accountId) continue;
-          const runtimeAccountId = deriveNimRuntimeAccountIdForInstance(inst);
-          if (runtimeAccountId) {
-            directPrefixes.add(normalizeNimLegacyConversationPrefix(runtimeAccountId));
-          }
-        }
-      }
 
       // Include direct conversations owned by this bot instance (prefix matches accountId)
       // and all group conversations for the platform, since group membership per-bot

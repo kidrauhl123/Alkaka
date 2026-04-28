@@ -213,7 +213,7 @@ export class McpBridgeServer {
 
         this.pendingAskUser.set(requestId, { requestId, resolve, timer });
 
-        // Notify LobsterAI to show the modal
+        // Notify Alkaka to show the modal
         if (this.onAskUserCallback) {
           this.onAskUserCallback({
             requestId,

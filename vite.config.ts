@@ -56,6 +56,18 @@ export default defineConfig({
         },
         onstart() {},
       },
+      {
+        // 桌宠窗口专用预加载脚本入口文件
+        entry: 'src/main/petPreload.ts',
+        vite: {
+          build: {
+            sourcemap: true,
+            outDir: 'dist-electron',
+            minify: false,
+          },
+        },
+        onstart() {},
+      },
     ]),
     renderer(),
   ],

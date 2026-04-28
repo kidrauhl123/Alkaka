@@ -6,13 +6,15 @@ import os from 'os';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 
+import { AgentEngine, DEFAULT_AGENT_ENGINE, isAgentEngine } from './libs/agentEngine/constants';
+
 
 // Default working directory for new users
 const getDefaultWorkingDirectory = (): string => {
-  return path.join(os.homedir(), 'lobsterai', 'project');
+  return path.join(os.homedir(), 'alkaka', 'project');
 };
 
-const TASK_WORKSPACE_CONTAINER_DIR = '.lobsterai-tasks';
+const TASK_WORKSPACE_CONTAINER_DIR = '.alkaka-tasks';
 
 const normalizeRecentWorkspacePath = (cwd: string): string => {
   const resolved = path.resolve(cwd);
@@ -291,7 +293,9 @@ function shouldAutoDeleteMemoryText(text: string): boolean {
 export type CoworkSessionStatus = 'idle' | 'running' | 'completed' | 'error';
 export type CoworkMessageType = 'user' | 'assistant' | 'tool_use' | 'tool_result' | 'system';
 export type CoworkExecutionMode = 'auto' | 'local' | 'sandbox';
-export type CoworkAgentEngine = 'openclaw';
+export { AgentEngine } from './libs/agentEngine/constants';
+/** @deprecated Use `AgentEngine` from `./libs/agentEngine/constants`. */
+export type CoworkAgentEngine = AgentEngine;
 
 export type AgentSource = 'custom' | 'preset';
 
@@ -336,10 +340,11 @@ export interface UpdateAgentRequest {
   enabled?: boolean;
 }
 
-const COWORK_AGENT_ENGINE = 'openclaw';
-
-function normalizeCoworkAgentEngineValue(_value?: string | null): CoworkAgentEngine {
-  return COWORK_AGENT_ENGINE;
+function normalizeCoworkAgentEngineValue(value?: string | null): AgentEngine {
+  if (isAgentEngine(value)) {
+    return value;
+  }
+  return DEFAULT_AGENT_ENGINE;
 }
 
 export interface CoworkMessageMetadata {

@@ -654,10 +654,10 @@ test('getSessionKeysForSession prefers channel keys before managed fallback', ()
   const adapter = new OpenClawRuntimeAdapter(store, {});
 
   adapter.rememberSessionKey('session-1', 'agent:main:openai-user:dingtalk-connector:__default__:2459325231940374');
-  adapter.rememberSessionKey('session-1', 'agent:main:lobsterai:session-1');
+  adapter.rememberSessionKey('session-1', 'agent:main:alkaka:session-1');
 
   expect(adapter.getSessionKeysForSession('session-1')).toEqual([
     'agent:main:openai-user:dingtalk-connector:__default__:2459325231940374',
-    'agent:main:lobsterai:session-1',
+    'agent:main:alkaka:session-1',
   ]);
 });

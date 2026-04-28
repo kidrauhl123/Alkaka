@@ -8,7 +8,7 @@
  * Usage:
  *   import { t, setLanguage } from './i18n';
  *   setLanguage('en');
- *   const label = t('trayShowWindow'); // "Open LobsterAI"
+ *   const label = t('trayShowWindow'); // "Open Alkaka"
  *   const msg = t('imMissingCredentials', { fields: 'appId, appSecret' });
  */
 
@@ -17,7 +17,7 @@ export type LanguageType = 'zh' | 'en';
 const translations: Record<LanguageType, Record<string, string>> = {
   zh: {
     // Tray menu
-    trayShowWindow: '打开 LobsterAI',
+    trayShowWindow: '打开 Alkaka',
     trayNewTask: '新建任务',
     traySettings: '设置',
     trayQuit: '退出',
@@ -27,13 +27,8 @@ const translations: Record<LanguageType, Record<string, string>> = {
     channelPrefixFeishu: '飞书',
     channelPrefixDingtalk: '钉钉',
     channelPrefixWecom: '企微',
-    channelPrefixNim: '云信',
     channelPrefixWeixin: '微信',
-    channelPrefixNeteaseBee: '小蜜蜂',
     channelPrefixEmail: '邮件',
-    // NIM chat type labels
-    nimQChat: '圈组',
-    nimGroup: '群聊',
 
     // Timeout hint
     taskTimedOut: '[任务超时] 任务因超过最大允许时长而被自动停止。你可以继续对话以从中断处继续。',
@@ -177,23 +172,6 @@ const translations: Record<LanguageType, Record<string, string>> = {
       '微信通过 OpenClaw 运行时运行，Bot 将在 OpenClaw Gateway 启动后自动连接。',
     imWeixinConfigReadyOpenClaw: '微信配置已就绪，通过 OpenClaw 运行。',
 
-    // NIM
-    imNimFillCredentials: '请补全 AppKey、Account 和 Token 后重新测试连通性。',
-    imNimConfigReady: '云信配置已就绪（Account: {account}）。',
-    imNimOpenClawHint: '云信通过 OpenClaw 运行时运行，Bot 将在 OpenClaw Gateway 启动后自动连接。',
-    imNimP2pOnly: '云信 IM 当前仅支持 P2P（私聊）消息。',
-    imNimP2pOnlySuggestion: '请通过私聊方式向机器人账号发送消息触发对话。',
-
-    // Xiaomifeng
-    imNeteaseBeeConfigReady: '小蜜蜂配置已就绪（Client ID: {clientId}）。',
-
-    // POPO
-    imPopoFillWebhookCredentials: '请补全 appKey、appSecret、token 和 aesKey 后重新测试连通性。',
-    imPopoFillWsCredentials: '请补全 appKey、appSecret 和 aesKey 后重新测试连通性。',
-    imPopoConfigReady: 'POPO 配置已就绪。',
-    imPopoOpenClawHint: 'POPO 通过 OpenClaw 运行时运行，Bot 将在 OpenClaw Gateway 启动后自动连接。',
-    imPopoConfigReadyOpenClaw: 'POPO 配置已就绪，通过 OpenClaw 运行。',
-
     // Email Channel
     emailSettings: '邮件设置',
     emailInstance: '邮箱账号',
@@ -262,7 +240,7 @@ const translations: Record<LanguageType, Record<string, string>> = {
   },
   en: {
     // Tray menu
-    trayShowWindow: 'Open LobsterAI',
+    trayShowWindow: 'Open Alkaka',
     trayNewTask: 'New Task',
     traySettings: 'Settings',
     trayQuit: 'Quit',
@@ -272,13 +250,9 @@ const translations: Record<LanguageType, Record<string, string>> = {
     channelPrefixFeishu: 'Feishu',
     channelPrefixDingtalk: 'DingTalk',
     channelPrefixWecom: 'WeCom',
-    channelPrefixNim: 'NIM',
+
     channelPrefixWeixin: 'WeChat',
-    channelPrefixNeteaseBee: 'Xiaomifeng',
     channelPrefixEmail: 'Email',
-    // NIM chat type labels
-    nimQChat: 'QChat',
-    nimGroup: 'Group',
 
     // Timeout hint
     taskTimedOut:
@@ -455,29 +429,6 @@ const translations: Record<LanguageType, Record<string, string>> = {
     imWeixinOpenClawHint:
       'WeChat runs via OpenClaw runtime. The bot will connect automatically when OpenClaw Gateway starts.',
     imWeixinConfigReadyOpenClaw: 'WeChat configuration is ready, running via OpenClaw.',
-
-    // NIM
-    imNimFillCredentials:
-      'Please provide the AppKey, Account, and Token and test connectivity again.',
-    imNimConfigReady: 'NIM configuration is ready (Account: {account}).',
-    imNimOpenClawHint:
-      'NIM runs via OpenClaw runtime. The bot will connect automatically when OpenClaw Gateway starts.',
-    imNimP2pOnly: 'NIM currently only supports P2P (direct) messages.',
-    imNimP2pOnlySuggestion:
-      'Please send a direct message to the bot account to start a conversation.',
-
-    // Netease Bee
-    imNeteaseBeeConfigReady: 'Netease Bee configuration is ready (Client ID: {clientId}).',
-
-    // POPO
-    imPopoFillWebhookCredentials:
-      'Please provide the appKey, appSecret, token, and aesKey and test connectivity again.',
-    imPopoFillWsCredentials:
-      'Please provide the appKey, appSecret, and aesKey and test connectivity again.',
-    imPopoConfigReady: 'POPO configuration is ready.',
-    imPopoOpenClawHint:
-      'POPO runs via OpenClaw runtime. The bot will connect automatically when OpenClaw Gateway starts.',
-    imPopoConfigReadyOpenClaw: 'POPO configuration is ready, running via OpenClaw.',
 
     // Email Channel
     emailSettings: 'Email Settings',

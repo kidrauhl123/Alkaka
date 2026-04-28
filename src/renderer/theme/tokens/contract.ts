@@ -1,75 +1,75 @@
 /**
  * Token Contract — defines all semantic variables a theme must provide.
  *
- * Naming: --lobster-{category}-{name}
+ * Naming: --alkaka-{category}-{name}
  * Convention: shadcn/ui background/foreground pairing + Radix 12-step gray scale
  *
  * Every theme (ThemeDefinition.tokens) must supply a value for each key.
  */
 export const TOKEN_CONTRACT = {
   // ── Brand ──
-  'primary':            '--lobster-primary',
-  'primary-foreground': '--lobster-primary-foreground',
-  'primary-hover':      '--lobster-primary-hover',
-  'primary-muted':      '--lobster-primary-muted',
+  'primary':            '--alkaka-primary',
+  'primary-foreground': '--alkaka-primary-foreground',
+  'primary-hover':      '--alkaka-primary-hover',
+  'primary-muted':      '--alkaka-primary-muted',
 
   // ── Accent ──
-  'accent':             '--lobster-accent',
-  'accent-foreground':  '--lobster-accent-foreground',
+  'accent':             '--alkaka-accent',
+  'accent-foreground':  '--alkaka-accent-foreground',
 
   // ── Surface / Background ──
-  'background':         '--lobster-background',
-  'foreground':         '--lobster-foreground',
-  'surface':            '--lobster-surface',
-  'surface-foreground': '--lobster-surface-foreground',
-  'surface-raised':     '--lobster-surface-raised',
-  'surface-overlay':    '--lobster-surface-overlay',
+  'background':         '--alkaka-background',
+  'foreground':         '--alkaka-foreground',
+  'surface':            '--alkaka-surface',
+  'surface-foreground': '--alkaka-surface-foreground',
+  'surface-raised':     '--alkaka-surface-raised',
+  'surface-overlay':    '--alkaka-surface-overlay',
 
   // ── Chat bubbles ──
-  'chat-user':              '--lobster-chat-user',
-  'chat-user-foreground':   '--lobster-chat-user-foreground',
-  'chat-bot':               '--lobster-chat-bot',
-  'chat-bot-foreground':    '--lobster-chat-bot-foreground',
+  'chat-user':              '--alkaka-chat-user',
+  'chat-user-foreground':   '--alkaka-chat-user-foreground',
+  'chat-bot':               '--alkaka-chat-bot',
+  'chat-bot-foreground':    '--alkaka-chat-bot-foreground',
 
   // ── Text hierarchy ──
-  'text-primary':       '--lobster-text-primary',
-  'text-secondary':     '--lobster-text-secondary',
-  'text-muted':         '--lobster-text-muted',
+  'text-primary':       '--alkaka-text-primary',
+  'text-secondary':     '--alkaka-text-secondary',
+  'text-muted':         '--alkaka-text-muted',
 
   // ── Borders ──
-  'border':             '--lobster-border',
-  'border-subtle':      '--lobster-border-subtle',
-  'input-border':       '--lobster-input-border',
+  'border':             '--alkaka-border',
+  'border-subtle':      '--alkaka-border-subtle',
+  'input-border':       '--alkaka-input-border',
 
   // ── Scrollbar ──
-  'scroll-thumb':       '--lobster-scroll-thumb',
-  'scroll-thumb-hover': '--lobster-scroll-thumb-hover',
+  'scroll-thumb':       '--alkaka-scroll-thumb',
+  'scroll-thumb-hover': '--alkaka-scroll-thumb-hover',
 
   // ── Decorative gradients ──
-  'gradient-1':         '--lobster-gradient-1',
-  'gradient-2':         '--lobster-gradient-2',
+  'gradient-1':         '--alkaka-gradient-1',
+  'gradient-2':         '--alkaka-gradient-2',
 
   // ── Status ──
-  'destructive':            '--lobster-destructive',
-  'destructive-foreground': '--lobster-destructive-foreground',
-  'success':                '--lobster-success',
-  'warning':                '--lobster-warning',
+  'destructive':            '--alkaka-destructive',
+  'destructive-foreground': '--alkaka-destructive-foreground',
+  'success':                '--alkaka-success',
+  'warning':                '--alkaka-warning',
 
   // ── Gray scale 11 steps (gray-1=lightest → gray-11=darkest, all themes) ──
-  'gray-1':  '--lobster-gray-1',
-  'gray-2':  '--lobster-gray-2',
-  'gray-3':  '--lobster-gray-3',
-  'gray-4':  '--lobster-gray-4',
-  'gray-5':  '--lobster-gray-5',
-  'gray-6':  '--lobster-gray-6',
-  'gray-7':  '--lobster-gray-7',
-  'gray-8':  '--lobster-gray-8',
-  'gray-9':  '--lobster-gray-9',
-  'gray-10': '--lobster-gray-10',
-  'gray-11': '--lobster-gray-11',
+  'gray-1':  '--alkaka-gray-1',
+  'gray-2':  '--alkaka-gray-2',
+  'gray-3':  '--alkaka-gray-3',
+  'gray-4':  '--alkaka-gray-4',
+  'gray-5':  '--alkaka-gray-5',
+  'gray-6':  '--alkaka-gray-6',
+  'gray-7':  '--alkaka-gray-7',
+  'gray-8':  '--alkaka-gray-8',
+  'gray-9':  '--alkaka-gray-9',
+  'gray-10': '--alkaka-gray-10',
+  'gray-11': '--alkaka-gray-11',
 
   // ── Radius ──
-  'radius':  '--lobster-radius',
+  'radius':  '--alkaka-radius',
 } as const;
 
 export type TokenName = keyof typeof TOKEN_CONTRACT;

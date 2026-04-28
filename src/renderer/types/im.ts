@@ -240,104 +240,6 @@ export interface DiscordMultiInstanceStatus {
   instances: DiscordInstanceStatus[];
 }
 
-// ==================== NIM (NetEase IM) Types ====================
-
-export type NimTeamPolicy = 'open' | 'allowlist' | 'disabled';
-
-export interface NimP2pConfig {
-  policy: 'open' | 'allowlist' | 'disabled';
-  allowFrom?: (string | number)[];
-}
-
-export interface NimTeamConfig {
-  policy: 'open' | 'allowlist' | 'disabled';
-  allowFrom?: (string | number)[];
-}
-
-export interface NimQChatConfig {
-  policy: 'open' | 'allowlist' | 'disabled';
-  allowFrom?: (string | number)[];
-}
-
-export interface NimAdvancedConfig {
-  mediaMaxMb?: number;
-  textChunkLimit?: number;
-  debug?: boolean;
-  legacyLogin?: boolean;
-  weblbsUrl?: string;
-  link_web?: string;
-  nos_uploader?: string;
-  nos_downloader_v2?: string;
-  nosSsl?: boolean;
-  nos_accelerate?: string;
-  nos_accelerate_host?: string;
-}
-
-export interface NimOpenClawConfig {
-  enabled: boolean;
-  nimToken?: string;
-  appKey: string;
-  account: string;
-  token: string;
-  antispamEnabled?: boolean;
-  p2p?: NimP2pConfig;
-  team?: NimTeamConfig;
-  qchat?: NimQChatConfig;
-  advanced?: NimAdvancedConfig;
-}
-
-export interface NimInstanceConfig extends NimOpenClawConfig {
-  instanceId: string;
-  instanceName: string;
-}
-
-export interface NimGatewayStatus {
-  connected: boolean;
-  startedAt: number | null;
-  lastError: string | null;
-  botAccount: string | null;
-  lastInboundAt: number | null;
-  lastOutboundAt: number | null;
-}
-
-// NIM supports max 3 instances (enabled or not), may use different accounts or AppKeys.
-// See: https://doc.yunxin.163.com/messaging2/ai-guide/TMwNzk4MzU?platform=client#多实例配置
-export const MAX_NIM_INSTANCES = 3;
-
-export interface NimInstanceStatus extends NimGatewayStatus {
-  instanceId: string;
-  instanceName: string;
-}
-
-export interface NimMultiInstanceConfig {
-  instances: NimInstanceConfig[];
-}
-
-export interface NimMultiInstanceStatus {
-  instances: NimInstanceStatus[];
-}
-
-/** @deprecated Use NimOpenClawConfig instead. */
-export type NimConfig = NimOpenClawConfig;
-
-// ==================== NetEase Bee Types ====================
-
-export interface NeteaseBeeChanConfig {
-  enabled: boolean;
-  clientId: string;    // 小蜜蜂平台的 NIM 账号 ID
-  secret: string;      // 用于 token 中继的密钥
-  debug?: boolean;
-}
-
-export interface NeteaseBeeChanGatewayStatus {
-  connected: boolean;
-  startedAt: number | null;
-  lastError: string | null;
-  botAccount: string | null;
-  lastInboundAt: number | null;
-  lastOutboundAt: number | null;
-}
-
 // ==================== QQ Types ====================
 
 export interface QQOpenClawConfig {
@@ -435,35 +337,6 @@ export interface WecomMultiInstanceStatus {
   instances: WecomInstanceStatus[];
 }
 
-// ==================== POPO Types ====================
-
-export interface PopoOpenClawConfig {
-  enabled: boolean;
-  connectionMode: 'websocket' | 'webhook';
-  appKey: string;
-  appSecret: string;
-  token: string;
-  aesKey: string;
-  webhookBaseUrl: string;
-  webhookPath: string;
-  webhookPort: number;
-  dmPolicy: 'open' | 'pairing' | 'allowlist' | 'disabled';
-  allowFrom: string[];
-  groupPolicy: 'open' | 'allowlist' | 'disabled';
-  groupAllowFrom: string[];
-  textChunkLimit: number;
-  richTextChunkLimit: number;
-  debug: boolean;
-}
-
-export interface PopoGatewayStatus {
-  connected: boolean;
-  startedAt: number | null;
-  lastError: string | null;
-  lastInboundAt: number | null;
-  lastOutboundAt: number | null;
-}
-
 // ==================== Weixin (微信) Types ====================
 
 export interface WeixinOpenClawConfig {
@@ -544,7 +417,7 @@ export const MAX_EMAIL_INSTANCES = 5;
 
 // ==================== Common IM Types ====================
 
-export type IMPlatform = keyof Omit<IMGatewayConfig, 'settings'> | 'xiaomifeng';
+export type IMPlatform = keyof Omit<IMGatewayConfig, 'settings'>;
 
 export interface IMGatewayConfig {
   dingtalk: DingTalkMultiInstanceConfig;
@@ -552,10 +425,7 @@ export interface IMGatewayConfig {
   telegram: TelegramMultiInstanceConfig;
   qq: QQMultiInstanceConfig;
   discord: DiscordMultiInstanceConfig;
-  nim: NimMultiInstanceConfig;
-  'netease-bee': NeteaseBeeChanConfig;
   wecom: WecomMultiInstanceConfig;
-  popo: PopoOpenClawConfig;
   weixin: WeixinOpenClawConfig;
   email: EmailMultiInstanceConfig;
   settings: IMSettings;
@@ -574,10 +444,7 @@ export interface IMGatewayStatus {
   qq: QQMultiInstanceStatus;
   telegram: TelegramMultiInstanceStatus;
   discord: DiscordMultiInstanceStatus;
-  nim: NimMultiInstanceStatus;
-  'netease-bee': NeteaseBeeChanGatewayStatus;
   wecom: WecomMultiInstanceStatus;
-  popo: PopoGatewayStatus;
   weixin: WeixinGatewayStatus;
   email: EmailMultiInstanceStatus;
 }
@@ -647,7 +514,6 @@ export type IMConnectivityCheckCode =
   | 'discord_group_requires_mention'
   | 'telegram_privacy_mode_hint'
   | 'dingtalk_bot_membership_hint'
-  | 'nim_p2p_only_hint'
   | 'openclaw_gateway_not_running'
   | 'qq_guild_mention_hint';
 
@@ -743,29 +609,6 @@ export const DEFAULT_DISCORD_MULTI_INSTANCE_CONFIG: DiscordMultiInstanceConfig =
   instances: [],
 };
 
-export const DEFAULT_NIM_OPENCLAW_CONFIG: NimOpenClawConfig = {
-  enabled: false,
-  nimToken: '',
-  appKey: '',
-  account: '',
-  token: '',
-  antispamEnabled: true,
-};
-
-export const DEFAULT_NIM_MULTI_INSTANCE_CONFIG: NimMultiInstanceConfig = {
-  instances: [],
-};
-
-/** @deprecated Use DEFAULT_NIM_OPENCLAW_CONFIG instead. */
-export const DEFAULT_NIM_CONFIG = DEFAULT_NIM_OPENCLAW_CONFIG;
-
-export const DEFAULT_NETEASE_BEE_CONFIG: NeteaseBeeChanConfig = {
-  enabled: false,
-  clientId: '',
-  secret: '',
-  debug: true,
-};
-
 export const DEFAULT_TELEGRAM_OPENCLAW_CONFIG: TelegramOpenClawConfig = {
   enabled: false,
   botToken: '',
@@ -825,25 +668,6 @@ export const DEFAULT_WECOM_CONFIG: WecomOpenClawConfig = {
 
 export const DEFAULT_WECOM_MULTI_INSTANCE_CONFIG: WecomMultiInstanceConfig = { instances: [] };
 
-export const DEFAULT_POPO_CONFIG: PopoOpenClawConfig = {
-  enabled: false,
-  connectionMode: 'websocket',
-  appKey: '',
-  appSecret: '',
-  token: '',
-  aesKey: '',
-  webhookBaseUrl: '',
-  webhookPath: '/popo/callback',
-  webhookPort: 3100,
-  dmPolicy: 'open',
-  allowFrom: [],
-  groupPolicy: 'open',
-  groupAllowFrom: [],
-  textChunkLimit: 3000,
-  richTextChunkLimit: 5000,
-  debug: true,
-};
-
 export const DEFAULT_WEIXIN_CONFIG: WeixinOpenClawConfig = {
   enabled: false,
   accountId: '',
@@ -865,10 +689,7 @@ export const DEFAULT_IM_CONFIG: IMGatewayConfig = {
   telegram: DEFAULT_TELEGRAM_MULTI_INSTANCE_CONFIG,
   qq: DEFAULT_QQ_MULTI_INSTANCE_CONFIG,
   discord: DEFAULT_DISCORD_MULTI_INSTANCE_CONFIG,
-  nim: DEFAULT_NIM_MULTI_INSTANCE_CONFIG,
-  'netease-bee': DEFAULT_NETEASE_BEE_CONFIG,
   wecom: DEFAULT_WECOM_MULTI_INSTANCE_CONFIG,
-  popo: DEFAULT_POPO_CONFIG,
   weixin: DEFAULT_WEIXIN_CONFIG,
   email: DEFAULT_EMAIL_MULTI_INSTANCE_CONFIG,
   settings: DEFAULT_IM_SETTINGS,
@@ -885,29 +706,11 @@ export const DEFAULT_IM_STATUS: IMGatewayStatus = {
   discord: {
     instances: [],
   },
-  nim: {
-    instances: [],
-  },
-  'netease-bee': {
-    connected: false,
-    startedAt: null,
-    lastError: null,
-    botAccount: null,
-    lastInboundAt: null,
-    lastOutboundAt: null,
-  },
   qq: {
     instances: [],
   },
   wecom: {
     instances: [],
-  },
-  popo: {
-    connected: false,
-    startedAt: null,
-    lastError: null,
-    lastInboundAt: null,
-    lastOutboundAt: null,
   },
   weixin: {
     connected: false,

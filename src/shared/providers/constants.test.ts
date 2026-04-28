@@ -11,16 +11,14 @@ describe('ProviderName constants', () => {
     expect(ProviderName.OpenAI).toBe('openai');
     expect(ProviderName.DeepSeek).toBe('deepseek');
     expect(ProviderName.Custom).toBe('custom');
-    expect(ProviderName.LobsteraiServer).toBe('lobsterai-server');
   });
 });
 
 describe('ProviderRegistry', () => {
-  test('providerIds returns 17 providers (no custom)', () => {
+  test('providerIds returns 16 providers (no custom)', () => {
     const ids = ProviderRegistry.providerIds;
-    expect(ids.length).toBe(17);
+    expect(ids.length).toBe(16);
     expect(ids).not.toContain(ProviderName.Custom);
-    expect(ids).not.toContain(ProviderName.LobsteraiServer);
   });
 
   test('get returns definition for known provider', () => {
@@ -49,9 +47,9 @@ describe('ProviderRegistry', () => {
     expect(ProviderRegistry.supportsCodingPlan('unknown')).toBe(false);
   });
 
-  test('idsByRegion china returns 12 providers', () => {
+  test('idsByRegion china returns 11 providers', () => {
     const china = ProviderRegistry.idsByRegion('china');
-    expect(china.length).toBe(12);
+    expect(china.length).toBe(11);
     expect(china).toContain(ProviderName.DeepSeek);
     expect(china).toContain(ProviderName.Qianfan);
     expect(china).toContain(ProviderName.Ollama);

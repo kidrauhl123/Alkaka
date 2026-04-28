@@ -1,7 +1,7 @@
 {
   "name": "imap-smtp-email-skill",
   "version": "1.0.0",
-  "description": "IMAP/SMTP email tool for Claude. Works with Gmail, Outlook, 163.com, vip.163.com, 126.com, vip.126.com, 188.com, vip.188.com, and any standard IMAP/SMTP server.",
+  "description": "IMAP/SMTP email tool. Works with Gmail, Outlook, and any standard IMAP/SMTP server.",
   "main": "scripts/imap.js",
   "scripts": {
     "check": "node scripts/imap.js check",
@@ -19,13 +19,10 @@
     "imap",
     "smtp",
     "email",
-    "163.com",
-    "126.com",
-    "188.com",
     "gmail",
     "outlook",
     "skill"
   ],
-  "author": "NetEase",
+  "author": "Alkaka",
   "license": "MIT"
 }

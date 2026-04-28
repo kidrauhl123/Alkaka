@@ -7,52 +7,42 @@ import {
 
 const providerApiKeyEnvVar = (providerName: string): string => {
   const envName = providerName.toUpperCase().replace(/[^A-Z0-9]/g, '_');
-  return `LOBSTER_APIKEY_${envName}`;
+  return `ALKAKA_APIKEY_${envName}`;
 };
 
 describe('providerApiKeyEnvVar', () => {
   test('converts simple provider names', () => {
-    expect(providerApiKeyEnvVar(ProviderName.Moonshot)).toBe('LOBSTER_APIKEY_MOONSHOT');
-    expect(providerApiKeyEnvVar(ProviderName.Anthropic)).toBe('LOBSTER_APIKEY_ANTHROPIC');
-    expect(providerApiKeyEnvVar(ProviderName.OpenAI)).toBe('LOBSTER_APIKEY_OPENAI');
-    expect(providerApiKeyEnvVar(ProviderName.Ollama)).toBe('LOBSTER_APIKEY_OLLAMA');
+    expect(providerApiKeyEnvVar(ProviderName.Moonshot)).toBe('ALKAKA_APIKEY_MOONSHOT');
+    expect(providerApiKeyEnvVar(ProviderName.Anthropic)).toBe('ALKAKA_APIKEY_ANTHROPIC');
+    expect(providerApiKeyEnvVar(ProviderName.OpenAI)).toBe('ALKAKA_APIKEY_OPENAI');
+    expect(providerApiKeyEnvVar(ProviderName.Ollama)).toBe('ALKAKA_APIKEY_OLLAMA');
   });
 
   test('replaces hyphens and special chars with underscores', () => {
-    expect(providerApiKeyEnvVar(ProviderName.LobsteraiServer)).toBe('LOBSTER_APIKEY_LOBSTERAI_SERVER');
-    expect(providerApiKeyEnvVar('my.provider')).toBe('LOBSTER_APIKEY_MY_PROVIDER');
-  });
-
-  test('server key matches hardcoded convention', () => {
-    expect(providerApiKeyEnvVar('server')).toBe('LOBSTER_APIKEY_SERVER');
+    expect(providerApiKeyEnvVar('my.provider')).toBe('ALKAKA_APIKEY_MY_PROVIDER');
   });
 });
 
 describe('env var stability on model switch', () => {
-  const simulateCollectEnvVars = (providers: Record<string, { enabled: boolean; apiKey: string }>, serverToken?: string) => {
+  const simulateCollectEnvVars = (providers: Record<string, { enabled: boolean; apiKey: string }>) => {
     const env: Record<string, string> = {};
-
-    if (serverToken) {
-      env.LOBSTER_APIKEY_SERVER = serverToken;
-    }
 
     for (const [name, config] of Object.entries(providers)) {
       if (!config.enabled) continue;
       const envName = name.toUpperCase().replace(/[^A-Z0-9]/g, '_');
-      env[`LOBSTER_APIKEY_${envName}`] = config.apiKey;
+      env[`ALKAKA_APIKEY_${envName}`] = config.apiKey;
     }
 
     return env;
   };
 
-  test('switching from server to custom provider does not change env var keys', () => {
+  test('switching custom providers does not change stable provider env var keys', () => {
     const providers = {
       [ProviderName.Moonshot]: { enabled: true, apiKey: 'sk-moon-123' },
     };
-    const serverToken = 'access-token-xyz';
 
-    const envBefore = simulateCollectEnvVars(providers, serverToken);
-    const envAfter = simulateCollectEnvVars(providers, serverToken);
+    const envBefore = simulateCollectEnvVars(providers);
+    const envAfter = simulateCollectEnvVars(providers);
 
     expect(JSON.stringify(envBefore)).toBe(JSON.stringify(envAfter));
   });
@@ -67,8 +57,8 @@ describe('env var stability on model switch', () => {
     const envAfter = simulateCollectEnvVars(providers);
 
     expect(JSON.stringify(envBefore)).toBe(JSON.stringify(envAfter));
-    expect(envBefore.LOBSTER_APIKEY_MOONSHOT).toBe('sk-moon-123');
-    expect(envBefore.LOBSTER_APIKEY_ANTHROPIC).toBe('sk-ant-456');
+    expect(envBefore.ALKAKA_APIKEY_MOONSHOT).toBe('sk-moon-123');
+    expect(envBefore.ALKAKA_APIKEY_ANTHROPIC).toBe('sk-ant-456');
   });
 
   test('only editing apiKey value causes env var change', () => {
@@ -178,11 +168,6 @@ const PROVIDER_REGISTRY: Record<string, ProviderDescriptor> = {
     resolveApi: ({ apiType }) => mapApiTypeToOpenClawApi(apiType),
     normalizeBaseUrl: stripChatCompletionsSuffix,
   },
-  [ProviderName.Youdaozhiyun]: {
-    providerId: OpenClawProviderId.Youdaozhiyun,
-    resolveApi: () => OpenClawApi.OpenAICompletions as OpenClawProviderApi,
-    normalizeBaseUrl: stripChatCompletionsSuffix,
-  },
   [ProviderName.StepFun]: {
     providerId: OpenClawProviderId.StepFun,
     resolveApi: () => OpenClawApi.OpenAICompletions as OpenClawProviderApi,
@@ -206,7 +191,7 @@ const PROVIDER_REGISTRY: Record<string, ProviderDescriptor> = {
 };
 
 const DEFAULT_DESCRIPTOR: ProviderDescriptor = {
-  providerId: OpenClawProviderId.Lobster,
+  providerId: OpenClawProviderId.Alkaka,
   resolveApi: ({ apiType }) => mapApiTypeToOpenClawApi(apiType),
   normalizeBaseUrl: stripChatCompletionsSuffix,
 };
@@ -226,7 +211,7 @@ const resolveDescriptor = (
   }
   return {
     ...DEFAULT_DESCRIPTOR,
-    providerId: providerName || OpenClawProviderId.Lobster,
+    providerId: providerName || OpenClawProviderId.Alkaka,
   };
 };
 
@@ -273,26 +258,20 @@ describe('resolveDescriptor', () => {
     expect(d.resolveApi({ apiType: 'anthropic', baseURL: '' })).toBe(OpenClawApi.AnthropicMessages);
   });
 
-  test('youdaozhiyun always uses openai-completions', () => {
-    const d = resolveDescriptor(ProviderName.Youdaozhiyun, false);
-    expect(d.providerId).toBe(OpenClawProviderId.Youdaozhiyun);
-    expect(d.resolveApi({ apiType: 'anthropic', baseURL: '' })).toBe(OpenClawApi.OpenAICompletions);
-  });
-
   test('ollama always uses openai-completions', () => {
     const d = resolveDescriptor(ProviderName.Ollama, false);
     expect(d.providerId).toBe(OpenClawProviderId.Ollama);
     expect(d.resolveApi({ apiType: undefined, baseURL: '' })).toBe(OpenClawApi.OpenAICompletions);
   });
 
-  test('unknown provider falls back to lobster providerId', () => {
+  test('unknown provider uses its own providerId', () => {
     const d = resolveDescriptor('some-unknown', false);
     expect(d.providerId).toBe('some-unknown');
   });
 
-  test('empty provider name falls back to lobster', () => {
+  test('empty provider name falls back to alkaka', () => {
     const d = resolveDescriptor('', false);
-    expect(d.providerId).toBe(OpenClawProviderId.Lobster);
+    expect(d.providerId).toBe(OpenClawProviderId.Alkaka);
   });
 
   test('codingPlan flag is ignored for providers without codingPlan entry', () => {
@@ -322,23 +301,22 @@ describe('provider registry coverage', () => {
     ProviderName.Zhipu,
     ProviderName.Volcengine,
     ProviderName.Minimax,
-    ProviderName.Youdaozhiyun,
     ProviderName.StepFun,
     ProviderName.Xiaomi,
     ProviderName.OpenRouter,
     ProviderName.Ollama,
   ] as const;
 
-  test('all 14 providers have registry entries', () => {
+  test('all 13 providers have registry entries', () => {
     for (const name of allRegistryProviders) {
       expect(name in PROVIDER_REGISTRY, `${name} missing from registry`).toBe(true);
     }
   });
 
-  test('no provider resolves to lobster fallback', () => {
+  test('no provider resolves to alkaka fallback', () => {
     for (const name of allRegistryProviders) {
       const d = resolveDescriptor(name, false);
-      expect(d.providerId).not.toBe(OpenClawProviderId.Lobster);
+      expect(d.providerId).not.toBe(OpenClawProviderId.Alkaka);
     }
   });
 

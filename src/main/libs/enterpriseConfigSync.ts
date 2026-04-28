@@ -29,7 +29,7 @@ const SANDBOX_MODE_MAP: Record<string, string> = {
 
 const ENTERPRISE_CONFIG_DIR = 'enterprise-config';
 const MANIFEST_FILE = 'manifest.json';
-const ACCOUNT_COMPAT_CHANNEL_KEYS = ['feishu', 'dingtalk', 'dingtalk-connector', 'qqbot', 'wecom', 'moltbot-popo'] as const;
+const ACCOUNT_COMPAT_CHANNEL_KEYS = ['feishu', 'dingtalk', 'dingtalk-connector', 'qqbot', 'wecom'] as const;
 type AccountCompatChannelKey = typeof ACCOUNT_COMPAT_CHANNEL_KEYS[number];
 
 const ACCOUNT_COMPAT_CHANNEL_TOP_LEVEL_MAP: Record<AccountCompatChannelKey, Record<string, string>> = {
@@ -98,23 +98,6 @@ const ACCOUNT_COMPAT_CHANNEL_TOP_LEVEL_MAP: Record<AccountCompatChannelKey, Reco
     groupPolicy: 'groupPolicy',
     groupAllowFrom: 'groupAllowFrom',
     sendThinkingMessage: 'sendThinkingMessage',
-  },
-  'moltbot-popo': {
-    enabled: 'enabled',
-    connectionMode: 'connectionMode',
-    appKey: 'appKey',
-    appSecret: 'appSecret',
-    token: 'token',
-    aesKey: 'aesKey',
-    webhookBaseUrl: 'webhookBaseUrl',
-    webhookPath: 'webhookPath',
-    webhookPort: 'webhookPort',
-    dmPolicy: 'dmPolicy',
-    allowFrom: 'allowFrom',
-    groupPolicy: 'groupPolicy',
-    groupAllowFrom: 'groupAllowFrom',
-    textChunkLimit: 'textChunkLimit',
-    richTextChunkLimit: 'richTextChunkLimit',
   },
 };
 
@@ -290,7 +273,7 @@ const API_FORMAT_MAP: Record<string, 'anthropic' | 'openai'> = {
 /**
  * Reverse-map openclaw.json models.providers → app_config.providers.
  * Enterprise openclaw.json should use real provider names as keys
- * (e.g., 'deepseek', 'anthropic') instead of the generic 'lobster'.
+ * (e.g., 'deepseek', 'anthropic') instead of the generic fallback provider.
  */
 function syncModelConfig(configPath: string, store: SqliteStore): void {
   const openclawPath = path.join(configPath, 'openclaw.json');
@@ -321,7 +304,7 @@ function syncModelConfig(configPath: string, store: SqliteStore): void {
         supportsImage: Array.isArray(m.input) && m.input.includes('image'),
       }));
 
-      // Resolve apiKey: use plain text value, skip placeholders like ${LOBSTER_...}
+      // Resolve apiKey: use plain text value, skip placeholders like ${ALKAKA_...}
       const apiKey = typeof providerConfig.apiKey === 'string' && !providerConfig.apiKey.startsWith('${')
         ? providerConfig.apiKey
         : '';
@@ -596,31 +579,7 @@ function syncIMChannels(configPath: string, imStore: IMStore): void {
           imStore.setWecomConfig(cfg);
         }
       },
-      'moltbot-popo': (cfg) => {
-        const normalizedCfg = normalizeMultiAccountChannelConfig('moltbot-popo', cfg);
-        const accounts = readAccountsFromChannelConfig(normalizedCfg);
-        if (accounts) {
-          const firstAccount = Object.values(accounts)[0];
-          if (firstAccount) {
-            imStore.setPopoConfig(firstAccount);
-            return;
-          }
-        }
-        imStore.setPopoConfig(cfg);
-      },
-      'nim': (cfg) => {
-        if (cfg && typeof cfg.accounts === 'object' && !Array.isArray(cfg.accounts)) {
-          imStore.setNimMultiInstanceConfig({ instances: Object.values(cfg.accounts) });
-          return;
-        }
-        if (cfg && Array.isArray(cfg.instances)) {
-          imStore.setNimMultiInstanceConfig(cfg);
-          return;
-        }
-        imStore.setNimConfig(cfg);
-      },
       'openclaw-weixin': (cfg) => imStore.setWeixinConfig(cfg),
-      'netease-bee': (cfg) => imStore.setNeteaseBeeChanConfig(cfg),
     };
 
     let syncedCount = 0;

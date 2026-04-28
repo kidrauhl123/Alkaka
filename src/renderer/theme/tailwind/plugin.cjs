@@ -1,5 +1,5 @@
 /**
- * Tailwind CSS v3 plugin — bridges --lobster-* CSS variables into Tailwind utility classes.
+ * Tailwind CSS v3 plugin — bridges --alkaka-* CSS variables into Tailwind utility classes.
  *
  * Usage in tailwind.config.js:
  *   plugins: [require('./src/renderer/theme/tailwind/plugin.cjs')]
@@ -16,73 +16,73 @@ module.exports = plugin(function () {
     extend: {
       colors: {
         // === Semantic theme colors (driven by CSS variables) ===
-        background:    'var(--lobster-background)',
-        foreground:    'var(--lobster-foreground)',
+        background:    'var(--alkaka-background)',
+        foreground:    'var(--alkaka-foreground)',
         primary: {
-          DEFAULT:     'var(--lobster-primary)',
-          foreground:  'var(--lobster-primary-foreground)',
-          hover:       'var(--lobster-primary-hover)',
-          muted:       'var(--lobster-primary-muted)',
-          dark:        'var(--lobster-primary-hover)',  // backward compat alias
+          DEFAULT:     'var(--alkaka-primary)',
+          foreground:  'var(--alkaka-primary-foreground)',
+          hover:       'var(--alkaka-primary-hover)',
+          muted:       'var(--alkaka-primary-muted)',
+          dark:        'var(--alkaka-primary-hover)',  // backward compat alias
         },
         accent: {
-          DEFAULT:     'var(--lobster-accent)',
-          foreground:  'var(--lobster-accent-foreground)',
+          DEFAULT:     'var(--alkaka-accent)',
+          foreground:  'var(--alkaka-accent-foreground)',
         },
         surface: {
-          DEFAULT:     'var(--lobster-surface)',
-          foreground:  'var(--lobster-surface-foreground)',
-          raised:      'var(--lobster-surface-raised)',
-          overlay:     'var(--lobster-surface-overlay)',
-          inset:       'var(--lobster-surface-raised)',  // alias
+          DEFAULT:     'var(--alkaka-surface)',
+          foreground:  'var(--alkaka-surface-foreground)',
+          raised:      'var(--alkaka-surface-raised)',
+          overlay:     'var(--alkaka-surface-overlay)',
+          inset:       'var(--alkaka-surface-raised)',  // alias
         },
         border: {
-          DEFAULT:     'var(--lobster-border)',
-          subtle:      'var(--lobster-border-subtle)',
-          input:       'var(--lobster-input-border)',
+          DEFAULT:     'var(--alkaka-border)',
+          subtle:      'var(--alkaka-border-subtle)',
+          input:       'var(--alkaka-input-border)',
         },
-        muted:         'var(--lobster-text-muted)',
+        muted:         'var(--alkaka-text-muted)',
         destructive: {
-          DEFAULT:     'var(--lobster-destructive)',
-          foreground:  'var(--lobster-destructive-foreground)',
+          DEFAULT:     'var(--alkaka-destructive)',
+          foreground:  'var(--alkaka-destructive-foreground)',
         },
-        success:       'var(--lobster-success)',
-        warning:       'var(--lobster-warning)',
+        success:       'var(--alkaka-success)',
+        warning:       'var(--alkaka-warning)',
 
-        // === Legacy claude.* aliases (map to --lobster-* for backward compat) ===
+        // === Legacy claude.* aliases (map to --alkaka-* for backward compat) ===
         claude: {
-          bg:                'var(--lobster-background)',
-          surface:           'var(--lobster-surface)',
-          surfaceHover:      'var(--lobster-surface-raised)',
-          surfaceMuted:      'var(--lobster-surface-raised)',
-          surfaceInset:      'var(--lobster-surface-raised)',
-          border:            'var(--lobster-border)',
-          borderLight:       'var(--lobster-border-subtle)',
-          text:              'var(--lobster-text-primary)',
-          textSecondary:     'var(--lobster-text-secondary)',
+          bg:                'var(--alkaka-background)',
+          surface:           'var(--alkaka-surface)',
+          surfaceHover:      'var(--alkaka-surface-raised)',
+          surfaceMuted:      'var(--alkaka-surface-raised)',
+          surfaceInset:      'var(--alkaka-surface-raised)',
+          border:            'var(--alkaka-border)',
+          borderLight:       'var(--alkaka-border-subtle)',
+          text:              'var(--alkaka-text-primary)',
+          textSecondary:     'var(--alkaka-text-secondary)',
           // dark.* aliases point to the same vars — theme handles light/dark
-          darkBg:            'var(--lobster-background)',
-          darkSurface:       'var(--lobster-surface)',
-          darkSurfaceHover:  'var(--lobster-surface-raised)',
-          darkSurfaceMuted:  'var(--lobster-surface-raised)',
-          darkSurfaceInset:  'var(--lobster-surface-raised)',
-          darkBorder:        'var(--lobster-border)',
-          darkBorderLight:   'var(--lobster-border-subtle)',
-          darkText:          'var(--lobster-text-primary)',
-          darkTextSecondary: 'var(--lobster-text-secondary)',
+          darkBg:            'var(--alkaka-background)',
+          darkSurface:       'var(--alkaka-surface)',
+          darkSurfaceHover:  'var(--alkaka-surface-raised)',
+          darkSurfaceMuted:  'var(--alkaka-surface-raised)',
+          darkSurfaceInset:  'var(--alkaka-surface-raised)',
+          darkBorder:        'var(--alkaka-border)',
+          darkBorderLight:   'var(--alkaka-border-subtle)',
+          darkText:          'var(--alkaka-text-primary)',
+          darkTextSecondary: 'var(--alkaka-text-secondary)',
           // Accent
-          accent:            'var(--lobster-primary)',
-          accentHover:       'var(--lobster-primary-hover)',
-          accentLight:       'var(--lobster-primary)',
-          accentMuted:       'var(--lobster-primary-muted)',
+          accent:            'var(--alkaka-primary)',
+          accentHover:       'var(--alkaka-primary-hover)',
+          accentLight:       'var(--alkaka-primary)',
+          accentMuted:       'var(--alkaka-primary-muted)',
         },
         secondary: {
-          DEFAULT: 'var(--lobster-text-secondary)',
-          dark:    'var(--lobster-border)',
+          DEFAULT: 'var(--alkaka-text-secondary)',
+          dark:    'var(--alkaka-border)',
         },
       },
       borderRadius: {
-        theme: 'var(--lobster-radius)',
+        theme: 'var(--alkaka-radius)',
       },
     },
   },

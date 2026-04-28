@@ -1,12 +1,8 @@
-import { OpenClawProviderId, ProviderRegistry } from '@shared/providers/constants';
+import { ProviderRegistry } from '@shared/providers/constants';
 
 import type { Model } from '../store/slices/modelSlice';
 
 export function toOpenClawModelRef(model: Pick<Model, 'id' | 'providerKey' | 'isServerModel'>): string {
-  if (model.isServerModel) {
-    return `${OpenClawProviderId.LobsteraiServer}/${model.id}`;
-  }
-
   return `${ProviderRegistry.getOpenClawProviderId(model.providerKey ?? '')}/${model.id}`;
 }
 

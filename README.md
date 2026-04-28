@@ -1,7 +1,11 @@
 # Alkaka — All-in-One Personal Assistant Agent
 
 <p align="center">
-  <strong>A 24/7 personal assistant Agent that gets things done</strong>
+  <img src="public/logo.png" alt="Alkaka" width="120">
+</p>
+
+<p align="center">
+  <strong>A 24/7 personal assistant Agent that gets things done, independent and self-hosted</strong>
 </p>
 
 <p align="center">
@@ -19,7 +23,7 @@
 
 ---
 
-**Alkaka** is an all-in-one personal assistant Agent. It works around the clock to handle your everyday tasks — data analysis, making presentations, generating videos, writing documents, searching the web, sending emails, scheduling tasks, and more.
+**Alkaka** is an all-in-one personal assistant Agent developed as an independent project. It works around the clock to handle your everyday tasks — data analysis, making presentations, generating videos, writing documents, searching the web, sending emails, scheduling tasks, and more.
 
 At its core is **Cowork mode** — it executes tools, manipulates files, and runs commands in a local or sandboxed environment, all under your supervision. You can also reach the Agent via WeChat, WeCom, DingTalk, Feishu, QQ, Telegram, Discord, and more — getting work done from your phone anytime, anywhere.
 
@@ -158,9 +162,9 @@ By default, packaging downloads the official Python embeddable runtime from pyth
 For offline/non-network builds, provide a prebuilt runtime archive explicitly.
 
 Offline/runtime source options for packaging:
-- `LOBSTERAI_PORTABLE_PYTHON_ARCHIVE`: Local prebuilt runtime archive path (recommended for offline CI/CD)
-- `LOBSTERAI_PORTABLE_PYTHON_URL`: Download URL for the prebuilt runtime archive
-- `LOBSTERAI_WINDOWS_EMBED_PYTHON_VERSION` / `LOBSTERAI_WINDOWS_EMBED_PYTHON_URL` / `LOBSTERAI_WINDOWS_GET_PIP_URL`: Optional overrides for Windows-host bootstrap sources
+- `ALKAKA_PORTABLE_PYTHON_ARCHIVE`: Local prebuilt runtime archive path (recommended for offline CI/CD)
+- `ALKAKA_PORTABLE_PYTHON_URL`: Download URL for the prebuilt runtime archive
+- `ALKAKA_WINDOWS_EMBED_PYTHON_VERSION` / `ALKAKA_WINDOWS_EMBED_PYTHON_URL` / `ALKAKA_WINDOWS_GET_PIP_URL`: Optional overrides for Windows-host bootstrap sources
 
 ## Architecture
 
@@ -286,7 +290,6 @@ Alkaka ships with 29 built-in skills covering productivity, creative, investment
 | local-tools | Local system tools | File management, system operations |
 | imap-smtp-email | Email send/receive | Email processing, auto-replies |
 | create-plan | Plan authoring | Project planning, task breakdown |
-| youdaonote | Youdao Note | Note management, to-dos, web clipping |
 | skill-vetter | Skill security audit | Safety check before installing third-party skills |
 | skill-creator | Custom skill creation | Extend new capabilities |
 
@@ -326,11 +329,8 @@ Alkaka can bridge the Agent to multiple IM platforms. Send a message from your p
 | QQ | OpenClaw gateway | QQ bot (official Bot API), supports multiple instances |
 | Telegram | OpenClaw gateway | Bot API, supports webhook and polling |
 | Discord | OpenClaw gateway | Discord bot, supports servers and DMs |
-| NetEase IM | node-nim V2 SDK | NetEase IM P2P messaging |
-| NetEase Bee | node-nim V2 SDK | NetEase Bee personal digital assistant |
-| NetEase POPO | OpenClaw gateway | NetEase POPO enterprise IM, supports WebSocket and Webhook |
 
-Configure the corresponding platform Token/Secret in the Settings panel to enable. Once set up, you can send instructions directly to the Agent from your phone IM, and the Agent will execute on the desktop and return results.
+Configure the corresponding platform Token/Secret in the Settings panel to enable. Once set up, you can send instructions directly to the Agent from your phone IM (e.g., "analyze this dataset", "make a weekly summary PPT"), and the Agent will execute on the desktop and return results.
 
 ## Persistent Memory
 
@@ -359,7 +359,7 @@ Memory writes go through file tools — there is no background extraction or inf
 
 ## Data Storage
 
-All data is stored in a local SQLite database in the user data directory.
+All data is stored in a local SQLite database (`alkaka.sqlite` in the user data directory).
 
 | Table | Purpose |
 |-------|---------|
@@ -454,6 +454,7 @@ Alkaka pins its OpenClaw dependency to a specific release version, declared in `
 | `OPENCLAW_SRC` | Path to OpenClaw source directory | `../openclaw` |
 | `OPENCLAW_FORCE_BUILD` | Set to `1` to force rebuild even if version matches | — |
 | `OPENCLAW_SKIP_ENSURE` | Set to `1` to skip automatic version checkout | — |
+| `ALKAKA_SQLITE_BACKUP_ALWAYS_ON_STARTUP` | Set to `1` or `true` to force an automatic backup on every app startup for QA/testing | — |
 
 ## Development Guidelines
 
@@ -496,6 +497,16 @@ test('log file pattern matches daily name', () => {
 
 Avoid importing Electron-only APIs (e.g. `electron-log`) in tests — inline any logic that depends on them instead.
 
+
+
+## Community
+
+Join our WeChat group to get help, share feedback, and stay up to date:
+
+<p align="center">
+  <img src="https://shared.ydstatic.com/market/souti/fihserChatWeb/online/1.3.5/dist/assets/wechat_group-ButC0ZCl.jpg" alt="WeChat Community QR Code" width="200">
+</p>
+
 ## Contributing
 
 1. Fork this repository
@@ -509,3 +520,12 @@ Please include in your PR description: a summary of changes, linked issue (if an
 ## License
 
 [MIT License](LICENSE)
+
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=kidrauhl123/Alkaka&type=date&legend=top-left)](https://www.star-history.com/#kidrauhl123/Alkaka&type=date&legend=top-left)
+
+---
+
+Built and maintained by the Alkaka project.

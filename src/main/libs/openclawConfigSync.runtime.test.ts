@@ -39,10 +39,6 @@ vi.mock('./openclawLocalExtensions', () => ({
   hasBundledOpenClawExtension: () => true,
 }));
 
-vi.mock('./openclawTokenProxy', () => ({
-  getOpenClawTokenProxyPort: () => null,
-}));
-
 describe('OpenClawConfigSync runtime config output', () => {
   let tmpDir: string;
   let configPath: string;
@@ -93,9 +89,6 @@ describe('OpenClawConfigSync runtime config output', () => {
       getQQInstances: () => [],
       getWecomConfig: () => null,
       getWecomInstances: () => [],
-      getPopoConfig: () => null,
-      getNimConfig: () => null,
-      getNeteaseBeeChanConfig: () => null,
       getWeixinConfig: () => null,
       getIMSettings: () => null,
       getSkillsList: () => [],
@@ -139,9 +132,6 @@ describe('OpenClawConfigSync runtime config output', () => {
       getQQInstances: () => [],
       getWecomConfig: () => null,
       getWecomInstances: () => [],
-      getPopoConfig: () => null,
-      getNimConfig: () => null,
-      getNeteaseBeeChanConfig: () => null,
       getWeixinConfig: () => null,
       getIMSettings: () => null,
       getSkillsList: () => [],
@@ -224,9 +214,6 @@ describe('OpenClawConfigSync runtime config output', () => {
       getQQInstances: () => [],
       getWecomConfig: () => null,
       getWecomInstances: () => [],
-      getPopoConfig: () => null,
-      getNimConfig: () => null,
-      getNeteaseBeeChanConfig: () => null,
       getWeixinConfig: () => null,
       getIMSettings: () => null,
       getSkillsList: () => [],
@@ -287,9 +274,6 @@ describe('OpenClawConfigSync runtime config output', () => {
       getQQInstances: () => [],
       getWecomConfig: () => null,
       getWecomInstances: () => [],
-      getPopoConfig: () => null,
-      getNimConfig: () => null,
-      getNeteaseBeeChanConfig: () => null,
       getWeixinConfig: () => null,
       getSkillsList: () => [],
       getAgents: () => [{
@@ -391,9 +375,6 @@ describe('OpenClawConfigSync runtime config output', () => {
       }],
       getWecomConfig: () => null,
       getWecomInstances: () => [],
-      getPopoConfig: () => null,
-      getNimConfig: () => null,
-      getNeteaseBeeChanConfig: () => null,
       getWeixinConfig: () => null,
       getIMSettings: () => null,
       getSkillsList: () => [],
@@ -440,9 +421,6 @@ describe('OpenClawConfigSync runtime config output', () => {
       getQQInstances: () => [],
       getWecomConfig: () => null,
       getWecomInstances: () => [],
-      getPopoConfig: () => null,
-      getNimConfig: () => null,
-      getNeteaseBeeChanConfig: () => null,
       getWeixinConfig: () => ({
         enabled: true,
         accountId: '97a130e3b62f@im.bot',

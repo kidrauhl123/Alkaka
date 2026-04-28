@@ -2,12 +2,11 @@ import React from 'react';
 import { i18nService } from '@/services/i18n';
 
 interface WelcomeDialogProps {
-  onLogin: () => void;
   onCustomModel: () => void;
   onClose: () => void;
 }
 
-const WelcomeDialog: React.FC<WelcomeDialogProps> = ({ onLogin, onCustomModel, onClose }) => {
+const WelcomeDialog: React.FC<WelcomeDialogProps> = ({ onCustomModel, onClose }) => {
   return (
     <div className="fixed inset-0 z-[60] bg-surface flex items-center justify-center">
       {/* gradient overlay */}
@@ -32,7 +31,7 @@ const WelcomeDialog: React.FC<WelcomeDialogProps> = ({ onLogin, onCustomModel, o
         {/* logo */}
         <img
           src="logo.png"
-          alt="LobsterAI"
+          alt="Alkaka"
           width={72}
           height={72}
           className="rounded-2xl mb-5 select-none"
@@ -63,7 +62,6 @@ const WelcomeDialog: React.FC<WelcomeDialogProps> = ({ onLogin, onCustomModel, o
           <span className="text-sm text-secondary">{i18nService.t('welcomePromo')}</span>
         </div>
 
-        {/* buttons — hand image sits at bottom-left of this row, overlapping login button */}
         <div className="flex gap-3 w-full relative overflow-visible">
           <img
             src="hand.png"
@@ -76,15 +74,8 @@ const WelcomeDialog: React.FC<WelcomeDialogProps> = ({ onLogin, onCustomModel, o
             aria-hidden="true"
           />
           <button
-            onClick={onLogin}
-            className="w-[204px] h-10 rounded-xl text-sm font-medium text-white transition-opacity hover:opacity-90 active:opacity-80"
-            style={{ backgroundColor: 'rgba(72, 133, 255, 1)' }}
-          >
-            {i18nService.t('welcomeLogin')}
-          </button>
-          <button
             onClick={onCustomModel}
-            className="w-[204px] h-10 rounded-xl text-sm font-medium text-white transition-opacity hover:opacity-90 active:opacity-80"
+            className="w-full h-10 rounded-xl text-sm font-medium text-white transition-opacity hover:opacity-90 active:opacity-80"
             style={{ backgroundColor: 'rgba(54, 57, 63, 1)' }}
           >
             {i18nService.t('welcomeCustomModel')}

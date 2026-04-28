@@ -28,7 +28,6 @@ import WindowTitleBar from './components/window/WindowTitleBar';
 import { defaultConfig, getProviderDisplayName } from './config';
 import type { ApiConfig } from './services/api';
 import { apiService } from './services/api';
-import { authService } from './services/auth';
 import { configService } from './services/config';
 import { coworkService } from './services/cowork';
 import { i18nService } from './services/i18n';
@@ -78,7 +77,6 @@ const App: React.FC = () => {
   const selectedModel = useSelector((state: RootState) => state.model.selectedModel);
   const currentSessionId = useSelector(selectCurrentSessionId);
   const pendingPermission = useSelector(selectFirstPendingPermission);
-  const authUser = useSelector((state: RootState) => state.auth.user);
   const isWindows = window.electron.platform === 'win32';
 
   const waitWithTimeout = useCallback(
@@ -132,10 +130,6 @@ const App: React.FC = () => {
         console.info('[App] initializeApp: i18nService.initialize');
         await waitWithTimeout(i18nService.initialize(), 5000, 'i18nService.initialize');
 
-        // 初始化认证服务（恢复登录状态）
-        console.info('[App] initializeApp: authService.init');
-        await authService.init();
-
         console.info('[App] initializeApp: configService.getConfig');
         const config = await configService.getConfig();
         const apiConfig: ApiConfig = {
@@ -170,8 +164,8 @@ const App: React.FC = () => {
         const resolvedModels = providerModels.length > 0 ? providerModels : fallbackModels;
         if (resolvedModels.length > 0) {
           dispatch(setAvailableModels(resolvedModels));
-          // Search all available models (including server models loaded by authService)
-          // so that a previously selected server model is correctly restored.
+          // Search all available models so that a previously selected model is
+          // correctly restored.
           const allModels = store.getState().model.availableModels;
           const preferredModel = allModels.find(
             model => model.id === config.model.defaultModel
@@ -376,13 +370,9 @@ const App: React.FC = () => {
     };
   }, []);
 
-  const handleShowLogin = useCallback(() => {
-    showToast(i18nService.t('featureInDevelopment'));
-  }, [showToast]);
-
   const runUpdateCheck = useCallback(async () => {
     try {
-      const result = await window.electron.appUpdate.checkNow({ userId: authUser?.yid });
+      const result = await window.electron.appUpdate.checkNow();
       setAppUpdateState(result.state);
       if (!result.success) {
         console.error('[App] app update check failed:', result.error);
@@ -390,7 +380,7 @@ const App: React.FC = () => {
     } catch (error) {
       console.error('Failed to check app update:', error);
     }
-  }, [authUser]);
+  }, []);
 
   const updateInfo = appUpdateState.info;
 
@@ -473,10 +463,6 @@ const App: React.FC = () => {
   }, []);
 
   const handleWelcomeClose = useCallback(() => setShowWelcome(false), []);
-  const handleWelcomeLogin = useCallback(async () => {
-    setShowWelcome(false);
-    await authService.login();
-  }, []);
   const handleWelcomeCustomModel = useCallback(() => {
     setShowWelcome(false);
     handleShowSettings({ initialTab: 'model' });
@@ -733,7 +719,6 @@ const App: React.FC = () => {
       )}
       <div className="flex flex-1 min-h-0 overflow-hidden">
         <Sidebar
-          onShowLogin={handleShowLogin}
           onShowSettings={handleShowSettings}
           activeView={mainView}
           onShowSkills={handleShowSkills}
@@ -745,7 +730,6 @@ const App: React.FC = () => {
           isCollapsed={isSidebarCollapsed}
           onToggleCollapse={handleToggleSidebar}
           updateBadge={!isSidebarCollapsed ? updateBadge : null}
-          hideLogin={enterpriseConfig?.ui?.login === 'hide'}
         />
         <div className={`flex-1 min-w-0 py-1.5 pr-1.5 ${isSidebarCollapsed ? 'pl-1.5' : ''}`}>
           <div className="relative h-full min-h-0 rounded-xl bg-background overflow-hidden">
@@ -827,7 +811,6 @@ const App: React.FC = () => {
       )}
       {showWelcome && (
         <WelcomeDialog
-          onLogin={handleWelcomeLogin}
           onCustomModel={handleWelcomeCustomModel}
           onClose={handleWelcomeClose}
         />

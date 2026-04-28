@@ -4,7 +4,6 @@ import { contextBridge, ipcRenderer } from 'electron';
 import { IpcChannel as ScheduledTaskIpc } from '../scheduledTask/constants';
 import { AppUpdateIpc } from '../shared/appUpdate/constants';
 import type { Platform } from '../shared/platform';
-import { NimQrLoginIpc } from './ipcHandlers/nimQrLogin';
 import { OpenClawSessionIpc } from './openclawSession/constants';
 import { OpenClawSessionPolicyIpc } from './openclawSessionPolicy/constants';
 
@@ -400,10 +399,6 @@ contextBridge.exposeInMainWorld('electron', {
     weixinQrLoginStart: () => ipcRenderer.invoke('im:weixin:qr-login-start'),
     weixinQrLoginWait: (accountId?: string) => ipcRenderer.invoke('im:weixin:qr-login-wait', accountId),
 
-    // POPO QR login
-    popoQrLoginStart: () => ipcRenderer.invoke('im:popo:qr-login-start'),
-    popoQrLoginPoll: (taskToken: string) => ipcRenderer.invoke('im:popo:qr-login-poll', taskToken),
-
     // Pairing
     listPairingRequests: (platform: string) => ipcRenderer.invoke('im:pairing:list', platform),
     approvePairingCode: (platform: string, code: string) => ipcRenderer.invoke('im:pairing:approve', platform, code),
@@ -414,14 +409,6 @@ contextBridge.exposeInMainWorld('electron', {
     deleteDingTalkInstance: (instanceId: string) => ipcRenderer.invoke('im:dingtalk:instance:delete', instanceId),
     setDingTalkInstanceConfig: (instanceId: string, config: any, options?: { syncGateway?: boolean }) =>
       ipcRenderer.invoke('im:dingtalk:instance:config:set', instanceId, config, options),
-
-    // NIM Multi-Instance
-    addNimInstance: (name: string) => ipcRenderer.invoke('im:nim:instance:add', name),
-    deleteNimInstance: (instanceId: string) => ipcRenderer.invoke('im:nim:instance:delete', instanceId),
-    setNimInstanceConfig: (instanceId: string, config: any, options?: { syncGateway?: boolean }) =>
-      ipcRenderer.invoke('im:nim:instance:config:set', instanceId, config, options),
-    nimQrLoginStart: () => ipcRenderer.invoke(NimQrLoginIpc.Start),
-    nimQrLoginPoll: (uuid: string) => ipcRenderer.invoke(NimQrLoginIpc.Poll, uuid),
 
     // QQ Multi-Instance
     addQQInstance: (name: string) => ipcRenderer.invoke('im:qq:instance:add', name),
@@ -521,27 +508,6 @@ contextBridge.exposeInMainWorld('electron', {
   },
   networkStatus: {
     send: (status: 'online' | 'offline') => ipcRenderer.send('network:status-change', status),
-  },
-  auth: {
-    login: (loginUrl?: string) => ipcRenderer.invoke('auth:login', { loginUrl }),
-    exchange: (code: string) => ipcRenderer.invoke('auth:exchange', { code }),
-    getUser: () => ipcRenderer.invoke('auth:getUser'),
-    getQuota: () => ipcRenderer.invoke('auth:getQuota'),
-    logout: () => ipcRenderer.invoke('auth:logout'),
-    refreshToken: () => ipcRenderer.invoke('auth:refreshToken'),
-    getAccessToken: () => ipcRenderer.invoke('auth:getAccessToken'),
-    getModels: () => ipcRenderer.invoke('auth:getModels'),
-    getProfileSummary: () => ipcRenderer.invoke('auth:getProfileSummary'),
-    onCallback: (callback: (data: { code: string }) => void) => {
-      const handler = (_event: any, data: { code: string }) => callback(data);
-      ipcRenderer.on('auth:callback', handler);
-      return () => ipcRenderer.removeListener('auth:callback', handler);
-    },
-    onQuotaChanged: (callback: () => void) => {
-      const handler = () => callback();
-      ipcRenderer.on('auth:quotaChanged', handler);
-      return () => ipcRenderer.removeListener('auth:quotaChanged', handler);
-    },
   },
   feishu: {
     install: {

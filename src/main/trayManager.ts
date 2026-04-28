@@ -35,7 +35,10 @@ function getLabels(): { showWindow: string; newTask: string; settings: string; q
   };
 }
 
-function buildContextMenu(getWindow: () => BrowserWindow | null): Menu {
+function buildContextMenu(
+  getWindow: () => BrowserWindow | null,
+  getPetWindow?: () => BrowserWindow | null
+): Menu {
   const labels = getLabels();
 
   return Menu.buildFromTemplate([
@@ -49,6 +52,18 @@ function buildContextMenu(getWindow: () => BrowserWindow | null): Menu {
         }
       },
     },
+    ...(getPetWindow
+      ? [{
+          label: '显示桌宠',
+          click: () => {
+            const win = getPetWindow();
+            if (win && !win.isDestroyed()) {
+              if (!win.isVisible()) win.show();
+              if (!win.isFocused()) win.focus();
+            }
+          },
+        }]
+      : []),
     {
       label: labels.newTask,
       click: () => {
@@ -82,7 +97,10 @@ function buildContextMenu(getWindow: () => BrowserWindow | null): Menu {
   ]);
 }
 
-export function createTray(getWindow: () => BrowserWindow | null): Tray {
+export function createTray(
+  getWindow: () => BrowserWindow | null,
+  getPetWindow?: () => BrowserWindow | null
+): Tray {
   if (tray) {
     return tray;
   }
@@ -102,7 +120,7 @@ export function createTray(getWindow: () => BrowserWindow | null): Tray {
   tray = new Tray(icon);
   tray.setToolTip(APP_NAME);
 
-  contextMenu = buildContextMenu(getWindow);
+  contextMenu = buildContextMenu(getWindow, getPetWindow);
 
   clickHandler = () => {
     const win = getWindow();
@@ -123,9 +141,12 @@ export function createTray(getWindow: () => BrowserWindow | null): Tray {
   return tray;
 }
 
-export function updateTrayMenu(getWindow: () => BrowserWindow | null): void {
+export function updateTrayMenu(
+  getWindow: () => BrowserWindow | null,
+  getPetWindow?: () => BrowserWindow | null
+): void {
   if (!tray) return;
-  contextMenu = buildContextMenu(getWindow);
+  contextMenu = buildContextMenu(getWindow, getPetWindow);
 }
 
 export function destroyTray(): void {

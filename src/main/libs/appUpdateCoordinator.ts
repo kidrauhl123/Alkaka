@@ -41,8 +41,19 @@ type UpdateApiResponse = {
   };
 };
 
+type GitHubReleaseResponse = {
+  tag_name?: string;
+  published_at?: string;
+  body?: string;
+  html_url?: string;
+};
+
+function isGitHubReleaseResponse(payload: UpdateApiResponse | GitHubReleaseResponse): payload is GitHubReleaseResponse {
+  return typeof (payload as GitHubReleaseResponse).tag_name === 'string';
+}
+
 const INSTALLATION_UUID_KEY = 'installation_uuid';
-const APP_UPDATE_TEST_CURRENT_VERSION_ENV = 'LOBSTERAI_UPDATE_CURRENT_VERSION';
+const APP_UPDATE_TEST_CURRENT_VERSION_ENV = 'ALKAKA_UPDATE_CURRENT_VERSION';
 const APP_UPDATE_READY_FILE_KEY_PREFIX = 'app_update_ready_file';
 
 type StoredReadyFile = {
@@ -441,7 +452,11 @@ export class AppUpdateCoordinator {
     userId?: string | null,
   ): Promise<AppUpdateInfo | null> {
     const baseUrl = manual ? getManualUpdateCheckUrl() : getUpdateCheckUrl();
-    const qs = this.getUpdateQueryString(userId, currentVersion);
+    // GitHub Releases does not need app/user identifiers. Avoid leaking the
+    // installation UUID or optional userId to third-party update endpoints.
+    const qs = this.shouldAttachUpdateQuery(baseUrl)
+      ? this.getUpdateQueryString(userId, currentVersion)
+      : '';
     const url = qs ? `${baseUrl}?${qs}` : baseUrl;
     console.log(`[AppUpdate] checking update, currentVersion=${currentVersion}, url=${url}`);
 
@@ -456,7 +471,11 @@ export class AppUpdateCoordinator {
       throw new Error(`Update check failed (HTTP ${response.status})`);
     }
 
-    const payload = (await response.json()) as UpdateApiResponse;
+    const payload = (await response.json()) as UpdateApiResponse | GitHubReleaseResponse;
+    if (isGitHubReleaseResponse(payload)) {
+      return this.parseGitHubReleaseUpdate(payload, currentVersion);
+    }
+
     if (payload.code !== 0) {
       throw new Error(`Update check failed with code ${payload.code ?? 'unknown'}`);
     }
@@ -483,6 +502,41 @@ export class AppUpdateCoordinator {
         en: toEntry(value?.changeLog?.en),
       },
       url: this.getPlatformDownloadUrl(value),
+    };
+    console.log(
+      `[AppUpdate] update available: ${currentVersion} -> ${latestVersion}, downloadUrl=${result.url}`,
+    );
+    return result;
+  }
+
+  private parseGitHubReleaseUpdate(
+    payload: GitHubReleaseResponse,
+    currentVersion: string,
+  ): AppUpdateInfo | null {
+    const latestVersion = payload.tag_name?.trim().replace(/^v/i, '');
+    if (!latestVersion || !this.isNewerVersion(latestVersion, currentVersion)) {
+      console.log(
+        `[AppUpdate] no update available, latestVersion=${latestVersion || 'N/A'}, currentVersion=${currentVersion}`,
+      );
+      return null;
+    }
+
+    const releaseNotes = (payload.body ?? '')
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+
+    const result: AppUpdateInfo = {
+      latestVersion,
+      date: payload.published_at?.slice(0, 10) ?? '',
+      changeLog: {
+        zh: { title: payload.tag_name ?? latestVersion, content: releaseNotes },
+        en: { title: payload.tag_name ?? latestVersion, content: releaseNotes },
+      },
+      // GitHub Release assets are not accompanied by an app-managed signed
+      // manifest/hash today. Treat GitHub as a manual update source instead
+      // of auto-downloading and executing arbitrary release assets.
+      url: payload.html_url || getFallbackDownloadUrl(),
     };
     console.log(
       `[AppUpdate] update available: ${currentVersion} -> ${latestVersion}, downloadUrl=${result.url}`,
@@ -556,6 +610,15 @@ export class AppUpdateCoordinator {
       params.append('version', version);
     }
     return params.toString();
+  }
+
+  private shouldAttachUpdateQuery(url: string): boolean {
+    try {
+      const parsed = new URL(url);
+      return parsed.hostname !== 'api.github.com';
+    } catch {
+      return false;
+    }
   }
 
   private getOrCreateInstallationId(): string | null {
@@ -638,16 +701,16 @@ export class AppUpdateCoordinator {
   }
 
   private isCachedInstallerForSource(filename: string, source: AppUpdateSource | null): boolean {
-    if (!filename.startsWith('lobsterai-update-')) {
+    if (!filename.startsWith('alkaka-update-')) {
       return false;
     }
     if (source == null) {
       return true;
     }
-    if (filename.startsWith(`lobsterai-update-${source}-`)) {
+    if (filename.startsWith(`alkaka-update-${source}-`)) {
       return true;
     }
-    return /^lobsterai-update-\d+/.test(filename);
+    return /^alkaka-update-\d+/.test(filename);
   }
 
   private async pruneCachedInstallerFiles(

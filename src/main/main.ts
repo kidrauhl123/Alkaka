@@ -21,9 +21,7 @@ import {
   readAllowFromStore,
   rejectPairingRequest,
 } from './im/imPairingStore';
-import { pollNimQrLogin, startNimQrLogin } from './im/nimQrLoginService';
-import type { DingTalkInstanceConfig, DiscordInstanceConfig, EmailMultiInstanceConfig, FeishuInstanceConfig, NimInstanceConfig, Platform, QQInstanceConfig, TelegramInstanceConfig, WecomInstanceConfig } from './im/types';
-import { registerNimQrLoginHandlers } from './ipcHandlers/nimQrLogin';
+import type { DingTalkInstanceConfig, DiscordInstanceConfig, EmailMultiInstanceConfig, FeishuInstanceConfig, Platform, QQInstanceConfig, TelegramInstanceConfig, WecomInstanceConfig } from './im/types';
 import {
   getCronJobService,
   initCronJobServiceManager,
@@ -31,13 +29,14 @@ import {
   registerScheduledTaskHandlers,
 } from './ipcHandlers/scheduledTask';
 import {
+  AgentEngine,
   type CoworkAgentEngine,
   CoworkEngineRouter,
   OpenClawRuntimeAdapter,
   type PermissionResult,
 } from './libs/agentEngine';
 import { AppUpdateCoordinator } from './libs/appUpdateCoordinator';
-import { clearServerModelMetadata, getCurrentApiConfig, resolveAllEnabledProviderConfigs, resolveCurrentApiConfig, resolveRawApiConfig, setAuthTokensGetter, setServerBaseUrlGetter, setStoreGetter, updateServerModelMetadata } from './libs/claudeSettings';
+import { getCurrentApiConfig, resolveAllEnabledProviderConfigs, resolveCurrentApiConfig, resolveRawApiConfig, setStoreGetter } from './libs/claudeSettings';
 import {
   clearCopilotTokenState,
   initCopilotTokenManager,
@@ -48,7 +47,7 @@ import { saveCoworkApiConfig } from './libs/coworkConfigStore';
 import { getCoworkLogPath } from './libs/coworkLogger';
 import { registerProxyTokenRefresher, startCoworkOpenAICompatProxy, stopCoworkOpenAICompatProxy } from './libs/coworkOpenAICompatProxy';
 import { generateSessionTitle, probeCoworkModelReadiness } from './libs/coworkUtil';
-import { getServerApiBaseUrl, getSkillStoreUrl, refreshEndpointsTestMode } from './libs/endpoints';
+import { getSkillStoreUrl, refreshEndpointsTestMode } from './libs/endpoints';
 import { mergeEnterpriseOpenclawConfig, resolveEnterpriseConfigPath, syncEnterpriseConfig } from './libs/enterpriseConfigSync';
 import { exportLogsZip } from './libs/logExport';
 import { McpBridgeServer } from './libs/mcpBridgeServer';
@@ -75,7 +74,6 @@ import {
   updateMemoryEntry,
   writeBootstrapFile,
 } from './libs/openclawMemoryFile';
-import { startOpenClawTokenProxy, stopOpenClawTokenProxy } from './libs/openclawTokenProxy';
 import { ensurePythonRuntimeReady } from './libs/pythonRuntime';
 import { SqliteBackupManager } from './libs/sqliteBackup/sqliteBackupManager';
 import {
@@ -90,6 +88,7 @@ import { McpStore } from './mcpStore';
 import { OpenClawSessionIpc } from './openclawSession/constants';
 import { OpenClawSessionPolicyIpc } from './openclawSessionPolicy/constants';
 import { loadOpenClawSessionPolicyConfig, saveOpenClawSessionPolicyConfig } from './openclawSessionPolicy/store';
+import { createPetWindow, destroyPetWindow, getPetWindow } from './petWindow';
 import { SkillManager } from './skillManager';
 import { getSkillServiceManager } from './skillServices';
 import { SqliteStore } from './sqliteStore';
@@ -234,7 +233,7 @@ const buildAvailableOpenClawProviders = (): Record<string, { models: Array<{ id:
 // Provider IDs that were renamed in past refactors. Any stored agent model ref
 // using an old ID is rewritten to the current ID on startup.
 const RENAMED_PROVIDER_IDS: Record<string, string> = {
-  'github-copilot': 'lobsterai-copilot',
+  'github-copilot': 'alkaka-copilot',
 };
 
 const migrateAgentModelRefs = (): number => {
@@ -250,7 +249,7 @@ const migrateAgentModelRefs = (): number => {
     if (!normalizedModel) continue;
 
     // Apply explicit provider rename map before qualification so that renamed
-    // provider IDs (e.g. 'github-copilot' → 'lobsterai-copilot') are corrected
+    // provider IDs (e.g. 'github-copilot' → 'alkaka-copilot') are corrected
     // even though resolveQualifiedAgentModelRef treats any slash-ref as valid.
     const slashIdx = normalizedModel.indexOf('/');
     if (slashIdx > 0) {
@@ -312,7 +311,7 @@ const resolveInlineAttachmentDir = (cwd?: string): string => {
       return path.join(resolved, '.cowork-temp', 'attachments', 'manual');
     }
   }
-  return path.join(app.getPath('temp'), 'lobsterai', 'attachments');
+  return path.join(app.getPath('temp'), 'alkaka', 'attachments');
 };
 
 const ensurePngFileName = (value: string): string => {
@@ -329,7 +328,7 @@ const buildLogExportFileName = (): string => {
   const now = new Date();
   const datePart = `${now.getFullYear()}${padTwoDigits(now.getMonth() + 1)}${padTwoDigits(now.getDate())}`;
   const timePart = `${padTwoDigits(now.getHours())}${padTwoDigits(now.getMinutes())}${padTwoDigits(now.getSeconds())}`;
-  return `lobsterai-logs-${datePart}-${timePart}.zip`;
+  return `alkaka-logs-${datePart}-${timePart}.zip`;
 };
 
 const OPENCLAW_DAILY_LOG_RETENTION_DAYS = 7;
@@ -533,8 +532,8 @@ const enableVerboseLogging =
   process.env.ELECTRON_ENABLE_LOGGING === '1' ||
   process.env.ELECTRON_ENABLE_LOGGING === 'true';
 const disableGpu =
-  process.env.LOBSTERAI_DISABLE_GPU === '1' ||
-  process.env.LOBSTERAI_DISABLE_GPU === 'true' ||
+  process.env.ALKAKA_DISABLE_GPU === '1' ||
+  process.env.ALKAKA_DISABLE_GPU === 'true' ||
   process.env.ELECTRON_DISABLE_GPU === '1' ||
   process.env.ELECTRON_DISABLE_GPU === 'true';
 const reloadOnChildProcessGone =
@@ -754,7 +753,7 @@ let mcpStore: McpStore | null = null;
 let mcpServerManager: McpServerManager | null = null;
 let mcpBridgeServer: McpBridgeServer | null = null;
 // Generated eagerly so the secret is available before the first syncOpenClawConfig
-// call — the gateway process inherits it via LOBSTER_MCP_BRIDGE_SECRET env var at
+// call — the gateway process inherits it via ALKAKA_MCP_BRIDGE_SECRET env var at
 // spawn time, avoiding a restart just to pick up the correct secret.
 let mcpBridgeSecret: string = require('crypto').randomUUID();
 let mcpBridgeStartPromise: Promise<McpBridgeConfig | null> | null = null;
@@ -920,31 +919,14 @@ const bootstrapOpenClawEngine = async (options: { forceReinstall?: boolean; reas
   return promise;
 };
 
-// Module-level handle so ensureOpenClawRunningForCowork can await any in-flight
-// proactive token refresh before syncing config to the gateway.
-let pendingTokenRefresh: Promise<string | null> | null = null;
-
 const ensureOpenClawRunningForCowork = async () => {
   const manager = getOpenClawEngineManager();
   const status = manager.getStatus();
   if (status.phase === 'running') {
-    // Token proxy handles dynamic token injection — no need to restart
-    // the gateway for token changes. Just wait for any in-flight refresh.
-    if (pendingTokenRefresh) {
-      console.log('[OpenClaw] ensureRunning: awaiting pending token refresh before proceeding');
-      await pendingTokenRefresh.catch(() => {});
-    }
     return manager.getStatus();
   }
   if (status.phase === 'starting') {
     return status;
-  }
-
-  // Wait for any in-flight token refresh so that the gateway starts with
-  // a fresh token rather than the stale one that triggered the refresh.
-  if (pendingTokenRefresh) {
-    console.log('[OpenClaw] ensureRunning: awaiting pending token refresh before gateway start');
-    await pendingTokenRefresh.catch(() => {});
   }
 
   // Ensure MCP bridge is started and config is synced before launching the gateway,
@@ -1030,32 +1012,11 @@ const getOpenClawConfigSync = (): OpenClawConfigSync => {
           return [];
         }
       },
-      getPopoConfig: () => {
-        try {
-          return getIMGatewayManager().getConfig().popo;
-          } catch {
-          return null;
-        }
-      },
       getEmailOpenClawConfig: () => {
         try {
           return getIMGatewayManager().getIMStore().getEmailConfig();
         } catch {
           return { instances: [] };
-        }
-      },
-      getNimInstances: () => {
-        try {
-          return getIMGatewayManager().getIMStore().getNimInstances();
-        } catch {
-          return [];
-        }
-      },
-      getNeteaseBeeChanConfig: () => {
-        try {
-          return getIMGatewayManager().getConfig()['netease-bee'];
-        } catch {
-          return null;
         }
       },
       getWeixinConfig: () => {
@@ -1321,19 +1282,6 @@ const bindCoworkRuntimeForwarder = (): void => {
       if (win.isDestroyed()) return;
       win.webContents.send('cowork:stream:complete', { sessionId, claudeSessionId });
     });
-    // If session used a server model, notify renderer to refresh quota
-    try {
-      const apiConfig = resolveCurrentApiConfig();
-      if (apiConfig.providerMetadata?.providerName === 'lobsterai-server') {
-        const windows = BrowserWindow.getAllWindows();
-        windows.forEach((win) => {
-          if (win.isDestroyed()) return;
-          win.webContents.send('auth:quotaChanged');
-        });
-      }
-    } catch {
-      // ignore
-    }
   });
 
   runtime.on('error', (sessionId: string, error: string) => {
@@ -1372,7 +1320,10 @@ const getCoworkEngineRouter = () => {
     }
     coworkEngineRouter = new CoworkEngineRouter({
       getCurrentEngine: resolveCoworkAgentEngine,
-      openclawRuntime: openClawRuntimeAdapter,
+      runtimes: {
+        [AgentEngine.OpenClaw]: openClawRuntimeAdapter,
+        // [AgentEngine.Hermes]: future hermes adapter (Phase 2.2)
+      },
     });
   }
   return coworkEngineRouter;
@@ -1589,7 +1540,7 @@ const getIMGatewayManager = () => {
         coworkRuntime: runtime,
         coworkStore: store,
         ensureCoworkReady: async () => {
-          if (resolveCoworkAgentEngine() !== 'openclaw') {
+          if (resolveCoworkAgentEngine() !== AgentEngine.OpenClaw) {
             return;
           }
           const status = await ensureOpenClawRunningForCowork();
@@ -1597,7 +1548,7 @@ const getIMGatewayManager = () => {
             throw new Error(status.message || 'AI engine is initializing. Please try again in a moment.');
           }
         },
-        isOpenClawEngine: () => resolveCoworkAgentEngine() === 'openclaw',
+        isOpenClawEngine: () => resolveCoworkAgentEngine() === AgentEngine.OpenClaw,
         syncOpenClawConfig: async () => {
           await syncOpenClawConfig({
             reason: 'im-gateway-start',
@@ -1913,54 +1864,8 @@ const gotTheLock = app.requestSingleInstanceLock();
 if (!gotTheLock) {
   app.quit();
 } else {
-  // Register custom protocol for OAuth callback
-  app.setAsDefaultProtocolClient('lobsterai');
-
-  // Buffer for deep link auth code received before renderer is ready
-  let pendingAuthCode: string | null = null;
-
-  /**
-   * Parse a lobsterai:// deep link and send (or buffer) the auth code.
-   */
-  const handleDeepLink = (url: string) => {
-    try {
-      const parsed = new URL(url);
-      if (parsed.hostname === 'auth' && parsed.pathname === '/callback') {
-        const code = parsed.searchParams.get('code');
-        if (code) {
-          if (mainWindow && !mainWindow.isDestroyed()) {
-            mainWindow.webContents.send('auth:callback', { code });
-          } else {
-            pendingAuthCode = code;
-          }
-        }
-      }
-    } catch (e) {
-      console.error('[Main] Failed to parse deep link:', e);
-    }
-  };
-
-  // Allow renderer to retrieve a buffered auth code on init
-  ipcMain.handle('auth:getPendingCallback', () => {
-    const code = pendingAuthCode;
-    pendingAuthCode = null;
-    return code;
-  });
-
-  // macOS: handle open-url event for deep links
-  app.on('open-url', (event, url) => {
-    event.preventDefault();
-    handleDeepLink(url);
-  });
-
   app.on('second-instance', (_event, commandLine, workingDirectory) => {
     console.debug('[Main] second-instance event', { commandLine, workingDirectory });
-
-    // Check for deep link in command line args (Windows/Linux)
-    const deepLink = commandLine.find(arg => arg.startsWith('lobsterai://'));
-    if (deepLink) {
-      handleDeepLink(deepLink);
-    }
 
     // Focus main window
     if (mainWindow) {
@@ -2054,7 +1959,7 @@ if (!gotTheLock) {
           { archiveName: 'gateway.log', filePath: manager.getGatewayLogPath() },
           ...getRecentOpenClawDailyLogEntries(manager.getOpenClawDailyLogDir()),
           ...(process.platform === 'win32'
-            ? [{ archiveName: 'install-timing.log', filePath: path.join(app.getPath('appData'), 'LobsterAI', 'install-timing.log') }]
+            ? [{ archiveName: 'install-timing.log', filePath: path.join(app.getPath('appData'), 'Alkaka', 'install-timing.log') }]
             : []),
         ],
       });
@@ -2149,277 +2054,6 @@ if (!gotTheLock) {
 
   ipcMain.handle('app:getVersion', () => app.getVersion());
   ipcMain.handle('app:getSystemLocale', () => app.getLocale());
-
-  // ── Auth IPC handlers ──
-
-  /**
-   * Helper: Persist auth tokens into the kv store.
-   */
-  const saveAuthTokens = (accessToken: string, refreshToken: string) => {
-    getStore().set('auth_tokens', { accessToken, refreshToken });
-  };
-
-  const getAuthTokens = (): { accessToken: string; refreshToken: string } | null => {
-    return getStore().get<{ accessToken: string; refreshToken: string }>('auth_tokens') || null;
-  };
-
-  const clearAuthTokens = () => {
-    getStore().delete('auth_tokens');
-  };
-
-  /**
-   * Helper: Fetch with Bearer token, auto-refresh on 401 and retry once.
-   */
-  const fetchWithAuth = async (url: string, options?: RequestInit): Promise<Response> => {
-    const tokens = getAuthTokens();
-    if (!tokens) throw new Error('No auth tokens');
-
-    const doFetch = (accessToken: string) =>
-      net.fetch(url, {
-        ...options,
-        headers: { ...(options?.headers as Record<string, string>), Authorization: `Bearer ${accessToken}` },
-      });
-
-    let resp = await doFetch(tokens.accessToken);
-
-    if (resp.status === 401 && tokens.refreshToken) {
-      const serverBaseUrl = getServerApiBaseUrl();
-      const refreshResp = await net.fetch(`${serverBaseUrl}/api/auth/refresh`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refreshToken: tokens.refreshToken }),
-      });
-      if (refreshResp.ok) {
-        const refreshBody = await refreshResp.json() as { code: number; data: { accessToken: string; refreshToken?: string } };
-        if (refreshBody.code === 0 && refreshBody.data) {
-          saveAuthTokens(refreshBody.data.accessToken, refreshBody.data.refreshToken || tokens.refreshToken);
-          resp = await doFetch(refreshBody.data.accessToken);
-        }
-      }
-    }
-
-    return resp;
-  };
-
-  /**
-   * Normalize quota data from various server response formats into a unified shape.
-   */
-  const normalizeQuota = (raw: Record<string, unknown>) => {
-    let creditsLimit = 0;
-    let creditsUsed = 0;
-    let planName = t('authPlanFree');
-    let subscriptionStatus = 'free';
-
-    if (typeof raw.freeCreditsTotal === 'number') {
-      // Free user format from /api/user/quota
-      creditsLimit = raw.freeCreditsTotal as number;
-      creditsUsed = (raw.freeCreditsUsed as number) || 0;
-      planName = (raw.planName as string) || t('authPlanFree');
-      subscriptionStatus = (raw.subscriptionStatus as string) || 'free';
-    } else if (typeof raw.monthlyCreditsLimit === 'number') {
-      // Paid user format from /api/user/quota
-      creditsLimit = raw.monthlyCreditsLimit as number;
-      creditsUsed = (raw.monthlyCreditsUsed as number) || 0;
-      planName = (raw.planName as string) || t('authPlanStandard');
-      subscriptionStatus = (raw.subscriptionStatus as string) || 'active';
-    } else if (typeof raw.dailyCreditsLimit === 'number') {
-      // Legacy exchange format
-      creditsLimit = raw.dailyCreditsLimit as number;
-      creditsUsed = (raw.dailyCreditsUsed as number) || 0;
-      planName = (raw.planName as string) || t('authPlanFree');
-      subscriptionStatus = (raw.subscriptionStatus as string) || 'free';
-    } else if (typeof raw.creditsLimit === 'number') {
-      // Already normalized
-      return raw;
-    }
-
-    return {
-      planName,
-      subscriptionStatus,
-      creditsLimit,
-      creditsUsed,
-      creditsRemaining: Math.max(0, creditsLimit - creditsUsed),
-    };
-  };
-
-  ipcMain.handle('auth:login', async (_event, { loginUrl }: { loginUrl?: string } = {}) => {
-    try {
-      const baseUrl = loginUrl || `${getServerApiBaseUrl()}/login`;
-      const finalUrl = `${baseUrl}?source=electron`;
-      await shell.openExternal(finalUrl);
-      return { success: true };
-    } catch (error) {
-      console.error('[Auth] login failed:', error);
-      return { success: false, error: error instanceof Error ? error.message : 'Failed to open login' };
-    }
-  });
-
-  ipcMain.handle('auth:exchange', async (_event, { code }: { code: string }) => {
-    try {
-      const serverBaseUrl = getServerApiBaseUrl();
-      const resp = await net.fetch(`${serverBaseUrl}/api/auth/exchange`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ authCode: code }),
-      });
-      if (!resp.ok) {
-        return { success: false, error: `Exchange failed: ${resp.status}` };
-      }
-      const body = await resp.json() as {
-        code: number;
-        message?: string;
-        data: {
-          accessToken: string;
-          refreshToken: string;
-          user: Record<string, unknown>;
-          quota: Record<string, unknown>;
-        };
-      };
-      if (body.code !== 0 || !body.data) {
-        return { success: false, error: body.message || 'Exchange failed' };
-      }
-      saveAuthTokens(body.data.accessToken, body.data.refreshToken);
-      console.log('[Auth] exchange user data:', JSON.stringify(body.data.user));
-      return { success: true, user: body.data.user, quota: normalizeQuota(body.data.quota) };
-    } catch (error) {
-      console.error('[Auth] exchange failed:', error);
-      return { success: false, error: error instanceof Error ? error.message : 'Exchange failed' };
-    }
-  });
-
-  ipcMain.handle('auth:getUser', async () => {
-    try {
-      const tokens = getAuthTokens();
-      if (!tokens) return { success: false };
-      const serverBaseUrl = getServerApiBaseUrl();
-      // Fetch user profile
-      const profileResp = await fetchWithAuth(`${serverBaseUrl}/api/user/profile`);
-      if (!profileResp.ok) return { success: false };
-      const profileBody = await profileResp.json() as { code: number; data: Record<string, unknown> };
-      if (profileBody.code !== 0 || !profileBody.data) return { success: false };
-      // Fetch quota separately
-      const quotaResp = await fetchWithAuth(`${serverBaseUrl}/api/user/quota`);
-      let quota = null;
-      if (quotaResp.ok) {
-        const quotaBody = await quotaResp.json() as { code: number; data: Record<string, unknown> };
-        if (quotaBody.code === 0 && quotaBody.data) {
-          quota = normalizeQuota(quotaBody.data);
-        }
-      }
-      console.log('[Auth] getUser profile data:', JSON.stringify(profileBody.data));
-      return { success: true, user: profileBody.data, quota };
-    } catch {
-      return { success: false };
-    }
-  });
-
-  ipcMain.handle('auth:getQuota', async () => {
-    try {
-      const tokens = getAuthTokens();
-      if (!tokens) return { success: false };
-      const serverBaseUrl = getServerApiBaseUrl();
-      const resp = await fetchWithAuth(`${serverBaseUrl}/api/user/quota`);
-      if (!resp.ok) return { success: false };
-      const body = await resp.json() as { code: number; data: Record<string, unknown> };
-      if (body.code !== 0 || !body.data) return { success: false };
-      return { success: true, quota: normalizeQuota(body.data) };
-    } catch {
-      return { success: false };
-    }
-  });
-
-  ipcMain.handle('auth:getProfileSummary', async () => {
-    try {
-      const tokens = getAuthTokens();
-      if (!tokens) return { success: false };
-      const serverBaseUrl = getServerApiBaseUrl();
-      const resp = await fetchWithAuth(`${serverBaseUrl}/api/user/profile-summary`);
-      if (!resp.ok) return { success: false };
-      const body = await resp.json() as { code: number; data: Record<string, unknown> };
-      if (body.code !== 0 || !body.data) return { success: false };
-      return { success: true, data: body.data };
-    } catch {
-      return { success: false };
-    }
-  });
-
-  ipcMain.handle('auth:logout', async () => {
-    try {
-      const tokens = getAuthTokens();
-      if (tokens) {
-        const serverBaseUrl = getServerApiBaseUrl();
-        await net.fetch(`${serverBaseUrl}/api/auth/logout`, {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${tokens.accessToken}` },
-        }).catch(() => { /* best-effort */ });
-      }
-      clearAuthTokens();
-      clearServerModelMetadata();
-      return { success: true };
-    } catch {
-      clearAuthTokens();
-      clearServerModelMetadata();
-      return { success: true };
-    }
-  });
-
-  ipcMain.handle('auth:refreshToken', async () => {
-    try {
-      const tokens = getAuthTokens();
-      if (!tokens?.refreshToken) return { success: false };
-      const serverBaseUrl = getServerApiBaseUrl();
-      const resp = await net.fetch(`${serverBaseUrl}/api/auth/refresh`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refreshToken: tokens.refreshToken }),
-      });
-      if (!resp.ok) return { success: false };
-      const body = await resp.json() as { code: number; data: { accessToken: string; refreshToken?: string } };
-      if (body.code !== 0 || !body.data) return { success: false };
-      saveAuthTokens(body.data.accessToken, body.data.refreshToken || tokens.refreshToken);
-      return { success: true, accessToken: body.data.accessToken };
-    } catch {
-      return { success: false };
-    }
-  });
-
-  ipcMain.handle('auth:getAccessToken', async () => {
-    const tokens = getAuthTokens();
-    return tokens?.accessToken || null;
-  });
-
-  ipcMain.handle('auth:getModels', async () => {
-    try {
-      const tokens = getAuthTokens();
-      if (!tokens) {
-        console.log('[Auth:getModels] No auth tokens available');
-        return { success: false };
-      }
-      const serverBaseUrl = getServerApiBaseUrl();
-      const url = `${serverBaseUrl}/api/models/available`;
-      console.log('[Auth:getModels] Fetching:', url);
-      const resp = await fetchWithAuth(url);
-      console.log('[Auth:getModels] Response status:', resp.status);
-      if (!resp.ok) {
-        console.log('[Auth:getModels] Response not ok:', resp.status, resp.statusText);
-        return { success: false };
-      }
-      const data = await resp.json() as { code: number; data: Array<{ modelId: string; modelName: string; provider: string; apiFormat: string; supportsImage?: boolean }> };
-      console.log('[Auth:getModels] Response data:', JSON.stringify(data).slice(0, 500));
-      if (data.code !== 0) return { success: false };
-      // Cache server model metadata for use in OpenClaw config sync (supportsImage, etc.)
-      updateServerModelMetadata(data.data);
-      // Re-sync so the gateway picks up the correct supportsImage values for server models.
-      // The startup sync runs before this IPC call, so the cache was empty then.
-      // restartGatewayIfRunning:true ensures the gateway restarts only when the config
-      // actually changed; the deferred-restart mechanism keeps active sessions safe.
-      syncOpenClawConfig({ reason: 'server-models-updated', restartGatewayIfRunning: false }).catch(() => {});
-      return { success: true, models: data.data };
-    } catch (e) {
-      console.error('[Auth:getModels] Error:', e);
-      return { success: false };
-    }
-  });
 
   // Skills IPC handlers
   ipcMain.handle('skills:list', () => {
@@ -2684,9 +2318,7 @@ if (!gotTheLock) {
   });
 
   ipcMain.handle('mcp:fetchMarketplace', async () => {
-    const url = app.isPackaged
-      ? 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/prod/mcp-marketplace'
-      : 'https://api-overmind.youdao.com/openapi/get/luna/hardware/lobsterai/test/mcp-marketplace';
+    const url = 'https://raw.githubusercontent.com/kidrauhl123/Alkaka/main/mcp-marketplace.json';
     try {
       const https = await import('https');
       const data = await new Promise<string>((resolve, reject) => {
@@ -2739,7 +2371,7 @@ if (!gotTheLock) {
   }) => {
     try {
       const activeEngine = resolveCoworkAgentEngine();
-      if (activeEngine === 'openclaw') {
+      if (activeEngine === AgentEngine.OpenClaw) {
         const engineStatus = await ensureOpenClawRunningForCowork();
         if (engineStatus.phase !== 'running') {
           return getEngineNotReadyResponse(engineStatus);
@@ -2856,7 +2488,7 @@ if (!gotTheLock) {
   }) => {
     try {
       const activeEngine = resolveCoworkAgentEngine();
-      if (activeEngine === 'openclaw') {
+      if (activeEngine === AgentEngine.OpenClaw) {
         const engineStatus = await ensureOpenClawRunningForCowork();
         if (engineStatus.phase !== 'running') {
           return getEngineNotReadyResponse(engineStatus);
@@ -3587,8 +3219,8 @@ if (!gotTheLock) {
         config.executionMode && String(config.executionMode) === 'container'
           ? 'local'
           : config.executionMode;
-      const normalizedAgentEngine = config.agentEngine === 'openclaw'
-        ? 'openclaw'
+      const normalizedAgentEngine = config.agentEngine === AgentEngine.OpenClaw
+        ? AgentEngine.OpenClaw
         : undefined;
       const normalizedMemoryEnabled = typeof config.memoryEnabled === 'boolean'
         ? config.memoryEnabled
@@ -3649,8 +3281,8 @@ if (!gotTheLock) {
       if (normalizedAgentEngine !== undefined && normalizedAgentEngine !== previousConfig.agentEngine) {
         getCoworkEngineRouter().handleEngineConfigChanged(normalizedAgentEngine);
       }
-      const switchedToOpenClaw = normalizedAgentEngine === 'openclaw'
-        && previousConfig.agentEngine !== 'openclaw';
+      const switchedToOpenClaw = normalizedAgentEngine === AgentEngine.OpenClaw
+        && previousConfig.agentEngine !== AgentEngine.OpenClaw;
 
       const shouldSyncOpenClawConfig = normalizedExecutionMode !== undefined
         || normalizedAgentEngine !== undefined
@@ -3660,7 +3292,7 @@ if (!gotTheLock) {
         const syncResult = await syncOpenClawConfig({
           reason: 'cowork-config-change',
         });
-        if (!syncResult.success && nextConfig.agentEngine === 'openclaw') {
+        if (!syncResult.success && nextConfig.agentEngine === AgentEngine.OpenClaw) {
           return {
             success: false,
             code: ENGINE_NOT_READY_CODE,
@@ -3713,11 +3345,6 @@ if (!gotTheLock) {
       ) => getIMGatewayManager().primeConversationReplyRoute(platform as Platform, conversationId, coworkSessionId),
     }),
     getOpenClawRuntimeAdapter: () => openClawRuntimeAdapter,
-  });
-
-  registerNimQrLoginHandlers({
-    startNimQrLogin,
-    pollNimQrLogin,
   });
 
   // ==================== Permissions IPC Handlers ====================
@@ -3833,7 +3460,7 @@ if (!gotTheLock) {
       // Only trigger sync when explicitly requested via syncGateway flag (e.g. from
       // the global Save button), to avoid frequent gateway restarts on every field blur.
       const hasOpenClawChange = config.telegram || config.discord || config.dingtalk
-        || config.feishu || config.qq || config.wecom || config.popo || config.weixin;
+        || config.feishu || config.qq || config.wecom || config.weixin;
       if (options?.syncGateway && hasOpenClawChange && getOpenClawEngineManager().getStatus().phase === 'running') {
         scheduleImConfigSync();
       }
@@ -3931,25 +3558,6 @@ if (!gotTheLock) {
       return { success: true, ...result };
     } catch (error) {
       return { success: false, connected: false, message: error instanceof Error ? error.message : 'Weixin QR login failed' };
-    }
-  });
-
-  // POPO QR login
-  ipcMain.handle('im:popo:qr-login-start', async () => {
-    try {
-      const result = getIMGatewayManager().popoQrLoginStart();
-      return { success: true, ...result };
-    } catch (error) {
-      return { success: false, message: error instanceof Error ? error.message : 'Failed to start POPO QR login' };
-    }
-  });
-
-  ipcMain.handle('im:popo:qr-login-poll', async (_event, taskToken: string) => {
-    try {
-      const result = await getIMGatewayManager().popoQrLoginPoll(taskToken);
-      return result;
-    } catch (error) {
-      return { success: false, message: error instanceof Error ? error.message : 'POPO QR login poll failed' };
     }
   });
 
@@ -4149,56 +3757,6 @@ if (!gotTheLock) {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to set DingTalk instance config',
-      };
-    }
-  });
-
-  // NIM Multi-Instance handlers
-  ipcMain.handle('im:nim:instance:add', async (_event, name: string) => {
-    try {
-      const instanceId = crypto.randomUUID();
-      const { DEFAULT_NIM_OPENCLAW_CONFIG: defaults } = await import('./im/types');
-      const instance = {
-        ...defaults,
-        instanceId,
-        instanceName: name || 'NIM Bot',
-      };
-      getIMGatewayManager().getIMStore().setNimInstanceConfig(instanceId, instance);
-      return { success: true, instance };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to add NIM instance',
-      };
-    }
-  });
-
-  ipcMain.handle('im:nim:instance:delete', async (_event, instanceId: string) => {
-    try {
-      getIMGatewayManager().getIMStore().deleteNimInstance(instanceId);
-      if (getOpenClawEngineManager().getStatus().phase === 'running') {
-        scheduleImConfigSync();
-      }
-      return { success: true };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to delete NIM instance',
-      };
-    }
-  });
-
-  ipcMain.handle('im:nim:instance:config:set', async (_event, instanceId: string, config: Partial<NimInstanceConfig>, options?: { syncGateway?: boolean }) => {
-    try {
-      getIMGatewayManager().getIMStore().setNimInstanceConfig(instanceId, config);
-      if (options?.syncGateway && getOpenClawEngineManager().getStatus().phase === 'running') {
-        scheduleImConfigSync();
-      }
-      return { success: true };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to set NIM instance config',
       };
     }
   });
@@ -5298,7 +4856,7 @@ if (!gotTheLock) {
       const initLang = getStore().get<{ language?: string }>('app_config')?.language;
       setLanguage(initLang === 'en' ? 'en' : 'zh');
       // 窗口就绪后创建系统托盘
-      createTray(() => mainWindow);
+      createTray(() => mainWindow, () => createPetWindow());
 
       // Start cron polling after the window is ready.
       (async () => {
@@ -5331,11 +4889,91 @@ if (!gotTheLock) {
     });
   };
 
+  const showMainWindow = () => {
+    createWindow();
+  };
+
+  const getPetWindowFromSender = (sender: WebContents): BrowserWindow | null => {
+    const senderWindow = BrowserWindow.fromWebContents(sender);
+    const pet = getPetWindow();
+    if (!senderWindow || senderWindow.isDestroyed() || !pet || pet.isDestroyed()) {
+      return null;
+    }
+    return senderWindow.id === pet.id ? pet : null;
+  };
+
+  const clampPetMenuPosition = (win: BrowserWindow, position?: { x?: number; y?: number }) => {
+    const [width, height] = win.getSize();
+    const x = Math.max(0, Math.min(width, Math.round(Number(position?.x) || 0)));
+    const y = Math.max(0, Math.min(height, Math.round(Number(position?.y) || 0)));
+    return { x, y };
+  };
+
+  const clampPetMoveDelta = (value: number): number => {
+    const rounded = Math.round(Number(value) || 0);
+    return Math.max(-200, Math.min(200, rounded));
+  };
+
+  const showPetContextMenu = (senderWindow: BrowserWindow, position?: { x?: number; y?: number }) => {
+    const menu = Menu.buildFromTemplate([
+      {
+        label: '打开主窗口',
+        click: showMainWindow,
+      },
+      {
+        label: '隐藏桌宠',
+        click: () => senderWindow.hide(),
+      },
+      { type: 'separator' },
+      {
+        label: '退出应用',
+        click: () => app.quit(),
+      },
+    ]);
+
+    menu.popup({
+      window: senderWindow,
+      ...clampPetMenuPosition(senderWindow, position),
+    });
+  };
+
+  ipcMain.handle('pet:openMainWindow', (event) => {
+    if (!getPetWindowFromSender(event.sender)) return;
+    showMainWindow();
+  });
+
+  ipcMain.handle('pet:hide', (event) => {
+    const win = getPetWindowFromSender(event.sender);
+    if (win) {
+      win.hide();
+    }
+  });
+
+  ipcMain.handle('pet:quit', (event) => {
+    if (!getPetWindowFromSender(event.sender)) return;
+    app.quit();
+  });
+
+  ipcMain.handle('pet:showContextMenu', (event, position?: { x?: number; y?: number }) => {
+    const win = getPetWindowFromSender(event.sender);
+    if (!win) return;
+    showPetContextMenu(win, position);
+  });
+
+  ipcMain.on('pet:moveWindowBy', (event, dx: number, dy: number) => {
+    const win = getPetWindowFromSender(event.sender);
+    if (!win) return;
+
+    const [x, y] = win.getPosition();
+    win.setPosition(x + clampPetMoveDelta(dx), y + clampPetMoveDelta(dy));
+  });
+
   let isCleanupFinished = false;
   let isCleanupInProgress = false;
 
   const runAppCleanup = async (): Promise<void> => {
     console.log('[Main] App is quitting, starting cleanup...');
+    destroyPetWindow();
     destroyTray();
     skillManager?.stopWatching();
 
@@ -5348,8 +4986,6 @@ if (!gotTheLock) {
     await stopCoworkOpenAICompatProxy().catch((error) => {
       console.error('Failed to stop OpenAI compatibility proxy:', error);
     });
-
-    stopOpenClawTokenProxy();
 
     // Stop skill services.
     const skillServices = getSkillServiceManager();
@@ -5442,7 +5078,7 @@ if (!gotTheLock) {
     // We don't trigger permission dialogs at startup to avoid annoying users
 
     // Ensure default working directory exists
-    const defaultProjectDir = path.join(os.homedir(), 'lobsterai', 'project');
+    const defaultProjectDir = path.join(os.homedir(), 'alkaka', 'project');
     if (!fs.existsSync(defaultProjectDir)) {
       fs.mkdirSync(defaultProjectDir, { recursive: true });
       console.log('Created default project directory:', defaultProjectDir);
@@ -5488,67 +5124,6 @@ if (!gotTheLock) {
     }
     // Inject store getter into claudeSettings
     setStoreGetter(() => store);
-    // Inject auth getters for lobsterai-server provider routing
-    // The getter proactively triggers a background token refresh when the
-    // accessToken is within 5 minutes of expiry, so that the SDK always
-    // gets a fresh token without blocking.
-    //
-    // refreshOnce() is the single entry-point for all token refresh paths
-    // (proactive, proxy 401/403 retry). It deduplicates concurrent calls via
-    // pendingTokenRefresh so that rolling refresh tokens are never consumed twice.
-    const refreshOnce = async (reason: string): Promise<string | null> => {
-      if (pendingTokenRefresh) {
-        return pendingTokenRefresh;
-      }
-      let resolvedToken: string | null = null;
-      pendingTokenRefresh = (async () => {
-        try {
-          const tokens = getAuthTokens();
-          if (!tokens?.refreshToken) return null;
-          const serverBaseUrl = getServerApiBaseUrl();
-          const resp = await net.fetch(`${serverBaseUrl}/api/auth/refresh`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ refreshToken: tokens.refreshToken }),
-          });
-          if (resp.ok) {
-            const body = await resp.json() as { code: number; data: { accessToken: string; refreshToken?: string } };
-            if (body.code === 0 && body.data) {
-              saveAuthTokens(body.data.accessToken, body.data.refreshToken || tokens.refreshToken);
-              console.log(`[Auth] token refresh succeeded (reason: ${reason})`);
-              resolvedToken = body.data.accessToken;
-              // Token proxy handles fresh tokens dynamically — no need
-              // to restart the gateway on token refresh.
-              syncOpenClawConfig({ reason: `token-refresh:${reason}`, restartGatewayIfRunning: false }).catch((err) => {
-                console.warn('[Auth] post-refresh OpenClaw config sync failed:', err);
-              });
-            }
-          }
-        } catch (err) {
-          console.warn(`[Auth] token refresh failed (reason: ${reason}):`, err);
-        } finally {
-          pendingTokenRefresh = null;
-        }
-        return resolvedToken;
-      })();
-      return pendingTokenRefresh;
-    };
-
-    setAuthTokensGetter(() => {
-      const tokens = getAuthTokens();
-      if (!tokens) return null;
-      // Check if accessToken is close to expiry and trigger background refresh
-      try {
-        const payload = JSON.parse(Buffer.from(tokens.accessToken.split('.')[1], 'base64').toString());
-        const expiresAt = payload.exp * 1000;
-        if (expiresAt - Date.now() < 5 * 60 * 1000) {
-          void refreshOnce('proactive'); // fire-and-forget
-        }
-      } catch { /* unable to parse JWT, return token as-is */ }
-      return tokens;
-    });
-    setServerBaseUrlGetter(() => getServerApiBaseUrl());
-
     // Initialize Copilot token manager and restore token state if available
     initCopilotTokenManager(getStore);
     const storedGithubToken = getStore().get('github_copilot_github_token') as string | undefined;
@@ -5563,30 +5138,6 @@ if (!gotTheLock) {
       });
     }
 
-    registerProxyTokenRefresher('lobsterai-server', async () => {
-      const tokens = getAuthTokens();
-      if (!tokens?.refreshToken) return null;
-      const serverBaseUrl = getServerApiBaseUrl();
-      try {
-        const resp = await net.fetch(`${serverBaseUrl}/api/auth/refresh`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ refreshToken: tokens.refreshToken }),
-        });
-        if (resp.ok) {
-          const body = await resp.json() as { code: number; data: { accessToken: string; refreshToken?: string } };
-          if (body.code === 0 && body.data) {
-            saveAuthTokens(body.data.accessToken, body.data.refreshToken || tokens.refreshToken);
-            console.log('[Auth] proxy token refresh succeeded');
-            return body.data.accessToken;
-          }
-        }
-      } catch (err) {
-        console.warn('[Auth] proxy token refresh failed:', err);
-      }
-      return null;
-    });
-
     registerProxyTokenRefresher('github-copilot', async () => {
       try {
         const { refreshCopilotTokenNow } = await import('./libs/copilotTokenManager');
@@ -5597,21 +5148,6 @@ if (!gotTheLock) {
         return null;
       }
     });
-
-    // Start the lightweight token proxy before OpenClaw config sync so that
-    // lobsterai-server provider can use the proxy URL in its config.
-    profiler.mark('openClawTokenProxy');
-    try {
-      await startOpenClawTokenProxy({
-        getAuthTokens,
-        refreshToken: refreshOnce,
-        getServerBaseUrl: getServerApiBaseUrl,
-      });
-      console.log('[Main] OpenClaw token proxy started');
-    } catch (err) {
-      console.warn('[Main] OpenClaw token proxy failed to start (non-fatal):', err);
-    }
-    profiler.measure('openClawTokenProxy');
 
     // Enterprise config sync — must run before openclawConfigSync
     profiler.mark('enterpriseConfigSync');
@@ -5714,7 +5250,7 @@ if (!gotTheLock) {
       console.error('[OpenClaw] Startup config sync failed:', startupSync.error);
     }
     profiler.measure('syncOpenClawConfig');
-    if (resolveCoworkAgentEngine() === 'openclaw') {
+    if (resolveCoworkAgentEngine() === AgentEngine.OpenClaw) {
       void ensureOpenClawRunningForCowork().then(() => {
         // Start cron polling once the gateway is confirmed running.
         try {
@@ -5736,6 +5272,7 @@ if (!gotTheLock) {
     profiler.mark('createWindow');
     console.log('[Main] initApp: creating window');
     createWindow();
+    createPetWindow();
     profiler.measure('createWindow');
     console.log('[Main] initApp: window created');
 
@@ -5816,23 +5353,6 @@ if (!gotTheLock) {
 
     console.log(profiler.summary());
 
-    // Windows/Linux cold start: parse deep link from process.argv
-    // Always buffer since renderer is not ready yet after createWindow()
-    const coldStartDeepLink = process.argv.find(arg => arg.startsWith('lobsterai://'));
-    if (coldStartDeepLink) {
-      try {
-        const parsed = new URL(coldStartDeepLink);
-        if (parsed.hostname === 'auth' && parsed.pathname === '/callback') {
-          const code = parsed.searchParams.get('code');
-          if (code) {
-            pendingAuthCode = code;
-          }
-        }
-      } catch (e) {
-        console.error('[Main] Failed to parse cold-start deep link:', e);
-      }
-    }
-
     // Auto-reconnect IM bots that were enabled before restart
     getIMGatewayManager().startAllEnabled().catch((error) => {
       console.error('[IM] Failed to auto-start enabled gateways:', error);
@@ -5874,7 +5394,7 @@ if (!gotTheLock) {
       if (currentLanguage !== lastLanguage) {
         lastLanguage = currentLanguage;
         setLanguage(currentLanguage === 'en' ? 'en' : 'zh');
-        updateTrayMenu(() => mainWindow);
+        updateTrayMenu(() => mainWindow, () => createPetWindow());
       }
 
       const previousUseSystemProxy = oldConfig

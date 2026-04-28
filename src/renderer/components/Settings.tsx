@@ -15,7 +15,6 @@ import { decryptSecret, decryptWithPassword, EncryptedPayload, encryptWithPasswo
 import { i18nService, LanguageType } from '../services/i18n';
 import { imService } from '../services/im';
 import { themeService } from '../services/theme';
-import type { RootState } from '../store';
 import { selectCoworkConfig } from '../store/selectors/coworkSelectors';
 import { setAvailableModels } from '../store/slices/modelSlice';
 import type {
@@ -63,7 +62,7 @@ const CUSTOM_PROVIDER_KEYS = [
 ] as const;
 
 const providerKeys = [
-  ...Object.values(ProviderName).filter(id => id !== ProviderName.Custom && id !== ProviderName.LobsteraiServer),
+  ...Object.values(ProviderName).filter(id => id !== ProviderName.Custom),
   ...CUSTOM_PROVIDER_KEYS,
 ] as const;
 
@@ -142,10 +141,10 @@ const normalizeBaseUrl = (baseUrl: string): string => baseUrl.trim().replace(/\/
 const normalizeApiFormat = (value: unknown): 'anthropic' | 'openai' => (
   value === 'openai' ? 'openai' : 'anthropic'
 );
-const ABOUT_CONTACT_EMAIL = 'lobsterai.project@rd.netease.com';
-const ABOUT_USER_MANUAL_URL = 'https://lobsterai.youdao.com/#/docs/lobsterai_user_manual';
-const ABOUT_USER_COMMUNITY_URL = 'https://lobsterai.youdao.com/#/about';
-const ABOUT_SERVICE_TERMS_URL = 'https://c.youdao.com/dict/hardware/lobsterai/lobsterai_service.html';
+const ABOUT_CONTACT_EMAIL = 'alkaka.project@example.com';
+const ABOUT_USER_MANUAL_URL = 'https://github.com/kidrauhl123/Alkaka';
+const ABOUT_USER_COMMUNITY_URL = 'https://github.com/kidrauhl123/Alkaka/discussions';
+const ABOUT_SERVICE_TERMS_URL = 'https://github.com/kidrauhl123/Alkaka';
 
 // MiniMax Portal OAuth constants
 const MINIMAX_OAUTH_CLIENT_ID = '78257093-7e40-4613-99e0-527b14b39113';
@@ -220,7 +219,7 @@ const getFixedApiFormatForProvider = (provider: string): 'anthropic' | 'openai' 
   if (provider === 'openai' || provider === 'stepfun') {
     return 'openai';
   }
-  if (provider === 'youdaozhiyun' || provider === 'github-copilot' || provider === 'qianfan') {
+  if (provider === 'github-copilot' || provider === 'qianfan') {
     return 'openai';
   }
   // Moonshot /anthropic endpoint does not fully implement the Anthropic Messages
@@ -691,13 +690,11 @@ const Settings: React.FC<SettingsProps> = ({ onClose, initialTab, notice, notice
     }
   }, []);
 
-  const authUser = useSelector((state: RootState) => state.auth.user);
-
   const handleCheckUpdate = useCallback(async () => {
     if (updateCheckStatus === 'checking' || !appVersion) return;
     setUpdateCheckStatus('checking');
     try {
-      const result = await window.electron.appUpdate.checkNow({ manual: true, userId: authUser?.yid });
+      const result = await window.electron.appUpdate.checkNow({ manual: true });
       if (!result.success) {
         throw new Error(result.error || 'Update check failed');
       }
@@ -735,7 +732,7 @@ const Settings: React.FC<SettingsProps> = ({ onClose, initialTab, notice, notice
         updateCheckTimerRef.current = null;
       }, 3000);
     }
-  }, [appVersion, authUser, updateCheckStatus, onUpdateFound]);
+  }, [appVersion, updateCheckStatus, onUpdateFound]);
 
   const updateButtonLabel = useMemo(() => {
     if (
@@ -966,17 +963,6 @@ const Settings: React.FC<SettingsProps> = ({ onClose, initialTab, notice, notice
             ...prev,
             minimax: {
               ...prev.minimax,
-              enabled: true,
-              apiKey: config.api.key,
-              baseUrl: config.api.baseUrl
-            }
-          }));
-        } else if (normalizedApiBaseUrl.includes('openapi.youdao.com')) {
-          setActiveProvider('youdaozhiyun');
-          setProviders(prev => ({
-            ...prev,
-            youdaozhiyun: {
-              ...prev.youdaozhiyun,
               enabled: true,
               apiKey: config.api.key,
               baseUrl: config.api.baseUrl
@@ -2758,7 +2744,7 @@ const Settings: React.FC<SettingsProps> = ({ onClose, initialTab, notice, notice
 
             {/* Appearance Section — mode selector + theme gallery */}
             <div>
-              <h4 className="text-sm font-medium mb-3" style={{ color: 'var(--lobster-text-primary)' }}>
+              <h4 className="text-sm font-medium mb-3" style={{ color: 'var(--alkaka-text-primary)' }}>
                 {i18nService.t('appearance')}
               </h4>
 
@@ -2777,8 +2763,8 @@ const Settings: React.FC<SettingsProps> = ({ onClose, initialTab, notice, notice
                       }}
                       className="flex flex-col items-center rounded-xl border-2 p-3 transition-colors cursor-pointer"
                       style={{
-                        borderColor: isSelected ? 'var(--lobster-primary)' : 'var(--lobster-border)',
-                        backgroundColor: isSelected ? 'var(--lobster-primary-muted)' : undefined,
+                        borderColor: isSelected ? 'var(--alkaka-primary)' : 'var(--alkaka-border)',
+                        backgroundColor: isSelected ? 'var(--alkaka-primary-muted)' : undefined,
                       }}
                     >
                       <svg viewBox="0 0 120 80" className="w-full h-auto rounded-md mb-2 overflow-hidden" xmlns="http://www.w3.org/2000/svg">
@@ -2862,7 +2848,7 @@ const Settings: React.FC<SettingsProps> = ({ onClose, initialTab, notice, notice
                           </>
                         )}
                       </svg>
-                      <span className="text-xs font-medium" style={{ color: isSelected ? 'var(--lobster-primary)' : 'var(--lobster-text-primary)' }}>
+                      <span className="text-xs font-medium" style={{ color: isSelected ? 'var(--alkaka-primary)' : 'var(--alkaka-text-primary)' }}>
                         {i18nService.t(mode)}
                       </span>
                     </button>
@@ -2871,7 +2857,7 @@ const Settings: React.FC<SettingsProps> = ({ onClose, initialTab, notice, notice
               </div>
 
               {/* Theme color gallery — all themes */}
-              <h4 className="text-sm font-medium mb-3 mt-5" style={{ color: 'var(--lobster-text-primary)' }}>
+              <h4 className="text-sm font-medium mb-3 mt-5" style={{ color: 'var(--alkaka-text-primary)' }}>
                 {i18nService.t('themeColor')}
               </h4>
               {(() => {
@@ -2892,8 +2878,8 @@ const Settings: React.FC<SettingsProps> = ({ onClose, initialTab, notice, notice
                       }}
                       className="flex flex-col items-center rounded-xl border-2 p-2 transition-colors cursor-pointer"
                       style={{
-                        borderColor: isSelected ? 'var(--lobster-primary)' : 'var(--lobster-border)',
-                        backgroundColor: isSelected ? 'var(--lobster-primary-muted)' : undefined,
+                        borderColor: isSelected ? 'var(--alkaka-primary)' : 'var(--alkaka-border)',
+                        backgroundColor: isSelected ? 'var(--alkaka-primary-muted)' : undefined,
                       }}
                     >
                       <svg viewBox="0 0 80 48" className="w-full h-auto rounded-md mb-1.5 overflow-hidden" xmlns="http://www.w3.org/2000/svg">
@@ -2903,7 +2889,7 @@ const Settings: React.FC<SettingsProps> = ({ onClose, initialTab, notice, notice
                         <circle cx="52" cy="24" r="8" fill={c3} opacity="0.8" />
                         <rect x="32" y="34" width="40" height="4" rx="2" fill={c1} opacity="0.6" />
                       </svg>
-                      <span className="text-[10px] font-medium truncate w-full text-center" style={{ color: isSelected ? 'var(--lobster-primary)' : 'var(--lobster-text-primary)' }}>
+                      <span className="text-[10px] font-medium truncate w-full text-center" style={{ color: isSelected ? 'var(--alkaka-primary)' : 'var(--alkaka-text-primary)' }}>
                         {i18nService.t('theme-name-' + t.meta.id) || t.meta.name}
                       </span>
                     </button>
@@ -4154,7 +4140,7 @@ const Settings: React.FC<SettingsProps> = ({ onClose, initialTab, notice, notice
             {/* Logo & App Name */}
             <img
               src="logo.png"
-              alt="LobsterAI"
+              alt="Alkaka"
               className="w-16 h-16 mb-3 cursor-pointer select-none"
               onClick={() => {
                 const next = logoClickCount + 1;
@@ -4164,7 +4150,7 @@ const Settings: React.FC<SettingsProps> = ({ onClose, initialTab, notice, notice
                 }
               }}
             />
-            <h3 className="text-lg font-semibold text-foreground">LobsterAI</h3>
+            <h3 className="text-lg font-semibold text-foreground">Alkaka</h3>
             <span className="text-xs text-secondary mt-1">v{appVersion}</span>
 
             {/* Info Card */}
@@ -4293,7 +4279,7 @@ const Settings: React.FC<SettingsProps> = ({ onClose, initialTab, notice, notice
                 {i18nService.t('copyrightHolder')}
               </p>
               <p className="mt-1 text-xs text-secondary">
-                Copyright &copy; {new Date().getFullYear()} NetEase Youdao. All Rights Reserved.
+                Copyright &copy; {new Date().getFullYear()} Alkaka. All Rights Reserved.
               </p>
             </div>
           </div>

@@ -3,7 +3,7 @@
 /**
  * IMAP Email CLI
  * Works with any standard IMAP server (Gmail, ProtonMail Bridge, Fastmail, etc.)
- * Supports IMAP ID extension (RFC 2971) for 163.com and other servers
+ * Supports IMAP ID extension (RFC 2971) for compatible servers
  */
 
 const Imap = require('imap');
@@ -12,12 +12,12 @@ const path = require('path');
 const fs = require('fs');
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
-// IMAP ID information for 163.com compatibility
+// IMAP ID information for broad server compatibility
 const IMAP_ID = {
-  name: 'moltbot',
+  name: 'alkaka',
   version: '0.0.1',
-  vendor: 'netease',
-  'support-email': 'kefu@188.com'
+  vendor: 'alkaka',
+  'support-email': 'alkaka.project@example.com'
 };
 
 const DEFAULT_MAILBOX = process.env.IMAP_MAILBOX || 'INBOX';

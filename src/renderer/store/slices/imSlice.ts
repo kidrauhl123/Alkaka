@@ -20,11 +20,6 @@ import type {
   IMGatewayConfig,
   IMGatewayStatus,
   IMSettings,
-  NeteaseBeeChanConfig,
-  NimConfig,
-  NimInstanceConfig,
-  NimMultiInstanceConfig,
-  PopoOpenClawConfig,
   QQInstanceConfig,
   QQMultiInstanceConfig,
   QQOpenClawConfig,
@@ -190,34 +185,6 @@ const imSlice = createSlice({
         i => i.instanceId !== action.payload
       );
     },
-    /** @deprecated Use setNimInstanceConfig instead */
-    setNimConfig: (state, action: PayloadAction<Partial<NimConfig>>) => {
-      const first = state.config.nim.instances[0];
-      if (first) {
-        Object.assign(first, action.payload);
-      }
-    },
-    setNimInstances: (state, action: PayloadAction<NimInstanceConfig[]>) => {
-      state.config.nim = { instances: action.payload };
-    },
-    setNimMultiInstanceConfig: (state, action: PayloadAction<NimMultiInstanceConfig>) => {
-      state.config.nim = action.payload;
-    },
-    setNimInstanceConfig: (state, action: PayloadAction<{ instanceId: string; config: Partial<NimConfig> }>) => {
-      const inst = state.config.nim.instances.find(i => i.instanceId === action.payload.instanceId);
-      if (inst) Object.assign(inst, action.payload.config);
-    },
-    addNimInstance: (state, action: PayloadAction<NimInstanceConfig>) => {
-      state.config.nim.instances.push(action.payload);
-    },
-    removeNimInstance: (state, action: PayloadAction<string>) => {
-      state.config.nim.instances = state.config.nim.instances.filter(
-        i => i.instanceId !== action.payload
-      );
-    },
-    setNeteaseBeeChanConfig: (state, action: PayloadAction<Partial<NeteaseBeeChanConfig>>) => {
-      state.config['netease-bee'] = { ...state.config['netease-bee'], ...action.payload };
-    },
     /** @deprecated Use setWecomInstanceConfig instead */
     setWecomConfig: (state, action: PayloadAction<Partial<WecomOpenClawConfig>>) => {
       // Backward compat: update first instance if exists
@@ -243,9 +210,6 @@ const imSlice = createSlice({
       state.config.wecom.instances = state.config.wecom.instances.filter(
         i => i.instanceId !== action.payload
       );
-    },
-    setPopoConfig: (state, action: PayloadAction<Partial<PopoOpenClawConfig>>) => {
-      state.config.popo = { ...state.config.popo, ...action.payload };
     },
     setWeixinConfig: (state, action: PayloadAction<Partial<WeixinOpenClawConfig>>) => {
       state.config.weixin = { ...state.config.weixin, ...action.payload };
@@ -318,20 +282,12 @@ export const {
   setDiscordInstanceConfig,
   addDiscordInstance,
   removeDiscordInstance,
-  setNimConfig,
-  setNimInstances,
-  setNimMultiInstanceConfig,
-  setNimInstanceConfig,
-  addNimInstance,
-  removeNimInstance,
-  setNeteaseBeeChanConfig,
   setWecomConfig,
   setWecomInstances,
   setWecomMultiInstanceConfig,
   setWecomInstanceConfig,
   addWecomInstance,
   removeWecomInstance,
-  setPopoConfig,
   setWeixinConfig,
   setEmailInstances,
   setEmailMultiInstanceConfig,

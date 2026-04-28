@@ -238,22 +238,6 @@ import type { Platform } from '@shared/platform';
 
 import type { Agent, PresetAgent } from './agent';
 
-interface CreditItem {
-  type: 'subscription' | 'boost' | 'free';
-  label: string;
-  labelEn: string;
-  creditsRemaining: number;
-  expiresAt: string | null;
-}
-
-interface ProfileSummaryData {
-  id: number;
-  nickname: string;
-  avatarUrl: string | null;
-  totalCreditsRemaining: number;
-  creditItems: CreditItem[];
-}
-
 interface IElectronAPI {
   platform: string;
   arch: string;
@@ -470,10 +454,6 @@ interface IElectronAPI {
     weixinQrLoginStart: () => Promise<{ success: boolean; qrDataUrl?: string; message: string; sessionKey?: string }>;
     weixinQrLoginWait: (accountId?: string) => Promise<{ success: boolean; connected: boolean; message: string; accountId?: string }>;
 
-    // POPO QR login
-    popoQrLoginStart: () => Promise<{ success: boolean; qrUrl?: string; taskToken?: string; timeoutMs?: number; message?: string }>;
-    popoQrLoginPoll: (taskToken: string) => Promise<{ success: boolean; appKey?: string; appSecret?: string; aesKey?: string; message: string }>;
-
     listPairingRequests: (platform: string) => Promise<{
       success: boolean;
       requests: Array<{ id: string; code: string; createdAt: string; lastSeenAt: string; meta?: Record<string, string> }>;
@@ -482,27 +462,6 @@ interface IElectronAPI {
     }>;
     approvePairingCode: (platform: string, code: string) => Promise<{ success: boolean; error?: string }>;
     rejectPairingRequest: (platform: string, code: string) => Promise<{ success: boolean; error?: string }>;
-    nimQrLoginStart: () => Promise<{
-      uuid: string;
-      qrValue: string;
-      expiresIn: number;
-      pollInterval: number;
-      credentialKind: 'split';
-      rawData: Record<string, unknown> | null;
-    }>;
-    nimQrLoginPoll: (uuid: string) => Promise<{
-      status: 'pending' | 'success' | 'failed';
-      credentials?: {
-        appKey: string;
-        account: string;
-        token: string;
-      };
-      errorCode?: string;
-      error?: string;
-    }>;
-    addNimInstance: (name: string) => Promise<{ success: boolean; instance?: NimInstanceConfig; error?: string }>;
-    deleteNimInstance: (instanceId: string) => Promise<{ success: boolean; error?: string }>;
-    setNimInstanceConfig: (instanceId: string, config: any, options?: { syncGateway?: boolean }) => Promise<{ success: boolean; error?: string }>;
     addQQInstance: (name: string) => Promise<{ success: boolean; instance?: QQInstanceConfig; error?: string }>;
     deleteQQInstance: (instanceId: string) => Promise<{ success: boolean; error?: string }>;
     setQQInstanceConfig: (instanceId: string, config: any, options?: { syncGateway?: boolean }) => Promise<{ success: boolean; error?: string }>;
@@ -562,34 +521,11 @@ interface IElectronAPI {
     checkCalendar: () => Promise<{ success: boolean; status?: string; error?: string; autoRequested?: boolean }>;
     requestCalendar: () => Promise<{ success: boolean; granted?: boolean; status?: string; error?: string }>;
   };
-  auth: {
-    login: (loginUrl?: string) => Promise<{ success: boolean; error?: string }>;
-    exchange: (code: string) => Promise<{ success: boolean; user?: any; quota?: any; error?: string }>;
-    getUser: () => Promise<{ success: boolean; user?: any; quota?: any }>;
-    getQuota: () => Promise<{ success: boolean; quota?: any }>;
-    logout: () => Promise<{ success: boolean }>;
-    refreshToken: () => Promise<{ success: boolean; accessToken?: string }>;
-    getAccessToken: () => Promise<string | null>;
-    getModels: () => Promise<{ success: boolean; models?: Array<{ modelId: string; modelName: string; provider: string; apiFormat: string }> }>;
-    getProfileSummary: () => Promise<{ success: boolean; data?: ProfileSummaryData }>;
-    onCallback: (callback: (data: { code: string }) => void) => () => void;
-    onQuotaChanged: (callback: () => void) => () => void;
-  }
   enterprise: {
     getConfig: () => Promise<{ ui?: Record<string, 'hide' | 'disable' | 'readonly'>; disableUpdate?: boolean; version: string; name: string } | null>;
   };
   networkStatus: {
     send: (status: 'online' | 'offline') => void;
-  };
-  auth: {
-    login: (loginUrl?: string) => Promise<{ success: boolean; error?: string }>;
-    exchange: (code: string) => Promise<{ success: boolean; user?: import('../store/slices/authSlice').UserProfile; quota?: { planName: string; subscriptionStatus: string; creditsLimit: number; creditsUsed: number; creditsRemaining: number }; error?: string }>;
-    getUser: () => Promise<{ success: boolean; user?: import('../store/slices/authSlice').UserProfile; quota?: { planName: string; subscriptionStatus: string; creditsLimit: number; creditsUsed: number; creditsRemaining: number } }>;
-    getQuota: () => Promise<{ success: boolean; quota?: { planName: string; subscriptionStatus: string; creditsLimit: number; creditsUsed: number; creditsRemaining: number } }>;
-    logout: () => Promise<{ success: boolean }>;
-    refreshToken: () => Promise<{ success: boolean; accessToken?: string }>;
-    getAccessToken: () => Promise<string | null>;
-    onCallback: (callback: (data: { code: string }) => void) => () => void;
   };
   qwen: Record<string, never>;
   feishu: {
@@ -708,10 +644,7 @@ interface IMGatewayConfig {
   telegram: TelegramMultiInstanceConfig;
   qq: QQMultiInstanceConfig;
   discord: DiscordMultiInstanceConfig;
-  nim: NimMultiInstanceConfig;
-  'netease-bee': NeteaseBeeChanConfig;
   wecom: WecomMultiInstanceConfig;
-  popo: PopoOpenClawConfig;
   weixin: WeixinOpenClawConfig;
   email: EmailMultiInstanceConfig;
   settings: IMSettings;
@@ -869,64 +802,6 @@ interface DiscordOpenClawConfig {
   debug: boolean;
 }
 
-interface NimP2pConfig {
-  policy: 'open' | 'allowlist' | 'disabled';
-  allowFrom?: (string | number)[];
-}
-
-interface NimTeamConfig {
-  policy: 'open' | 'allowlist' | 'disabled';
-  allowFrom?: (string | number)[];
-}
-
-interface NimQChatConfig {
-  policy: 'open' | 'allowlist' | 'disabled';
-  allowFrom?: (string | number)[];
-}
-
-interface NimAdvancedConfig {
-  mediaMaxMb?: number;
-  textChunkLimit?: number;
-  debug?: boolean;
-  legacyLogin?: boolean;
-  weblbsUrl?: string;
-  link_web?: string;
-  nos_uploader?: string;
-  nos_downloader_v2?: string;
-  nosSsl?: boolean;
-  nos_accelerate?: string;
-  nos_accelerate_host?: string;
-}
-
-interface NimOpenClawConfig {
-  enabled: boolean;
-  nimToken?: string;
-  appKey: string;
-  account: string;
-  token: string;
-  antispamEnabled?: boolean;
-  p2p?: NimP2pConfig;
-  team?: NimTeamConfig;
-  qchat?: NimQChatConfig;
-  advanced?: NimAdvancedConfig;
-}
-
-interface NimInstanceConfig extends NimOpenClawConfig {
-  instanceId: string;
-  instanceName: string;
-}
-
-interface NimMultiInstanceConfig {
-  instances: NimInstanceConfig[];
-}
-
-interface NeteaseBeeChanConfig {
-  enabled: boolean;
-  clientId: string;
-  secret: string;
-  debug?: boolean;
-}
-
 interface QQConfig {
   enabled: boolean;
   appId: string;
@@ -989,25 +864,6 @@ interface WecomMultiInstanceStatus {
   instances: WecomInstanceStatus[];
 }
 
-interface PopoOpenClawConfig {
-  enabled: boolean;
-  connectionMode: 'websocket' | 'webhook';
-  appKey: string;
-  appSecret: string;
-  token: string;
-  aesKey: string;
-  webhookBaseUrl: string;
-  webhookPath: string;
-  webhookPort: number;
-  dmPolicy: 'open' | 'pairing' | 'allowlist' | 'disabled';
-  allowFrom: string[];
-  groupPolicy: 'open' | 'allowlist' | 'disabled';
-  groupAllowFrom: string[];
-  textChunkLimit: number;
-  richTextChunkLimit: number;
-  debug: boolean;
-}
-
 interface WeixinOpenClawConfig {
   enabled: boolean;
   accountId: string;
@@ -1029,21 +885,9 @@ interface IMGatewayStatus {
   qq: QQMultiInstanceStatus;
   telegram: TelegramMultiInstanceStatus;
   discord: DiscordMultiInstanceStatus;
-  nim: NimMultiInstanceStatus;
-  'netease-bee': NeteaseBeeChanGatewayStatus;
   wecom: WecomMultiInstanceStatus;
-  popo: PopoGatewayStatus;
   weixin: WeixinGatewayStatus;
   email: EmailMultiInstanceStatus;
-}
-
-interface NimInstanceStatus extends NimGatewayStatus {
-  instanceId: string;
-  instanceName: string;
-}
-
-interface NimMultiInstanceStatus {
-  instances: NimInstanceStatus[];
 }
 
 type IMConnectivityVerdict = 'pass' | 'warn' | 'fail';
@@ -1062,7 +906,6 @@ type IMConnectivityCheckCode =
   | 'discord_group_requires_mention'
   | 'telegram_privacy_mode_hint'
   | 'dingtalk_bot_membership_hint'
-  | 'nim_p2p_only_hint'
   | 'qq_guild_mention_hint';
 
 interface IMConnectivityCheck {
@@ -1133,24 +976,6 @@ interface DiscordMultiInstanceStatus {
   instances: DiscordInstanceStatus[];
 }
 
-interface NimGatewayStatus {
-  connected: boolean;
-  startedAt: number | null;
-  lastError: string | null;
-  botAccount: string | null;
-  lastInboundAt: number | null;
-  lastOutboundAt: number | null;
-}
-
-interface NeteaseBeeChanGatewayStatus {
-  connected: boolean;
-  startedAt: number | null;
-  lastError: string | null;
-  botAccount: string | null;
-  lastInboundAt: number | null;
-  lastOutboundAt: number | null;
-}
-
 interface QQGatewayStatus {
   connected: boolean;
   startedAt: number | null;
@@ -1164,14 +989,6 @@ interface WecomGatewayStatus {
   startedAt: number | null;
   lastError: string | null;
   botId: string | null;
-  lastInboundAt: number | null;
-  lastOutboundAt: number | null;
-}
-
-interface PopoGatewayStatus {
-  connected: boolean;
-  startedAt: number | null;
-  lastError: string | null;
   lastInboundAt: number | null;
   lastOutboundAt: number | null;
 }
@@ -1195,9 +1012,18 @@ interface IMMessage {
   timestamp: number;
 }
 
+interface IPetElectronAPI {
+  openMainWindow: () => Promise<void>;
+  hidePet: () => Promise<void>;
+  quitApp: () => Promise<void>;
+  showContextMenu: (position?: { x: number; y: number }) => Promise<void>;
+  moveWindowBy: (dx: number, dy: number) => void;
+}
+
 declare global {
   interface Window {
     electron: IElectronAPI;
+    petElectron?: IPetElectronAPI;
   }
 }
 

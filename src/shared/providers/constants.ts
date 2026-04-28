@@ -21,7 +21,7 @@
 // ═══════════════════════════════════════════════════════
 
 // ─── Provider Name ──────────────────────────────────────────────────────
-// providerName identifies the LobsterAI internal provider (config key).
+// providerName identifies the Alkaka internal provider (config key).
 export const ProviderName = {
   OpenAI: 'openai',
   Gemini: 'gemini',
@@ -30,7 +30,6 @@ export const ProviderName = {
   Moonshot: 'moonshot',
   Zhipu: 'zhipu',
   Minimax: 'minimax',
-  Youdaozhiyun: 'youdaozhiyun',
   Qwen: 'qwen',
   Qianfan: 'qianfan',
   Xiaomi: 'xiaomi',
@@ -40,7 +39,6 @@ export const ProviderName = {
   Ollama: 'ollama',
   LmStudio: 'lm-studio',
   Custom: 'custom',
-  LobsteraiServer: 'lobsterai-server',
   Copilot: 'github-copilot',
 } as const;
 export type ProviderName = typeof ProviderName[keyof typeof ProviderName];
@@ -48,7 +46,6 @@ export type ProviderName = typeof ProviderName[keyof typeof ProviderName];
 // ─── OpenClaw Provider ID ───────────────────────────────────────────────
 // OpenClaw gateway provider identifiers. May differ from ProviderName.
 export const OpenClawProviderId = {
-  LobsteraiServer: 'lobsterai-server',
   Moonshot: 'moonshot',
   Google: 'google',
   Anthropic: 'anthropic',
@@ -59,15 +56,14 @@ export const OpenClawProviderId = {
   Zai: 'zai', // OpenClaw official provider ID for Zhipu/GLM
   Volcengine: 'volcengine',
   Minimax: 'minimax',
-  Youdaozhiyun: 'youdaozhiyun',
   StepFun: 'stepfun',
   Xiaomi: 'xiaomi',
   OpenRouter: 'openrouter',
   Copilot: 'github-copilot',
-  LobsteraiCopilot: 'lobsterai-copilot',
+  AlkakaCopilot: 'alkaka-copilot',
   Ollama: 'ollama',
   LmStudio: 'lm-studio',
-  Lobster: 'lobster',
+  Alkaka: 'alkaka',
 } as const;
 export type OpenClawProviderId = typeof OpenClawProviderId[keyof typeof OpenClawProviderId];
 
@@ -323,28 +319,6 @@ const PROVIDER_DEFINITIONS = [
     ],
   },
   {
-    id: ProviderName.Youdaozhiyun,
-    label: 'Youdao',
-    website: 'https://ai.youdao.com',
-    apiKeyUrl: 'https://ai.youdao.com/console',
-    openClawProviderId: OpenClawProviderId.Youdaozhiyun,
-    defaultBaseUrl: 'https://openapi.youdao.com/llmgateway/api/v1/chat/completions',
-    defaultApiFormat: ApiFormat.OpenAI,
-    codingPlanSupported: false,
-    region: 'china',
-    enPriority: 0,
-    defaultModels: [
-      { id: 'deepseek-chat', name: 'DeepSeek Chat', supportsImage: false },
-      { id: 'deepseek-reasoner', name: 'DeepSeek Reasoner', supportsImage: false },
-      { id: 'deepseek-inhouse-chat', name: 'DeepSeek Chat (\u5b89\u5168)', supportsImage: false },
-      {
-        id: 'deepseek-inhouse-reasoner',
-        name: 'DeepSeek Reasoner (\u5b89\u5168)',
-        supportsImage: false,
-      },
-    ],
-  },
-  {
     id: ProviderName.Qianfan,
     label: 'Qianfan',
     apiKeyUrl: 'https://console.bce.baidu.com/qianfan/ais/console/apiKey',
@@ -430,7 +404,7 @@ const PROVIDER_DEFINITIONS = [
   {
     id: ProviderName.Copilot,
     label: 'GitHub Copilot',
-    openClawProviderId: OpenClawProviderId.LobsteraiCopilot,
+    openClawProviderId: OpenClawProviderId.AlkakaCopilot,
     defaultBaseUrl: 'https://api.individual.githubcopilot.com',
     defaultApiFormat: ApiFormat.OpenAI,
     codingPlanSupported: false,
@@ -616,7 +590,7 @@ class ProviderRegistryImpl {
   }
 
   getOpenClawProviderId(providerName: string): string {
-    return this.idIndex.get(providerName)?.openClawProviderId ?? providerName ?? OpenClawProviderId.Lobster;
+    return this.idIndex.get(providerName)?.openClawProviderId ?? providerName ?? OpenClawProviderId.Alkaka;
   }
 
   /** Provider IDs filtered by region. */
