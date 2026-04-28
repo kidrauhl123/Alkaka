@@ -12,4 +12,10 @@ contextBridge.exposeInMainWorld('petElectron', {
     ipcRenderer.invoke('pet:setQuickInputExpanded', expanded),
   startQuickTask: (options: { prompt: string; title: string }) =>
     ipcRenderer.invoke('pet:quickTask:start', options),
+  getStatus: () => ipcRenderer.invoke('pet:status:current'),
+  onStatusChanged: (listener: (status: unknown) => void) => {
+    const wrapped = (_event: Electron.IpcRendererEvent, status: unknown) => listener(status);
+    ipcRenderer.on('pet:status:changed', wrapped);
+    return () => ipcRenderer.removeListener('pet:status:changed', wrapped);
+  },
 });

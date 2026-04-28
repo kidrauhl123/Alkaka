@@ -89,6 +89,7 @@ import { OpenClawSessionIpc } from './openclawSession/constants';
 import { OpenClawSessionPolicyIpc } from './openclawSessionPolicy/constants';
 import { loadOpenClawSessionPolicyConfig, saveOpenClawSessionPolicyConfig } from './openclawSessionPolicy/store';
 import { createPetWindow, destroyPetWindow, getPetWindow, resizePetWindowForQuickInput } from './petWindow';
+import { createPetStatusSnapshot, type PetStatusSnapshot } from './petStatus';
 import { SkillManager } from './skillManager';
 import { getSkillServiceManager } from './skillServices';
 import { SqliteStore } from './sqliteStore';
@@ -113,6 +114,70 @@ const ENGINE_NOT_READY_CODE = 'ENGINE_NOT_READY';
 const PowerSaveBlockerType = {
   PreventAppSuspension: 'prevent-app-suspension',
 } as const;
+let currentPetStatusSnapshot: PetStatusSnapshot = createPetStatusSnapshot({ phase: 'ready' });
+let activePetSessionId: string | undefined;
+
+const shouldUpdatePetStatusForSession = (sessionId: string): boolean => !activePetSessionId || activePetSessionId === sessionId;
+
+const broadcastPetStatus = (input: PetStatusSnapshot): PetStatusSnapshot => {
+  if (input.sessionId && ['sending', 'working'].includes(input.phase)) {
+    activePetSessionId = input.sessionId;
+  }
+  currentPetStatusSnapshot = createPetStatusSnapshot(input);
+  const pet = getPetWindow();
+  if (pet && !pet.isDestroyed()) {
+    pet.webContents.send('pet:status:changed', currentPetStatusSnapshot);
+  }
+  return currentPetStatusSnapshot;
+};
+
+const getCurrentPetStatusSnapshot = (): PetStatusSnapshot => currentPetStatusSnapshot;
+
+const resolvePetSessionTitle = (sessionId: string): string | undefined => {
+  try {
+    return getCoworkStore().getSession(sessionId)?.title;
+  } catch {
+    return undefined;
+  }
+};
+
+const broadcastPetWorkingStatus = (sessionId: string, title = resolvePetSessionTitle(sessionId)): PetStatusSnapshot => {
+  if (!shouldUpdatePetStatusForSession(sessionId)) return currentPetStatusSnapshot;
+  return broadcastPetStatus({
+    phase: 'working',
+    sessionId,
+    title,
+  });
+};
+
+const broadcastPetNeedsApprovalStatus = (sessionId: string, title = resolvePetSessionTitle(sessionId)): PetStatusSnapshot => {
+  if (!shouldUpdatePetStatusForSession(sessionId)) return currentPetStatusSnapshot;
+  return broadcastPetStatus({
+    phase: 'needs-approval',
+    sessionId,
+    title,
+  });
+};
+
+const broadcastPetDoneStatus = (sessionId: string, title = resolvePetSessionTitle(sessionId)): PetStatusSnapshot => {
+  if (!shouldUpdatePetStatusForSession(sessionId)) return currentPetStatusSnapshot;
+  return broadcastPetStatus({
+    phase: 'done',
+    sessionId,
+    title,
+  });
+};
+
+const broadcastPetErrorStatus = (sessionId: string, error: string, title = resolvePetSessionTitle(sessionId)): PetStatusSnapshot => {
+  if (!shouldUpdatePetStatusForSession(sessionId)) return currentPetStatusSnapshot;
+  return broadcastPetStatus({
+    phase: 'error',
+    sessionId,
+    title,
+    error,
+  });
+};
+
 const MIME_EXTENSION_MAP: Record<string, string> = {
   'image/png': '.png',
   'image/jpeg': '.jpg',
@@ -1237,6 +1302,7 @@ const bindCoworkRuntimeForwarder = (): void => {
   const runtime = getCoworkEngineRouter();
 
   runtime.on('message', (sessionId: string, message: unknown) => {
+    broadcastPetWorkingStatus(sessionId);
     const safeMessage = sanitizeCoworkMessageForIpc(message);
     const windows = BrowserWindow.getAllWindows();
     const messageType = typeof message === 'object' && message && 'type' in message
@@ -1270,6 +1336,7 @@ const bindCoworkRuntimeForwarder = (): void => {
     if (runtime.getSessionConfirmationMode(sessionId) === 'text') {
       return;
     }
+    broadcastPetNeedsApprovalStatus(sessionId);
     const safeRequest = sanitizePermissionRequestForIpc(request);
     const windows = BrowserWindow.getAllWindows();
     windows.forEach((win) => {
@@ -1283,6 +1350,7 @@ const bindCoworkRuntimeForwarder = (): void => {
   });
 
   runtime.on('complete', (sessionId: string, claudeSessionId: string | null) => {
+    broadcastPetDoneStatus(sessionId);
     const windows = BrowserWindow.getAllWindows();
     windows.forEach((win) => {
       if (win.isDestroyed()) return;
@@ -1291,6 +1359,7 @@ const bindCoworkRuntimeForwarder = (): void => {
   });
 
   runtime.on('error', (sessionId: string, error: string) => {
+    broadcastPetErrorStatus(sessionId, error);
     // Mark session as error in store so the .catch() fallback can detect duplicates.
     try { getCoworkStore().updateSession(sessionId, { status: 'error' }); } catch { /* ignore */ }
     const windows = BrowserWindow.getAllWindows();
@@ -2474,6 +2543,7 @@ if (!gotTheLock) {
           const existing = coworkStoreInstance.getSession(session.id);
           if (existing?.status === 'error') return;
           const errorMessage = error instanceof Error ? error.message : String(error);
+          broadcastPetErrorStatus(session.id, errorMessage, title);
           const windows = BrowserWindow.getAllWindows();
           windows.forEach((win) => {
             if (win.isDestroyed()) return;
@@ -2488,6 +2558,7 @@ if (!gotTheLock) {
         ...session,
         status: 'running' as const,
       };
+      broadcastPetWorkingStatus(session.id, title);
       return { success: true, session: sessionWithMessages };
     } catch (error) {
       return {
@@ -2514,13 +2585,26 @@ if (!gotTheLock) {
     const prompt = typeof payload.prompt === 'string' ? payload.prompt.trim().slice(0, 4000) : '';
     const title = typeof payload.title === 'string' ? payload.title.trim().slice(0, 50) : '';
     if (!prompt) {
+      broadcastPetStatus({ phase: 'error', error: '请输入任务内容' });
       return { success: false, error: '请输入任务内容' };
     }
 
-    return startCoworkSession({
-      prompt,
-      title: title || prompt.split('\n')[0].slice(0, 50),
+    const taskTitle = title || prompt.split('\n')[0].slice(0, 50);
+    broadcastPetStatus({
+      phase: 'sending',
+      title: taskTitle,
     });
+
+    const response = await startCoworkSession({
+      prompt,
+      title: taskTitle,
+    });
+
+    if (!response.success) {
+      broadcastPetStatus({ phase: 'error', title: taskTitle, error: response.error || '任务创建失败' });
+    }
+
+    return response;
   });
 
   ipcMain.handle('cowork:session:continue', async (_event, options: {
@@ -4976,6 +5060,11 @@ if (!gotTheLock) {
   ipcMain.handle('pet:setQuickInputExpanded', (event, expanded: boolean) => {
     if (!getPetWindowFromSender(event.sender)) return;
     resizePetWindowForQuickInput(Boolean(expanded));
+  });
+
+  ipcMain.handle('pet:status:current', (event) => {
+    if (!getPetWindowFromSender(event.sender)) return null;
+    return getCurrentPetStatusSnapshot();
   });
 
   ipcMain.on('pet:moveWindowBy', (event, dx: number, dy: number) => {

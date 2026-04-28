@@ -1,7 +1,8 @@
 import type { FormEvent, KeyboardEvent, MouseEvent as ReactMouseEvent } from 'react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 
 import { createQuickTaskPayload } from './petQuickTask';
+import { createInitialPetStatus, reducePetStatus } from './petState';
 
 const DRAG_THRESHOLD_PX = 3;
 
@@ -12,6 +13,7 @@ export default function PetView() {
   const [prompt, setPrompt] = useState('');
   const [status, setStatus] = useState<QuickTaskStatus>('idle');
   const [statusText, setStatusText] = useState('');
+  const [petStatus, dispatchPetStatus] = useReducer(reducePetStatus, undefined, createInitialPetStatus);
   const clickTimerRef = useRef<number | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const petButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -23,6 +25,29 @@ export default function PetView() {
     lastScreenX: 0,
     lastScreenY: 0,
   });
+
+  useEffect(() => {
+    let cancelled = false;
+
+    window.petElectron?.getStatus?.()
+      .then((snapshot) => {
+        if (!cancelled && snapshot) {
+          dispatchPetStatus({ type: 'snapshot', snapshot });
+        }
+      })
+      .catch(() => {
+        // Keep the local idle state if the preload API is not available yet.
+      });
+
+    const unsubscribe = window.petElectron?.onStatusChanged?.((snapshot) => {
+      dispatchPetStatus({ type: 'snapshot', snapshot });
+    });
+
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
+  }, []);
 
   const setQuickInputOpen = useCallback((nextOpen: boolean) => {
     setIsQuickInputOpen(nextOpen);
@@ -109,25 +134,37 @@ export default function PetView() {
     if (!result.ok) {
       setStatus('error');
       setStatusText(result.error);
+      dispatchPetStatus({ type: 'snapshot', snapshot: { phase: 'error', message: '任务遇到问题', error: result.error } });
       return;
     }
 
     setStatus('sending');
     setStatusText('正在交给 Alkaka…');
+    dispatchPetStatus({ type: 'snapshot', snapshot: { phase: 'sending', title: result.payload.title } });
     try {
       const response = await window.petElectron?.startQuickTask?.(result.payload);
       if (response?.success) {
         setPrompt('');
         setStatus('success');
         setStatusText('任务已创建，可去主窗口查看详情');
+        if (response.session?.id) {
+          dispatchPetStatus({
+            type: 'quick-task-started',
+            sessionId: response.session.id,
+            title: response.session.title || result.payload.title,
+          });
+        }
         return;
       }
 
       setStatus('error');
       setStatusText(response?.error || '任务创建失败');
+      dispatchPetStatus({ type: 'snapshot', snapshot: { phase: 'error', error: response?.error || '任务创建失败' } });
     } catch (error) {
+      const message = error instanceof Error ? error.message : '任务创建失败';
       setStatus('error');
-      setStatusText(error instanceof Error ? error.message : '任务创建失败');
+      setStatusText(message);
+      dispatchPetStatus({ type: 'snapshot', snapshot: { phase: 'error', message: '任务遇到问题', error: message } });
     }
   };
 
@@ -146,8 +183,12 @@ export default function PetView() {
   };
 
   return (
-    <div className={`pet-view${isQuickInputOpen ? ' pet-view-expanded' : ''}`} onContextMenu={handleContextMenu}>
+    <div className={`pet-view pet-status--${petStatus.phase}${isQuickInputOpen ? ' pet-view-expanded' : ''}`} onContextMenu={handleContextMenu}>
       <div className="pet-drag-region" />
+      <div className="pet-status-bubble" role="status" aria-live="polite">
+        <span className="pet-status-dot" aria-hidden="true" />
+        <span>{petStatus.message}</span>
+      </div>
       <button
         ref={petButtonRef}
         type="button"

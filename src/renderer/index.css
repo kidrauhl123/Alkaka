@@ -176,6 +176,95 @@ html.pet-window .pet-view {
   object-fit: contain;
   pointer-events: none;
   filter: drop-shadow(0 14px 26px rgba(15, 23, 42, 0.22));
+  transition: filter 180ms ease, transform 180ms ease;
+}
+
+.pet-status-bubble {
+  position: absolute;
+  left: 50%;
+  bottom: 10px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  max-width: 180px;
+  transform: translateX(-50%);
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid rgba(148, 163, 184, 0.26);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.62);
+  color: rgba(248, 250, 252, 0.92);
+  font-size: 12px;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  backdrop-filter: blur(14px);
+  pointer-events: none;
+}
+
+.pet-view-expanded .pet-status-bubble {
+  right: 14px;
+  bottom: 102px;
+  left: auto;
+  transform: none;
+  max-width: 150px;
+}
+
+.pet-status-dot {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: #94a3b8;
+  box-shadow: 0 0 0 4px rgba(148, 163, 184, 0.12);
+}
+
+.pet-status--ready .pet-status-dot,
+.pet-status--done .pet-status-dot {
+  background: #34d399;
+  box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.14);
+}
+
+.pet-status--sending .pet-status-dot,
+.pet-status--working .pet-status-dot {
+  background: #38bdf8;
+  box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.16);
+  animation: pet-status-pulse 1.35s ease-in-out infinite;
+}
+
+.pet-status--needs-approval .pet-status-dot {
+  background: #f59e0b;
+  box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.16);
+}
+
+.pet-status--error .pet-status-dot {
+  background: #fb7185;
+  box-shadow: 0 0 0 4px rgba(251, 113, 133, 0.16);
+}
+
+.pet-status--sending .pet-character img,
+.pet-status--working .pet-character img {
+  filter: drop-shadow(0 14px 26px rgba(15, 23, 42, 0.22)) drop-shadow(0 0 18px rgba(56, 189, 248, 0.42));
+}
+
+.pet-status--needs-approval .pet-character img {
+  filter: drop-shadow(0 14px 26px rgba(15, 23, 42, 0.22)) drop-shadow(0 0 18px rgba(245, 158, 11, 0.42));
+}
+
+.pet-status--error .pet-character img {
+  filter: drop-shadow(0 14px 26px rgba(15, 23, 42, 0.22)) drop-shadow(0 0 18px rgba(251, 113, 133, 0.38));
+}
+
+@keyframes pet-status-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.88;
+  }
+  50% {
+    transform: scale(1.28);
+    opacity: 1;
+  }
 }
 
 .pet-quick-input {

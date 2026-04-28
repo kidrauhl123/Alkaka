@@ -1012,6 +1012,14 @@ interface IMMessage {
   timestamp: number;
 }
 
+interface PetStatusSnapshot {
+  phase: 'idle' | 'ready' | 'sending' | 'working' | 'needs-approval' | 'error' | 'done';
+  sessionId?: string;
+  title?: string;
+  message?: string;
+  error?: string;
+}
+
 interface IPetElectronAPI {
   openMainWindow: () => Promise<void>;
   hidePet: () => Promise<void>;
@@ -1019,7 +1027,9 @@ interface IPetElectronAPI {
   showContextMenu: (position?: { x: number; y: number }) => Promise<void>;
   moveWindowBy: (dx: number, dy: number) => void;
   setQuickInputExpanded: (expanded: boolean) => Promise<void>;
-  startQuickTask: (options: { prompt: string; title: string }) => Promise<{ success: boolean; error?: string; session?: unknown }>;
+  startQuickTask: (options: { prompt: string; title: string }) => Promise<{ success: boolean; error?: string; session?: { id?: string; title?: string } }>;
+  getStatus: () => Promise<PetStatusSnapshot | null>;
+  onStatusChanged: (listener: (status: PetStatusSnapshot) => void) => () => void;
 }
 
 declare global {
