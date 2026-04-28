@@ -6,9 +6,9 @@ import { DEFAULT_SHIMEJI_CHARACTER_PACK } from './shimejiDefaultPack';
 describe('DEFAULT_SHIMEJI_CHARACTER_PACK', () => {
   it('is the accepted egg-no-top-horns atlas with refined natural hands, not the old horned placeholder', () => {
     expect(DEFAULT_SHIMEJI_CHARACTER_PACK).toMatchObject({
-      id: 'alkaka-shimeji-egg-no-horns-v5',
-      displayName: 'Alkaka Shimeji — egg silhouette, natural hands v5',
-      spriteSheetUrl: '/pets/alkaka-shimeji/alkaka-shimeji-atlas-v5.svg',
+      id: 'alkaka-shimeji-egg-no-horns-v6',
+      displayName: 'Alkaka Shimeji — symmetric egg hands v6',
+      spriteSheetUrl: '/pets/alkaka-shimeji/alkaka-shimeji-atlas-v6.svg',
     });
     expect(DEFAULT_SHIMEJI_CHARACTER_PACK.spriteSheetUrl).not.toMatch(/^data:/);
     expect(DEFAULT_SHIMEJI_CHARACTER_PACK.id).not.toContain('placeholder');

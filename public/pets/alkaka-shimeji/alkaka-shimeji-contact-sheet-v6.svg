@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="468" viewBox="0 0 680 468">
+<title>Alkaka Shimeji v6 contact sheet — symmetric hands</title>
+<rect width="100%" height="100%" fill="#fbf8f3"/>
+<text x="18" y="24" font-family="ui-sans-serif, system-ui" font-size="16" font-weight="700" fill="#3f312a">Alkaka Shimeji v6 — symmetric egg hands</text>
+<text x="18" y="44" font-family="ui-sans-serif, system-ui" font-size="11" fill="#6a5548">Keeps the accepted egg body/no horns; removes the right-side line and keeps left/right hands balanced. No hood/helmet fill.</text>
+<g transform="translate(10 58)">
+  <rect width="122" height="122" rx="10" fill="#f7f3ed" stroke="#d6c7b3"/>
+  <svg x="15" y="4" width="92" height="92" viewBox="0 0 128 128">
+    <image href="alkaka-shimeji-atlas-v6.svg" x="0" y="0" width="1664" height="128"/>
+  </svg>
+  <text x="61" y="105" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="8.5" fill="#4a3428">idle / stand-soft</text>
+  <text x="61" y="117" text-anchor="middle" font-family="ui-sans-serif, system-ui" font-size="8" fill="#8f684e">egg, no horns</text>
+</g><g transform="translate(142 58)">
+  <rect width="122" height="122" rx="10" fill="#f7f3ed" stroke="#d6c7b3"/>
+  <svg x="15" y="4" width="92" height="92" viewBox="128 0 128 128">
+    <image href="alkaka-shimeji-atlas-v6.svg" x="0" y="0" width="1664" height="128"/>
+  </svg>
+  <text x="61" y="105" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="8.5" fill="#4a3428">idle / stand-blink</text>
+  <text x="61" y="117" text-anchor="middle" font-family="ui-sans-serif, system-ui" font-size="8" fill="#8f684e">egg, no horns</text>
+</g><g transform="translate(274 58)">
+  <rect width="122" height="122" rx="10" fill="#f7f3ed" stroke="#d6c7b3"/>
+  <svg x="15" y="4" width="92" height="92" viewBox="256 0 128 128">
+    <image href="alkaka-shimeji-atlas-v6.svg" x="0" y="0" width="1664" height="128"/>
+  </svg>
+  <text x="61" y="105" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="8.5" fill="#4a3428">walk / walk-left-step</text>
+  <text x="61" y="117" text-anchor="middle" font-family="ui-sans-serif, system-ui" font-size="8" fill="#8f684e">egg, no horns</text>
+</g><g transform="translate(406 58)">
+  <rect width="122" height="122" rx="10" fill="#f7f3ed" stroke="#d6c7b3"/>
+  <svg x="15" y="4" width="92" height="92" viewBox="384 0 128 128">
+    <image href="alkaka-shimeji-atlas-v6.svg" x="0" y="0" width="1664" height="128"/>
+  </svg>
+  <text x="61" y="105" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="8.5" fill="#4a3428">walk / walk-mid-step</text>
+  <text x="61" y="117" text-anchor="middle" font-family="ui-sans-serif, system-ui" font-size="8" fill="#8f684e">egg, no horns</text>
+</g><g transform="translate(538 58)">
+  <rect width="122" height="122" rx="10" fill="#f7f3ed" stroke="#d6c7b3"/>
+  <svg x="15" y="4" width="92" height="92" viewBox="512 0 128 128">
+    <image href="alkaka-shimeji-atlas-v6.svg" x="0" y="0" width="1664" height="128"/>
+  </svg>
+  <text x="61" y="105" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="8.5" fill="#4a3428">walk / walk-right-step</text>
+  <text x="61" y="117" text-anchor="middle" font-family="ui-sans-serif, system-ui" font-size="8" fill="#8f684e">egg, no horns</text>
+</g><g transform="translate(10 190)">
+  <rect width="122" height="122" rx="10" fill="#f7f3ed" stroke="#d6c7b3"/>
+  <svg x="15" y="4" width="92" height="92" viewBox="640 0 128 128">
+    <image href="alkaka-shimeji-atlas-v6.svg" x="0" y="0" width="1664" height="128"/>
+  </svg>
+  <text x="61" y="105" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="8.5" fill="#4a3428">walk / walk-turn-step</text>
+  <text x="61" y="117" text-anchor="middle" font-family="ui-sans-serif, system-ui" font-size="8" fill="#8f684e">egg, no horns</text>
+</g><g transform="translate(142 190)">
+  <rect width="122" height="122" rx="10" fill="#f7f3ed" stroke="#d6c7b3"/>
+  <svg x="15" y="4" width="92" height="92" viewBox="768 0 128 128">
+    <image href="alkaka-shimeji-atlas-v6.svg" x="0" y="0" width="1664" height="128"/>
+  </svg>
+  <text x="61" y="105" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="8.5" fill="#4a3428">sit / sit-thinking</text>
+  <text x="61" y="117" text-anchor="middle" font-family="ui-sans-serif, system-ui" font-size="8" fill="#8f684e">egg, no horns</text>
+</g><g transform="translate(274 190)">
+  <rect width="122" height="122" rx="10" fill="#f7f3ed" stroke="#d6c7b3"/>
+  <svg x="15" y="4" width="92" height="92" viewBox="896 0 128 128">
+    <image href="alkaka-shimeji-atlas-v6.svg" x="0" y="0" width="1664" height="128"/>
+  </svg>
+  <text x="61" y="105" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="8.5" fill="#4a3428">fall / fall-tumble</text>
+  <text x="61" y="117" text-anchor="middle" font-family="ui-sans-serif, system-ui" font-size="8" fill="#8f684e">egg, no horns</text>
+</g><g transform="translate(406 190)">
+  <rect width="122" height="122" rx="10" fill="#f7f3ed" stroke="#d6c7b3"/>
+  <svg x="15" y="4" width="92" height="92" viewBox="1024 0 128 128">
+    <image href="alkaka-shimeji-atlas-v6.svg" x="0" y="0" width="1664" height="128"/>
+  </svg>
+  <text x="61" y="105" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="8.5" fill="#4a3428">drag / drag-lifted</text>
+  <text x="61" y="117" text-anchor="middle" font-family="ui-sans-serif, system-ui" font-size="8" fill="#8f684e">egg, no horns</text>
+</g><g transform="translate(538 190)">
+  <rect width="122" height="122" rx="10" fill="#f7f3ed" stroke="#d6c7b3"/>
+  <svg x="15" y="4" width="92" height="92" viewBox="1152 0 128 128">
+    <image href="alkaka-shimeji-atlas-v6.svg" x="0" y="0" width="1664" height="128"/>
+  </svg>
+  <text x="61" y="105" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="8.5" fill="#4a3428">climb / climb-reach</text>
+  <text x="61" y="117" text-anchor="middle" font-family="ui-sans-serif, system-ui" font-size="8" fill="#8f684e">egg, no horns</text>
+</g><g transform="translate(10 322)">
+  <rect width="122" height="122" rx="10" fill="#f7f3ed" stroke="#d6c7b3"/>
+  <svg x="15" y="4" width="92" height="92" viewBox="1280 0 128 128">
+    <image href="alkaka-shimeji-atlas-v6.svg" x="0" y="0" width="1664" height="128"/>
+  </svg>
+  <text x="61" y="105" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="8.5" fill="#4a3428">climb / climb-pull</text>
+  <text x="61" y="117" text-anchor="middle" font-family="ui-sans-serif, system-ui" font-size="8" fill="#8f684e">egg, no horns</text>
+</g><g transform="translate(142 322)">
+  <rect width="122" height="122" rx="10" fill="#f7f3ed" stroke="#d6c7b3"/>
+  <svg x="15" y="4" width="92" height="92" viewBox="1408 0 128 128">
+    <image href="alkaka-shimeji-atlas-v6.svg" x="0" y="0" width="1664" height="128"/>
+  </svg>
+  <text x="61" y="105" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="8.5" fill="#4a3428">hang / hang-dangle</text>
+  <text x="61" y="117" text-anchor="middle" font-family="ui-sans-serif, system-ui" font-size="8" fill="#8f684e">egg, no horns</text>
+</g><g transform="translate(274 322)">
+  <rect width="122" height="122" rx="10" fill="#f7f3ed" stroke="#d6c7b3"/>
+  <svg x="15" y="4" width="92" height="92" viewBox="1536 0 128 128">
+    <image href="alkaka-shimeji-atlas-v6.svg" x="0" y="0" width="1664" height="128"/>
+  </svg>
+  <text x="61" y="105" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="8.5" fill="#4a3428">sleep / sleep-curl</text>
+  <text x="61" y="117" text-anchor="middle" font-family="ui-sans-serif, system-ui" font-size="8" fill="#8f684e">egg, no horns</text>
+</g>
+</svg>
