@@ -1,22 +1,94 @@
-import type { FormEvent, KeyboardEvent, MouseEvent as ReactMouseEvent } from 'react';
+import type {
+  CSSProperties,
+  FormEvent,
+  KeyboardEvent,
+  MouseEvent as ReactMouseEvent,
+} from 'react';
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 
+import type { PetAppearance, PetStatus, ShimejiCharacterPack } from '../../types/pet';
+import { resolvePetActionFromStatus } from '../../utils/shimejiBehavior';
+import { advanceShimejiSchedule, createInitialShimejiSchedule } from '../../utils/shimejiScheduler';
+import { DEFAULT_SHIMEJI_CHARACTER_PACK } from '../../utils/shimejiDefaultPack';
+import { createInitialShimejiWorld, tickShimejiWorld } from '../../utils/shimejiWorld';
 import { createQuickTaskPayload } from './petQuickTask';
-import { createInitialPetStatus, reducePetStatus } from './petState';
+import {
+  createInitialPetStatus,
+  reducePetStatus,
+  type PetStatusPhase,
+} from './petState';
+import { ShimejiSprite } from './ShimejiSprite';
 
 const DRAG_THRESHOLD_PX = 3;
+const SHIMEJI_DEMO_MAX_DELTA_MS = 48;
+const SHIMEJI_DEMO_SPRITE_SIZE = 226;
 
 type QuickTaskStatus = 'idle' | 'sending' | 'success' | 'error';
 
-export default function PetView() {
+interface PetViewProps {
+  status?: PetStatus;
+  appearance?: PetAppearance;
+  behaviorDemo?: boolean;
+  autoBehavior?: boolean;
+  characterPack?: ShimejiCharacterPack;
+}
+
+function createViewportWorld() {
+  return createInitialShimejiWorld({
+    width: Math.max(window.innerWidth, SHIMEJI_DEMO_SPRITE_SIZE),
+    height: Math.max(window.innerHeight, SHIMEJI_DEMO_SPRITE_SIZE),
+    spriteSize: SHIMEJI_DEMO_SPRITE_SIZE,
+  });
+}
+
+function getWorldContext(world: ReturnType<typeof createInitialShimejiWorld>) {
+  const maxX = Math.max(0, world.width - world.spriteSize);
+  const floorY = Math.max(0, world.height - world.spriteSize);
+
+  return {
+    atSideEdge: world.x <= 0 || world.x >= maxX,
+    atTopEdge: world.y <= 0,
+    onFloor: Math.abs(world.y - floorY) <= 1,
+  };
+}
+
+function mapPetStatusPhaseToShimejiStatus(phase: PetStatusPhase): PetStatus {
+  switch (phase) {
+    case 'sending':
+      return 'thinking';
+    case 'working':
+      return 'working';
+    case 'needs-approval':
+      return 'waiting_permission';
+    case 'error':
+      return 'error';
+    case 'done':
+    case 'ready':
+    case 'idle':
+    default:
+      return 'idle';
+  }
+}
+
+export default function PetView({
+  status: previewStatus = 'idle',
+  appearance,
+  behaviorDemo = false,
+  autoBehavior = false,
+  characterPack = DEFAULT_SHIMEJI_CHARACTER_PACK,
+}: PetViewProps) {
   const [isQuickInputOpen, setIsQuickInputOpen] = useState(false);
   const [prompt, setPrompt] = useState('');
   const [status, setStatus] = useState<QuickTaskStatus>('idle');
   const [statusText, setStatusText] = useState('');
   const [petStatus, dispatchPetStatus] = useReducer(reducePetStatus, undefined, createInitialPetStatus);
+  const [isDragging, setIsDragging] = useState(false);
+  const [world, setWorld] = useState(() => createViewportWorld());
   const clickTimerRef = useRef<number | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const petButtonRef = useRef<HTMLButtonElement | null>(null);
+  const scheduleRef = useRef(createInitialShimejiSchedule('idle'));
+  const dragPointerRef = useRef({ x: 0, y: 0 });
   const dragStateRef = useRef({
     isDragging: false,
     hasMoved: false,
@@ -25,6 +97,7 @@ export default function PetView() {
     lastScreenX: 0,
     lastScreenY: 0,
   });
+  const visualStatus = behaviorDemo ? previewStatus : mapPetStatusPhaseToShimejiStatus(petStatus.phase);
 
   useEffect(() => {
     let cancelled = false;
@@ -67,12 +140,65 @@ export default function PetView() {
 
   const stopDrag = useCallback(() => {
     dragStateRef.current.isDragging = false;
+    setIsDragging(false);
   }, []);
+
+  useEffect(() => {
+    if (!behaviorDemo) return undefined;
+
+    let animationFrameId = 0;
+    let previousTimestamp = performance.now();
+
+    const animate = (timestamp: number) => {
+      const deltaMs = Math.min(timestamp - previousTimestamp, SHIMEJI_DEMO_MAX_DELTA_MS);
+      previousTimestamp = timestamp;
+
+      setWorld((current) => {
+        let action = resolvePetActionFromStatus(previewStatus);
+
+        if (autoBehavior) {
+          scheduleRef.current = advanceShimejiSchedule(
+            scheduleRef.current,
+            deltaMs,
+            getWorldContext(current)
+          );
+          action = scheduleRef.current.action;
+        }
+
+        return tickShimejiWorld(
+          { ...current, action: isDragging ? 'drag' : action },
+          deltaMs,
+          isDragging
+            ? {
+                dragging: true,
+                pointerX: dragPointerRef.current.x,
+                pointerY: dragPointerRef.current.y,
+              }
+            : undefined
+        );
+      });
+
+      animationFrameId = window.requestAnimationFrame(animate);
+    };
+
+    animationFrameId = window.requestAnimationFrame(animate);
+
+    return () => window.cancelAnimationFrame(animationFrameId);
+  }, [autoBehavior, behaviorDemo, isDragging, previewStatus]);
+
+  useEffect(() => {
+    if (!behaviorDemo) return undefined;
+
+    const handleResize = () => setWorld(createViewportWorld());
+    window.addEventListener('resize', handleResize);
+
+    return () => window.removeEventListener('resize', handleResize);
+  }, [behaviorDemo]);
 
   const handleMouseDown = (event: ReactMouseEvent<HTMLButtonElement>) => {
     if (event.button !== 0) return;
 
-    dragStateRef.current = {
+    const state = {
       isDragging: true,
       hasMoved: false,
       startScreenX: event.screenX,
@@ -81,28 +207,41 @@ export default function PetView() {
       lastScreenY: event.screenY,
     };
 
-    window.addEventListener('mouseup', stopDrag, { once: true });
-  };
+    dragStateRef.current = state;
+    dragPointerRef.current = { x: event.clientX, y: event.clientY };
+    setIsDragging(true);
 
-  const handleMouseMove = (event: ReactMouseEvent<HTMLButtonElement>) => {
-    const state = dragStateRef.current;
-    if (!state.isDragging) return;
+    const handleWindowMouseMove = (moveEvent: MouseEvent) => {
+      if (!state.isDragging) return;
 
-    const dx = event.screenX - state.lastScreenX;
-    const dy = event.screenY - state.lastScreenY;
-    if (dx === 0 && dy === 0) return;
+      const dx = moveEvent.screenX - state.lastScreenX;
+      const dy = moveEvent.screenY - state.lastScreenY;
+      if (dx === 0 && dy === 0) return;
 
-    state.lastScreenX = event.screenX;
-    state.lastScreenY = event.screenY;
+      state.lastScreenX = moveEvent.screenX;
+      state.lastScreenY = moveEvent.screenY;
+      dragPointerRef.current = { x: moveEvent.clientX, y: moveEvent.clientY };
 
-    const totalDx = event.screenX - state.startScreenX;
-    const totalDy = event.screenY - state.startScreenY;
-    if (!state.hasMoved && Math.hypot(totalDx, totalDy) < DRAG_THRESHOLD_PX) {
-      return;
-    }
+      const totalDx = moveEvent.screenX - state.startScreenX;
+      const totalDy = moveEvent.screenY - state.startScreenY;
+      if (!state.hasMoved && Math.hypot(totalDx, totalDy) < DRAG_THRESHOLD_PX) {
+        return;
+      }
 
-    state.hasMoved = true;
-    window.petElectron?.moveWindowBy(dx, dy);
+      state.hasMoved = true;
+      if (!behaviorDemo) {
+        window.petElectron?.moveWindowBy(dx, dy);
+      }
+    };
+
+    const handleWindowMouseUp = () => {
+      window.removeEventListener('mousemove', handleWindowMouseMove);
+      window.removeEventListener('mouseup', handleWindowMouseUp);
+      stopDrag();
+    };
+
+    window.addEventListener('mousemove', handleWindowMouseMove);
+    window.addEventListener('mouseup', handleWindowMouseUp, { once: true });
   };
 
   const handleClick = () => {
@@ -182,6 +321,15 @@ export default function PetView() {
     }
   };
 
+  const characterStyle: CSSProperties | undefined = behaviorDemo
+    ? {
+        left: 0,
+        position: 'absolute',
+        top: 0,
+        transform: `translate3d(${world.x}px, ${world.y}px, 0) scaleX(${world.direction})`,
+      }
+    : undefined;
+
   return (
     <div className={`pet-view pet-status--${petStatus.phase}${isQuickInputOpen ? ' pet-view-expanded' : ''}`} onContextMenu={handleContextMenu}>
       <div className="pet-drag-region" />
@@ -193,15 +341,20 @@ export default function PetView() {
         ref={petButtonRef}
         type="button"
         className="pet-character"
+        data-shimeji-world={behaviorDemo ? 'enabled' : 'disabled'}
+        style={characterStyle}
         title="点击快速提问，双击打开 Alkaka"
         aria-label="Alkaka 桌宠，点击快速提问，双击打开主窗口"
         onClick={handleClick}
         onDoubleClick={handleDoubleClick}
         onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={stopDrag}
       >
-        <img src="logo.png" alt="Alkaka" draggable={false} />
+        <ShimejiSprite
+          appearance={appearance}
+          characterPack={characterPack}
+          status={visualStatus}
+          forcedAction={behaviorDemo ? world.action : isDragging ? 'drag' : undefined}
+        />
       </button>
 
       {isQuickInputOpen ? (

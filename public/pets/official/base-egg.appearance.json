@@ -1,0 +1,20 @@
+{
+  "id": "base-egg",
+  "displayName": "Base Egg",
+  "templateId": "alkaka-base-egg-template",
+  "author": "Alkaka Official",
+  "spriteSheetUrl": "/pets/alkaka-shimeji/alkaka-shimeji-atlas-v4.svg",
+  "tokens": {
+    "bodyColor": "#e8dcc8",
+    "bodyHighlight": "#f3eadb",
+    "outlineColor": "#4a3428",
+    "accentColor": "#9a5a33",
+    "coreColor": "#3b82f6",
+    "eyeColor": "#1f242b",
+    "species": "egg-companion",
+    "accessory": "none",
+    "personality": "calm"
+  },
+  "contactSheetUrl": "/pets/alkaka-shimeji/alkaka-shimeji-contact-sheet-v4.svg",
+  "description": "The blank default Alkaka Shimeji avatar: restrained egg silhouette, no top horns."
+}

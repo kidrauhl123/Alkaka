@@ -1,0 +1,412 @@
+{
+  "id": "alkaka-base-egg-template",
+  "displayName": "Alkaka Base Egg Template",
+  "basePackId": "alkaka-base-egg",
+  "frameSize": 128,
+  "spriteSheetUrl": "/pets/alkaka-shimeji/alkaka-shimeji-atlas-v4.svg",
+  "requiredActions": [
+    "idle",
+    "walk",
+    "sit",
+    "fall",
+    "drag",
+    "climb",
+    "hang",
+    "sleep"
+  ],
+  "tokens": [
+    {
+      "id": "bodyColor",
+      "label": "Body color",
+      "type": "color",
+      "defaultValue": "#e8dcc8"
+    },
+    {
+      "id": "bodyHighlight",
+      "label": "Body highlight",
+      "type": "color",
+      "defaultValue": "#f3eadb"
+    },
+    {
+      "id": "outlineColor",
+      "label": "Outline color",
+      "type": "color",
+      "defaultValue": "#4a3428"
+    },
+    {
+      "id": "accentColor",
+      "label": "Accent color",
+      "type": "color",
+      "defaultValue": "#9a5a33"
+    },
+    {
+      "id": "coreColor",
+      "label": "Core color",
+      "type": "color",
+      "defaultValue": "#3b82f6"
+    },
+    {
+      "id": "eyeColor",
+      "label": "Eye color",
+      "type": "color",
+      "defaultValue": "#1f242b"
+    },
+    {
+      "id": "species",
+      "label": "Species preset",
+      "type": "enum",
+      "defaultValue": "egg-companion",
+      "allowedValues": [
+        "egg-companion",
+        "orb-bot",
+        "soft-shadow",
+        "tail-variant"
+      ]
+    },
+    {
+      "id": "accessory",
+      "label": "Accessory",
+      "type": "enum",
+      "defaultValue": "none",
+      "allowedValues": [
+        "none",
+        "small-scarf",
+        "side-pin",
+        "tiny-backpack",
+        "visor"
+      ]
+    },
+    {
+      "id": "personality",
+      "label": "Personality",
+      "type": "enum",
+      "defaultValue": "calm",
+      "allowedValues": [
+        "calm",
+        "focused",
+        "sleepy",
+        "mischievous"
+      ]
+    }
+  ],
+  "frames": [
+    {
+      "id": "idle-stand-calm",
+      "action": "idle",
+      "pose": "stand-soft",
+      "durationMs": 460,
+      "x": 0,
+      "y": 0,
+      "width": 128,
+      "height": 128,
+      "anchorX": 64,
+      "anchorY": 116,
+      "layers": [
+        "body",
+        "bodyHighlight",
+        "outline",
+        "accent",
+        "tail",
+        "limbs",
+        "eyes",
+        "face",
+        "core",
+        "accessory"
+      ]
+    },
+    {
+      "id": "idle-side-glance",
+      "action": "idle",
+      "pose": "stand-blink",
+      "durationMs": 220,
+      "x": 128,
+      "y": 0,
+      "width": 128,
+      "height": 128,
+      "anchorX": 64,
+      "anchorY": 116,
+      "layers": [
+        "body",
+        "bodyHighlight",
+        "outline",
+        "accent",
+        "tail",
+        "limbs",
+        "eyes",
+        "face",
+        "core",
+        "accessory"
+      ]
+    },
+    {
+      "id": "walk-step-a",
+      "action": "walk",
+      "pose": "walk-left-step",
+      "durationMs": 130,
+      "x": 256,
+      "y": 0,
+      "width": 128,
+      "height": 128,
+      "anchorX": 64,
+      "anchorY": 116,
+      "layers": [
+        "body",
+        "bodyHighlight",
+        "outline",
+        "accent",
+        "tail",
+        "limbs",
+        "eyes",
+        "face",
+        "core",
+        "accessory"
+      ]
+    },
+    {
+      "id": "walk-step-mid",
+      "action": "walk",
+      "pose": "walk-mid-step",
+      "durationMs": 120,
+      "x": 384,
+      "y": 0,
+      "width": 128,
+      "height": 128,
+      "anchorX": 64,
+      "anchorY": 116,
+      "layers": [
+        "body",
+        "bodyHighlight",
+        "outline",
+        "accent",
+        "tail",
+        "limbs",
+        "eyes",
+        "face",
+        "core",
+        "accessory"
+      ]
+    },
+    {
+      "id": "walk-step-b",
+      "action": "walk",
+      "pose": "walk-right-step",
+      "durationMs": 130,
+      "x": 512,
+      "y": 0,
+      "width": 128,
+      "height": 128,
+      "anchorX": 64,
+      "anchorY": 116,
+      "layers": [
+        "body",
+        "bodyHighlight",
+        "outline",
+        "accent",
+        "tail",
+        "limbs",
+        "eyes",
+        "face",
+        "core",
+        "accessory"
+      ]
+    },
+    {
+      "id": "walk-turn",
+      "action": "walk",
+      "pose": "walk-turn-step",
+      "durationMs": 140,
+      "x": 640,
+      "y": 0,
+      "width": 128,
+      "height": 128,
+      "anchorX": 64,
+      "anchorY": 116,
+      "layers": [
+        "body",
+        "bodyHighlight",
+        "outline",
+        "accent",
+        "tail",
+        "limbs",
+        "eyes",
+        "face",
+        "core",
+        "accessory"
+      ]
+    },
+    {
+      "id": "sit-observe",
+      "action": "sit",
+      "pose": "sit-thinking",
+      "durationMs": 420,
+      "x": 768,
+      "y": 0,
+      "width": 128,
+      "height": 128,
+      "anchorX": 64,
+      "anchorY": 116,
+      "layers": [
+        "body",
+        "bodyHighlight",
+        "outline",
+        "accent",
+        "tail",
+        "limbs",
+        "eyes",
+        "face",
+        "core",
+        "accessory"
+      ]
+    },
+    {
+      "id": "fall-recover",
+      "action": "fall",
+      "pose": "fall-tumble",
+      "durationMs": 140,
+      "x": 896,
+      "y": 0,
+      "width": 128,
+      "height": 128,
+      "anchorX": 64,
+      "anchorY": 116,
+      "layers": [
+        "body",
+        "bodyHighlight",
+        "outline",
+        "accent",
+        "tail",
+        "limbs",
+        "eyes",
+        "face",
+        "core",
+        "accessory"
+      ]
+    },
+    {
+      "id": "drag-suspended",
+      "action": "drag",
+      "pose": "drag-lifted",
+      "durationMs": 190,
+      "x": 1024,
+      "y": 0,
+      "width": 128,
+      "height": 128,
+      "anchorX": 64,
+      "anchorY": 116,
+      "layers": [
+        "body",
+        "bodyHighlight",
+        "outline",
+        "accent",
+        "tail",
+        "limbs",
+        "eyes",
+        "face",
+        "core",
+        "accessory"
+      ]
+    },
+    {
+      "id": "climb-reach",
+      "action": "climb",
+      "pose": "climb-reach",
+      "durationMs": 150,
+      "x": 1152,
+      "y": 0,
+      "width": 128,
+      "height": 128,
+      "anchorX": 64,
+      "anchorY": 116,
+      "layers": [
+        "body",
+        "bodyHighlight",
+        "outline",
+        "accent",
+        "tail",
+        "limbs",
+        "eyes",
+        "face",
+        "core",
+        "accessory"
+      ]
+    },
+    {
+      "id": "climb-pull",
+      "action": "climb",
+      "pose": "climb-pull",
+      "durationMs": 150,
+      "x": 1280,
+      "y": 0,
+      "width": 128,
+      "height": 128,
+      "anchorX": 64,
+      "anchorY": 116,
+      "layers": [
+        "body",
+        "bodyHighlight",
+        "outline",
+        "accent",
+        "tail",
+        "limbs",
+        "eyes",
+        "face",
+        "core",
+        "accessory"
+      ]
+    },
+    {
+      "id": "hang-watch",
+      "action": "hang",
+      "pose": "hang-dangle",
+      "durationMs": 360,
+      "x": 1408,
+      "y": 0,
+      "width": 128,
+      "height": 128,
+      "anchorX": 64,
+      "anchorY": 116,
+      "layers": [
+        "body",
+        "bodyHighlight",
+        "outline",
+        "accent",
+        "tail",
+        "limbs",
+        "eyes",
+        "face",
+        "core",
+        "accessory"
+      ]
+    },
+    {
+      "id": "sleep-folded",
+      "action": "sleep",
+      "pose": "sleep-curl",
+      "durationMs": 620,
+      "x": 1536,
+      "y": 0,
+      "width": 128,
+      "height": 128,
+      "anchorX": 64,
+      "anchorY": 116,
+      "layers": [
+        "body",
+        "bodyHighlight",
+        "outline",
+        "accent",
+        "tail",
+        "limbs",
+        "eyes",
+        "face",
+        "core",
+        "accessory"
+      ]
+    }
+  ],
+  "guardrails": [
+    "Use v4 egg-no-top-horns as the blank default avatar.",
+    "Do not add top horn/ear triangles back to the base template.",
+    "Do not fill the removed horns with a hood, helmet, cap, or separate head mass.",
+    "Skins may add controlled accessories or full atlas overrides, but must preserve action readability and anchors."
+  ]
+}
