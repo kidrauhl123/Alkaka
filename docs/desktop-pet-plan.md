@@ -71,7 +71,7 @@
 
 ### 当前 checkpoint（2026-04-29 00:03 CST）
 
-- 当前分支：`main`（commit `7df4d9b`，准备 push 到 `alkaka/main`）。
+- 当前分支：`main`（commit `9aa35df`，准备 push 到 `alkaka/main`）。
 - 最新功能范围：**Phase 3A.4 主窗口轻量化导航**。
 - 已完成到：主窗口默认进入“桌宠主入口模式”的轻量辅助面板；左侧历史/工具栏默认折叠，主窗口首页优先提供“任务历史 / 设置 / 复杂 Cowork / Skills/MCP”等入口；完整 Cowork 输入区默认收起，仅在用户点击“复杂 Cowork”、有 home draft，或外部新建任务快捷事件触发时展开，避免主窗口继续像重型默认工作台。
 - 最新 smoke 证据：
