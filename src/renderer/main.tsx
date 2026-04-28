@@ -28,7 +28,11 @@ try {
   ReactDOM.createRoot(rootElement).render(
     <React.StrictMode>
       {isPetWindow ? (
-        <PetView appearance={parsePetAppearanceParams(searchParams)} status={normalizePetStatus(searchParams.get('petStatus'))} />
+        <PetView
+          appearance={parsePetAppearanceParams(searchParams)}
+          behaviorDemo={searchParams.get('petDemo') === 'shimeji'}
+          status={normalizePetStatus(searchParams.get('petStatus'))}
+        />
       ) : (
         <Provider store={store}>
           <App />
