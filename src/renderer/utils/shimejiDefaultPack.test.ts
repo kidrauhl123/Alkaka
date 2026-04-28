@@ -4,7 +4,17 @@ import { REQUIRED_SHIMEJI_ACTIONS, validateShimejiCharacterPack } from './shimej
 import { DEFAULT_SHIMEJI_CHARACTER_PACK } from './shimejiDefaultPack';
 
 describe('DEFAULT_SHIMEJI_CHARACTER_PACK', () => {
-  it('is a valid manifest-backed placeholder sprite pack for every required action', () => {
+  it('is the accepted v4 egg-no-top-horns atlas, not the old horned placeholder', () => {
+    expect(DEFAULT_SHIMEJI_CHARACTER_PACK).toMatchObject({
+      id: 'alkaka-shimeji-egg-no-horns-v4',
+      displayName: 'Alkaka Shimeji — egg silhouette, no horns v4',
+      spriteSheetUrl: '/pets/alkaka-shimeji/alkaka-shimeji-atlas-v4.svg',
+    });
+    expect(DEFAULT_SHIMEJI_CHARACTER_PACK.spriteSheetUrl).not.toMatch(/^data:/);
+    expect(DEFAULT_SHIMEJI_CHARACTER_PACK.id).not.toContain('placeholder');
+  });
+
+  it('is a valid manifest-backed sprite pack for every required action', () => {
     const result = validateShimejiCharacterPack(DEFAULT_SHIMEJI_CHARACTER_PACK);
 
     expect(result).toEqual({ ok: true, errors: [] });

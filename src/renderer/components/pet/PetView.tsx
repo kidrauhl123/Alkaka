@@ -9,7 +9,7 @@ import { PetBubble } from './PetBubble';
 import { ShimejiSprite } from './ShimejiSprite';
 
 const DRAG_THRESHOLD_PX = 3;
-const SHIMEJI_DEMO_TICK_MS = 120;
+const SHIMEJI_DEMO_MAX_DELTA_MS = 48;
 const SHIMEJI_DEMO_SPRITE_SIZE = 226;
 
 function createViewportWorld() {
@@ -67,14 +67,20 @@ export default function PetView({
   useEffect(() => {
     if (!behaviorDemo) return undefined;
 
-    const intervalId = window.setInterval(() => {
+    let animationFrameId = 0;
+    let previousTimestamp = performance.now();
+
+    const animate = (timestamp: number) => {
+      const deltaMs = Math.min(timestamp - previousTimestamp, SHIMEJI_DEMO_MAX_DELTA_MS);
+      previousTimestamp = timestamp;
+
       setWorld((current) => {
         let action = resolvePetActionFromStatus(status);
 
         if (autoBehavior) {
           scheduleRef.current = advanceShimejiSchedule(
             scheduleRef.current,
-            SHIMEJI_DEMO_TICK_MS,
+            deltaMs,
             getWorldContext(current)
           );
           action = scheduleRef.current.action;
@@ -82,7 +88,7 @@ export default function PetView({
 
         return tickShimejiWorld(
           { ...current, action: isDragging ? 'drag' : action },
-          SHIMEJI_DEMO_TICK_MS,
+          deltaMs,
           isDragging
             ? {
                 dragging: true,
@@ -92,9 +98,13 @@ export default function PetView({
             : undefined
         );
       });
-    }, SHIMEJI_DEMO_TICK_MS);
 
-    return () => window.clearInterval(intervalId);
+      animationFrameId = window.requestAnimationFrame(animate);
+    };
+
+    animationFrameId = window.requestAnimationFrame(animate);
+
+    return () => window.cancelAnimationFrame(animationFrameId);
   }, [autoBehavior, behaviorDemo, isDragging, status]);
 
   useEffect(() => {
@@ -109,7 +119,7 @@ export default function PetView({
   const handleMouseDown = (event: ReactMouseEvent<HTMLButtonElement>) => {
     if (event.button !== 0) return;
 
-    dragStateRef.current = {
+    const state = {
       isDragging: true,
       hasMoved: false,
       startScreenX: event.screenX,
@@ -118,33 +128,41 @@ export default function PetView({
       lastScreenY: event.screenY,
     };
 
-    window.addEventListener('mouseup', stopDrag, { once: true });
+    dragStateRef.current = state;
     dragPointerRef.current = { x: event.clientX, y: event.clientY };
     setIsDragging(true);
-  };
 
-  const handleMouseMove = (event: ReactMouseEvent<HTMLButtonElement>) => {
-    const state = dragStateRef.current;
-    if (!state.isDragging) return;
+    const handleWindowMouseMove = (moveEvent: MouseEvent) => {
+      if (!state.isDragging) return;
 
-    const dx = event.screenX - state.lastScreenX;
-    const dy = event.screenY - state.lastScreenY;
-    if (dx === 0 && dy === 0) return;
+      const dx = moveEvent.screenX - state.lastScreenX;
+      const dy = moveEvent.screenY - state.lastScreenY;
+      if (dx === 0 && dy === 0) return;
 
-    state.lastScreenX = event.screenX;
-    state.lastScreenY = event.screenY;
-    dragPointerRef.current = { x: event.clientX, y: event.clientY };
+      state.lastScreenX = moveEvent.screenX;
+      state.lastScreenY = moveEvent.screenY;
+      dragPointerRef.current = { x: moveEvent.clientX, y: moveEvent.clientY };
 
-    const totalDx = event.screenX - state.startScreenX;
-    const totalDy = event.screenY - state.startScreenY;
-    if (!state.hasMoved && Math.hypot(totalDx, totalDy) < DRAG_THRESHOLD_PX) {
-      return;
-    }
+      const totalDx = moveEvent.screenX - state.startScreenX;
+      const totalDy = moveEvent.screenY - state.startScreenY;
+      if (!state.hasMoved && Math.hypot(totalDx, totalDy) < DRAG_THRESHOLD_PX) {
+        return;
+      }
 
-    state.hasMoved = true;
-    if (!behaviorDemo) {
-      window.petElectron?.moveWindowBy(dx, dy);
-    }
+      state.hasMoved = true;
+      if (!behaviorDemo) {
+        window.petElectron?.moveWindowBy(dx, dy);
+      }
+    };
+
+    const handleWindowMouseUp = () => {
+      window.removeEventListener('mousemove', handleWindowMouseMove);
+      window.removeEventListener('mouseup', handleWindowMouseUp);
+      stopDrag();
+    };
+
+    window.addEventListener('mousemove', handleWindowMouseMove);
+    window.addEventListener('mouseup', handleWindowMouseUp, { once: true });
   };
 
   const handleDoubleClick = () => {
@@ -185,8 +203,6 @@ export default function PetView({
         aria-label="Alkaka 桌宠，双击打开主窗口"
         onDoubleClick={handleDoubleClick}
         onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={stopDrag}
       >
         <ShimejiSprite
           appearance={appearance}

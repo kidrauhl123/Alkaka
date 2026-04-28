@@ -15,7 +15,7 @@ import {
 import { buildSpriteSheetFrameStyle, selectSpriteSheetFrame } from '../../utils/shimejiSpriteSheet';
 import { PetCharacter } from './PetCharacter';
 
-const TICK_MS = 120;
+const TICK_MS = 60;
 
 interface ShimejiSpriteProps {
   appearance?: PetAppearance;
