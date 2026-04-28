@@ -9,6 +9,7 @@ import PetView from './components/pet/PetView';
 import { store } from './store';
 import { parsePetAppearanceParams } from './utils/petAppearance';
 import { normalizePetStatus } from './utils/petStatus';
+import { DEFAULT_SHIMEJI_CHARACTER_PACK } from './utils/shimejiDefaultPack';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -32,6 +33,7 @@ try {
           appearance={parsePetAppearanceParams(searchParams)}
           autoBehavior={searchParams.get('petBehavior') === 'auto'}
           behaviorDemo={searchParams.get('petDemo') === 'shimeji'}
+          characterPack={searchParams.get('petRenderer') === 'sprite' ? DEFAULT_SHIMEJI_CHARACTER_PACK : undefined}
           status={normalizePetStatus(searchParams.get('petStatus'))}
         />
       ) : (

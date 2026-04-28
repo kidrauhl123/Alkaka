@@ -1,7 +1,7 @@
 import type { CSSProperties, MouseEvent as ReactMouseEvent } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import type { PetAppearance, PetStatus } from '../../types/pet';
+import type { PetAppearance, PetStatus, ShimejiCharacterPack } from '../../types/pet';
 import { resolvePetActionFromStatus } from '../../utils/shimejiBehavior';
 import { advanceShimejiSchedule, createInitialShimejiSchedule } from '../../utils/shimejiScheduler';
 import { createInitialShimejiWorld, tickShimejiWorld } from '../../utils/shimejiWorld';
@@ -36,6 +36,7 @@ interface PetViewProps {
   appearance?: PetAppearance;
   behaviorDemo?: boolean;
   autoBehavior?: boolean;
+  characterPack?: ShimejiCharacterPack;
 }
 
 export default function PetView({
@@ -43,6 +44,7 @@ export default function PetView({
   appearance,
   behaviorDemo = false,
   autoBehavior = false,
+  characterPack,
 }: PetViewProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [world, setWorld] = useState(() => createViewportWorld());
@@ -188,6 +190,7 @@ export default function PetView({
       >
         <ShimejiSprite
           appearance={appearance}
+          characterPack={characterPack}
           status={status}
           forcedAction={behaviorDemo ? world.action : isDragging ? 'drag' : undefined}
         />

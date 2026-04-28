@@ -156,6 +156,18 @@ html.pet-window .pet-view {
   justify-content: center;
 }
 
+.pet-shimeji-frame {
+  display: block;
+  flex: 0 0 auto;
+  width: var(--shimeji-frame-width);
+  height: var(--shimeji-frame-height);
+  background-repeat: no-repeat;
+  image-rendering: auto;
+  pointer-events: none;
+  transform: scale(1.55);
+  transform-origin: var(--shimeji-anchor-x) var(--shimeji-anchor-y);
+}
+
 .pet-character-art__ground {
   fill: rgba(75, 54, 48, 0.13);
   filter: blur(0.4px);
