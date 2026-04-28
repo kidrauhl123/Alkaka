@@ -130,8 +130,8 @@ html.pet-window .pet-view {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 172px;
-  height: 172px;
+  width: 196px;
+  height: 196px;
   padding: 0;
   border: 0;
   border-radius: 999px;
@@ -141,12 +141,79 @@ html.pet-window .pet-view {
   app-region: no-drag;
 }
 
-.pet-character img {
-  width: 164px;
-  height: 164px;
-  object-fit: contain;
+.pet-character-art {
+  width: 196px;
+  height: 196px;
+  overflow: visible;
   pointer-events: none;
-  filter: drop-shadow(0 14px 26px rgba(15, 23, 42, 0.22));
+}
+
+.pet-character-art__float {
+  animation: pet-bob 3.6s ease-in-out infinite;
+  transform-origin: 110px 170px;
+}
+
+.pet-character-art__body {
+  fill: url(#pet-body-shine);
+  stroke: color-mix(in srgb, var(--pet-accent) 42%, #ffffff);
+  stroke-width: 4;
+}
+
+.pet-character-art__belly {
+  fill: rgba(255, 255, 255, 0.5);
+}
+
+.pet-character-art__ear,
+.pet-character-art__arm,
+.pet-character-art__foot {
+  fill: var(--pet-body);
+  stroke: color-mix(in srgb, var(--pet-accent) 40%, #ffffff);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 4;
+}
+
+.pet-character-art__inner-ear,
+.pet-character-art__blush {
+  fill: none;
+  stroke: var(--pet-accent);
+  stroke-linecap: round;
+  stroke-width: 5;
+  opacity: 0.55;
+}
+
+.pet-character-art__eye {
+  fill: var(--pet-eye);
+}
+
+.pet-character-art__eye-spark {
+  fill: #ffffff;
+}
+
+.pet-character-art__mouth {
+  fill: none;
+  stroke: var(--pet-eye);
+  stroke-linecap: round;
+  stroke-width: 4;
+}
+
+.pet-character-art__accessory {
+  fill: var(--pet-accent);
+  stroke: color-mix(in srgb, var(--pet-accent) 76%, #111827);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 3;
+}
+
+@keyframes pet-bob {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-1deg);
+  }
+
+  50% {
+    transform: translateY(-7px) rotate(1deg);
+  }
 }
 
 .pet-bubble {

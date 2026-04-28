@@ -8,3 +8,16 @@ export interface PetStatusPresentation {
   tone: PetStatusTone;
   ariaLabel: string;
 }
+
+export type PetSpecies = 'cat' | 'bunny';
+
+export type PetAccessory = 'none' | 'ribbon' | 'bell' | 'star';
+
+export interface PetAppearance {
+  species: PetSpecies;
+  name: string;
+  bodyColor: string;
+  accentColor: string;
+  eyeColor: string;
+  accessory: PetAccessory;
+}

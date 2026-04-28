@@ -1,17 +1,21 @@
+import './index.css';
+
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { Provider } from 'react-redux';
+
 import App from './App';
 import PetView from './components/pet/PetView';
-import './index.css';
 import { store } from './store';
+import { parsePetAppearanceParams } from './utils/petAppearance';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
   throw new Error('Failed to find the root element');
 }
 
-const isPetWindow = new URLSearchParams(window.location.search).get('window') === 'pet';
+const searchParams = new URLSearchParams(window.location.search);
+const isPetWindow = searchParams.get('window') === 'pet';
 
 if (isPetWindow) {
   document.documentElement.classList.add('pet-window');
@@ -23,7 +27,7 @@ try {
   ReactDOM.createRoot(rootElement).render(
     <React.StrictMode>
       {isPetWindow ? (
-        <PetView />
+        <PetView appearance={parsePetAppearanceParams(searchParams)} />
       ) : (
         <Provider store={store}>
           <App />

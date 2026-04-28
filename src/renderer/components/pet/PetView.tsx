@@ -1,16 +1,18 @@
 import type { MouseEvent as ReactMouseEvent } from 'react';
 import { useCallback, useRef } from 'react';
 
-import type { PetStatus } from '../../types/pet';
+import type { PetAppearance, PetStatus } from '../../types/pet';
 import { PetBubble } from './PetBubble';
+import { PetCharacter } from './PetCharacter';
 
 const DRAG_THRESHOLD_PX = 3;
 
 interface PetViewProps {
   status?: PetStatus;
+  appearance?: PetAppearance;
 }
 
-export default function PetView({ status = 'idle' }: PetViewProps) {
+export default function PetView({ status = 'idle', appearance }: PetViewProps) {
   const dragStateRef = useRef({
     isDragging: false,
     hasMoved: false,
@@ -84,7 +86,7 @@ export default function PetView({ status = 'idle' }: PetViewProps) {
         onMouseMove={handleMouseMove}
         onMouseLeave={stopDrag}
       >
-        <img src="logo.png" alt="Alkaka" draggable={false} />
+        <PetCharacter appearance={appearance} />
       </button>
     </div>
   );
