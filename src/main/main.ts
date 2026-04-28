@@ -1,5 +1,5 @@
 import type { WebContents } from 'electron';
-import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, nativeTheme, net, powerMonitor, powerSaveBlocker, protocol, session, shell } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, nativeTheme, net, powerMonitor, powerSaveBlocker, protocol, screen, session, shell } from 'electron';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
@@ -88,7 +88,7 @@ import { McpStore } from './mcpStore';
 import { OpenClawSessionIpc } from './openclawSession/constants';
 import { OpenClawSessionPolicyIpc } from './openclawSessionPolicy/constants';
 import { loadOpenClawSessionPolicyConfig, saveOpenClawSessionPolicyConfig } from './openclawSessionPolicy/store';
-import { createPetWindow, destroyPetWindow, getPetWindow } from './petWindow';
+import { createPetWindow, destroyPetWindow, getPetWindow, resizePetWindowForQuickInput } from './petWindow';
 import { SkillManager } from './skillManager';
 import { getSkillServiceManager } from './skillServices';
 import { SqliteStore } from './sqliteStore';
@@ -2376,7 +2376,7 @@ if (!gotTheLock) {
   });
 
   // Cowork IPC handlers
-  ipcMain.handle('cowork:session:start', async (_event, options: {
+  type CoworkStartSessionOptions = {
     prompt: string;
     cwd?: string;
     systemPrompt?: string;
@@ -2384,7 +2384,9 @@ if (!gotTheLock) {
     activeSkillIds?: string[];
     imageAttachments?: Array<{ name: string; mimeType: string; base64Data: string }>;
     agentId?: string;
-  }) => {
+  };
+
+  const startCoworkSession = async (options: CoworkStartSessionOptions) => {
     try {
       const activeEngine = resolveCoworkAgentEngine();
       if (activeEngine === AgentEngine.OpenClaw) {
@@ -2493,6 +2495,32 @@ if (!gotTheLock) {
         error: error instanceof Error ? error.message : 'Failed to start session',
       };
     }
+  };
+
+  ipcMain.handle('cowork:session:start', async (_event, options: CoworkStartSessionOptions) => {
+    return startCoworkSession(options);
+  });
+
+  ipcMain.handle('pet:quickTask:start', async (event, options: unknown) => {
+    if (!getPetWindowFromSender(event.sender)) {
+      return { success: false, error: 'Invalid quick task sender' };
+    }
+
+    if (!options || typeof options !== 'object') {
+      return { success: false, error: 'Invalid quick task payload' };
+    }
+
+    const payload = options as { prompt?: unknown; title?: unknown };
+    const prompt = typeof payload.prompt === 'string' ? payload.prompt.trim().slice(0, 4000) : '';
+    const title = typeof payload.title === 'string' ? payload.title.trim().slice(0, 50) : '';
+    if (!prompt) {
+      return { success: false, error: '请输入任务内容' };
+    }
+
+    return startCoworkSession({
+      prompt,
+      title: title || prompt.split('\n')[0].slice(0, 50),
+    });
   });
 
   ipcMain.handle('cowork:session:continue', async (_event, options: {
@@ -4945,12 +4973,21 @@ if (!gotTheLock) {
     showPetContextMenu(win, position);
   });
 
+  ipcMain.handle('pet:setQuickInputExpanded', (event, expanded: boolean) => {
+    if (!getPetWindowFromSender(event.sender)) return;
+    resizePetWindowForQuickInput(Boolean(expanded));
+  });
+
   ipcMain.on('pet:moveWindowBy', (event, dx: number, dy: number) => {
     const win = getPetWindowFromSender(event.sender);
     if (!win) return;
 
-    const [x, y] = win.getPosition();
-    win.setPosition(x + clampPetMoveDelta(dx), y + clampPetMoveDelta(dy));
+    const bounds = win.getBounds();
+    const display = screen.getDisplayMatching(bounds);
+    const { x: workX, y: workY, width: workW, height: workH } = display.workArea;
+    const nextX = Math.max(workX, Math.min(bounds.x + clampPetMoveDelta(dx), workX + workW - bounds.width));
+    const nextY = Math.max(workY, Math.min(bounds.y + clampPetMoveDelta(dy), workY + workH - bounds.height));
+    win.setPosition(nextX, nextY);
   });
 
   let isCleanupFinished = false;

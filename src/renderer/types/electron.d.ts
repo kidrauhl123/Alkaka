@@ -1018,6 +1018,8 @@ interface IPetElectronAPI {
   quitApp: () => Promise<void>;
   showContextMenu: (position?: { x: number; y: number }) => Promise<void>;
   moveWindowBy: (dx: number, dy: number) => void;
+  setQuickInputExpanded: (expanded: boolean) => Promise<void>;
+  startQuickTask: (options: { prompt: string; title: string }) => Promise<{ success: boolean; error?: string; session?: unknown }>;
 }
 
 declare global {

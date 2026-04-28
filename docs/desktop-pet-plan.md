@@ -87,6 +87,7 @@
 - **2026-04-28** **Cowork/OpenClaw shutdown smoke**——修复 Electron 退出时 channel polling in-flight `sessions.list` 因 gateway 已断开而误报 `pollChannelSessions: error during polling: gateway not connected` 的噪音；新增回归测试，验证 `openclawRuntimeAdapter.test.ts` 21/21 通过、`npm run compile:electron` 通过、`npm run electron:dev:openclaw` 真实窗口可显示且 gateway `/health` 为 live，退出日志不再出现该 ChannelSync 错误
 - **2026-04-28** **产品方向 pivot：桌宠优先**——确认 OpenClaw / IM → 桌面 UI 映射已有基础实现，下一阶段不再把“主窗口工作台”作为核心形态继续加重，而是重构为“桌宠主入口 + 轻量任务/设置面板”：桌宠承载日常输入、状态、快捷工具，主窗口退为历史、设置、复杂任务详情
 - **2026-04-28** **Phase 3A.1 桌宠默认主入口 checkpoint**——启动顺序改为优先创建桌宠窗口；主窗口改为按需显示，同时保留隐藏 renderer bootstrap 承载现有自动更新/网络恢复监听，避免 pet-only 启动跳过旧启动副作用；托盘菜单改为可懒创建主窗口，并等待主窗口加载完成后再发送“新建任务/设置”IPC；新增 `trayManager.test.ts` 覆盖托盘首次打开主窗口时的 IPC 等待逻辑
+- **2026-04-28** **Phase 3A.2 桌宠快速输入 checkpoint**——桌宠支持点击展开轻量输入面板，面板通过 `petPreload` 暴露的最小 IPC 调用 `pet:quickTask:start`，主进程校验 sender 必须来自桌宠窗口后再创建 OpenClaw/Cowork 任务；展开时桌宠窗口从 `220×260` 临时扩展到 `360×420`，收起后恢复尺寸；新增 `petQuickTask.test.ts` 覆盖空输入、标题生成和 prompt 截断，真实 Electron/OpenClaw smoke 验证 gateway `/health` live 且快速输入面板可见
 
 ---
 
@@ -178,7 +179,7 @@ alkaka-marketplace/
 | # | 任务 | 工作量 | 说明 |
 |---|------|--------|------|
 | 3A.1 | 桌宠默认启动与可见性策略 | ✅ checkpoint | 启动优先显示桌宠；主窗口按需显示，但暂保留隐藏 renderer bootstrap 承载旧启动副作用 |
-| 3A.2 | 桌宠快速输入面板 | 2 天 | 点击/快捷键唤起轻量输入框，直接创建/继续 Agent 任务 |
+| 3A.2 | 桌宠快速输入面板 | ✅ checkpoint | 点击桌宠展开轻量输入框，经安全 preload IPC 直接创建 OpenClaw/Cowork 任务；后续补全快捷键和继续现有任务 |
 | 3A.3 | 桌宠状态机 | 2 天 | idle / listening / thinking / working / needs-approval / error / done |
 | 3A.4 | 主窗口轻量化导航 | 2-3 天 | 把主窗口从“默认首页”改成历史/详情/设置，减少启动压迫感 |
 | 3A.5 | 桌宠 ↔ 主窗口任务跳转 | 1 天 | 桌宠任务可打开对应详情；主窗口详情可回到桌宠状态 |

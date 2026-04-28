@@ -8,4 +8,8 @@ contextBridge.exposeInMainWorld('petElectron', {
     ipcRenderer.invoke('pet:showContextMenu', position),
   moveWindowBy: (dx: number, dy: number) =>
     ipcRenderer.send('pet:moveWindowBy', dx, dy),
+  setQuickInputExpanded: (expanded: boolean) =>
+    ipcRenderer.invoke('pet:setQuickInputExpanded', expanded),
+  startQuickTask: (options: { prompt: string; title: string }) =>
+    ipcRenderer.invoke('pet:quickTask:start', options),
 });
