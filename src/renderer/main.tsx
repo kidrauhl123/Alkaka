@@ -30,6 +30,7 @@ try {
       {isPetWindow ? (
         <PetView
           appearance={parsePetAppearanceParams(searchParams)}
+          autoBehavior={searchParams.get('petBehavior') === 'auto'}
           behaviorDemo={searchParams.get('petDemo') === 'shimeji'}
           status={normalizePetStatus(searchParams.get('petStatus'))}
         />

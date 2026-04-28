@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { PetAppearance, PetStatus } from '../../types/pet';
 import { resolvePetActionFromStatus } from '../../utils/shimejiBehavior';
+import { advanceShimejiSchedule, createInitialShimejiSchedule } from '../../utils/shimejiScheduler';
 import { createInitialShimejiWorld, tickShimejiWorld } from '../../utils/shimejiWorld';
 import { PetBubble } from './PetBubble';
 import { ShimejiSprite } from './ShimejiSprite';
@@ -19,15 +20,33 @@ function createViewportWorld() {
   });
 }
 
+function getWorldContext(world: ReturnType<typeof createInitialShimejiWorld>) {
+  const maxX = Math.max(0, world.width - world.spriteSize);
+  const floorY = Math.max(0, world.height - world.spriteSize);
+
+  return {
+    atSideEdge: world.x <= 0 || world.x >= maxX,
+    atTopEdge: world.y <= 0,
+    onFloor: Math.abs(world.y - floorY) <= 1,
+  };
+}
+
 interface PetViewProps {
   status?: PetStatus;
   appearance?: PetAppearance;
   behaviorDemo?: boolean;
+  autoBehavior?: boolean;
 }
 
-export default function PetView({ status = 'idle', appearance, behaviorDemo = false }: PetViewProps) {
+export default function PetView({
+  status = 'idle',
+  appearance,
+  behaviorDemo = false,
+  autoBehavior = false,
+}: PetViewProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [world, setWorld] = useState(() => createViewportWorld());
+  const scheduleRef = useRef(createInitialShimejiSchedule('idle'));
   const dragPointerRef = useRef({ x: 0, y: 0 });
   const dragStateRef = useRef({
     isDragging: false,
@@ -47,9 +66,20 @@ export default function PetView({ status = 'idle', appearance, behaviorDemo = fa
     if (!behaviorDemo) return undefined;
 
     const intervalId = window.setInterval(() => {
-      setWorld((current) =>
-        tickShimejiWorld(
-          { ...current, action: isDragging ? 'drag' : resolvePetActionFromStatus(status) },
+      setWorld((current) => {
+        let action = resolvePetActionFromStatus(status);
+
+        if (autoBehavior) {
+          scheduleRef.current = advanceShimejiSchedule(
+            scheduleRef.current,
+            SHIMEJI_DEMO_TICK_MS,
+            getWorldContext(current)
+          );
+          action = scheduleRef.current.action;
+        }
+
+        return tickShimejiWorld(
+          { ...current, action: isDragging ? 'drag' : action },
           SHIMEJI_DEMO_TICK_MS,
           isDragging
             ? {
@@ -58,12 +88,12 @@ export default function PetView({ status = 'idle', appearance, behaviorDemo = fa
                 pointerY: dragPointerRef.current.y,
               }
             : undefined
-        )
-      );
+        );
+      });
     }, SHIMEJI_DEMO_TICK_MS);
 
     return () => window.clearInterval(intervalId);
-  }, [behaviorDemo, isDragging, status]);
+  }, [autoBehavior, behaviorDemo, isDragging, status]);
 
   useEffect(() => {
     if (!behaviorDemo) return undefined;
@@ -133,11 +163,17 @@ export default function PetView({ status = 'idle', appearance, behaviorDemo = fa
         transform: `translate3d(${world.x}px, ${world.y}px, 0) scaleX(${world.direction})`,
       }
     : undefined;
+  const bubbleStyle: CSSProperties | undefined = behaviorDemo
+    ? {
+        left: world.x + world.spriteSize / 2,
+        top: Math.max(12, world.y - 104),
+      }
+    : undefined;
 
   return (
     <div className="pet-view" onContextMenu={handleContextMenu}>
       <div className="pet-drag-region" />
-      <PetBubble status={status} />
+      <PetBubble status={status} style={bubbleStyle} />
       <button
         type="button"
         className="pet-character"
