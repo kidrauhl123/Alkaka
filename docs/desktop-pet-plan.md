@@ -86,6 +86,7 @@
 - **2026-04-28** **本机用户验收 smoke**——用户在电脑旁实测 `npm run electron:dev:openclaw` 打开的真实 Electron 产品窗口可正常看到/操作，OpenClaw gateway health 为 live；下一步转入 Cowork / IM / 桌宠入口端到端链路验证
 - **2026-04-28** **Cowork/OpenClaw shutdown smoke**——修复 Electron 退出时 channel polling in-flight `sessions.list` 因 gateway 已断开而误报 `pollChannelSessions: error during polling: gateway not connected` 的噪音；新增回归测试，验证 `openclawRuntimeAdapter.test.ts` 21/21 通过、`npm run compile:electron` 通过、`npm run electron:dev:openclaw` 真实窗口可显示且 gateway `/health` 为 live，退出日志不再出现该 ChannelSync 错误
 - **2026-04-28** **产品方向 pivot：桌宠优先**——确认 OpenClaw / IM → 桌面 UI 映射已有基础实现，下一阶段不再把“主窗口工作台”作为核心形态继续加重，而是重构为“桌宠主入口 + 轻量任务/设置面板”：桌宠承载日常输入、状态、快捷工具，主窗口退为历史、设置、复杂任务详情
+- **2026-04-28** **Phase 3A.1 桌宠默认主入口 checkpoint**——启动顺序改为优先创建桌宠窗口；主窗口改为按需显示，同时保留隐藏 renderer bootstrap 承载现有自动更新/网络恢复监听，避免 pet-only 启动跳过旧启动副作用；托盘菜单改为可懒创建主窗口，并等待主窗口加载完成后再发送“新建任务/设置”IPC；新增 `trayManager.test.ts` 覆盖托盘首次打开主窗口时的 IPC 等待逻辑
 
 ---
 
@@ -176,7 +177,7 @@ alkaka-marketplace/
 
 | # | 任务 | 工作量 | 说明 |
 |---|------|--------|------|
-| 3A.1 | 桌宠默认启动与可见性策略 | 0.5 天 | 应用启动后优先出现桌宠；主窗口可延迟/按需打开 |
+| 3A.1 | 桌宠默认启动与可见性策略 | ✅ checkpoint | 启动优先显示桌宠；主窗口按需显示，但暂保留隐藏 renderer bootstrap 承载旧启动副作用 |
 | 3A.2 | 桌宠快速输入面板 | 2 天 | 点击/快捷键唤起轻量输入框，直接创建/继续 Agent 任务 |
 | 3A.3 | 桌宠状态机 | 2 天 | idle / listening / thinking / working / needs-approval / error / done |
 | 3A.4 | 主窗口轻量化导航 | 2-3 天 | 把主窗口从“默认首页”改成历史/详情/设置，减少启动压迫感 |

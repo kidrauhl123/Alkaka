@@ -11,7 +11,7 @@ import { AppUpdateIpc } from '../shared/appUpdate/constants';
 import { PlatformRegistry } from '../shared/platform';
 import { AgentManager } from './agentManager';
 import { APP_NAME } from './appConstants';
-import { getAutoLaunchEnabled, isAutoLaunched, setAutoLaunchEnabled } from './autoLaunchManager';
+import { getAutoLaunchEnabled, setAutoLaunchEnabled } from './autoLaunchManager';
 import { CoworkStore } from './coworkStore';
 import { setLanguage, t } from './i18n';
 import { IMGatewayConfig, IMGatewayManager } from './im';
@@ -1879,12 +1879,16 @@ if (!gotTheLock) {
   app.on('second-instance', (_event, commandLine, workingDirectory) => {
     console.debug('[Main] second-instance event', { commandLine, workingDirectory });
 
-    // Focus main window
+    // Focus main window when it already exists; otherwise recover the pet entry.
+    // The main window function is declared later, so pet is the safe fallback here.
     if (mainWindow) {
       if (mainWindow.isMinimized()) mainWindow.restore();
       if (!mainWindow.isVisible()) mainWindow.show();
       if (!mainWindow.isFocused()) mainWindow.focus();
+      return;
     }
+
+    createPetWindow();
   });
 
   // IPC 处理程序
@@ -4673,12 +4677,14 @@ if (!gotTheLock) {
   };
 
   // 创建主窗口
-  const createWindow = () => {
-    // 如果窗口已经存在，就不再创建新窗口
+  const createWindow = (showOnReady = true) => {
+    // 如果窗口已经存在，就不再创建新窗口；显式打开时再显示/聚焦。
     if (mainWindow) {
-      if (mainWindow.isMinimized()) mainWindow.restore();
-      if (!mainWindow.isVisible()) mainWindow.show();
-      if (!mainWindow.isFocused()) mainWindow.focus();
+      if (showOnReady) {
+        if (mainWindow.isMinimized()) mainWindow.restore();
+        if (!mainWindow.isVisible()) mainWindow.show();
+        if (!mainWindow.isFocused()) mainWindow.focus();
+      }
       return;
     }
 
@@ -4860,44 +4866,11 @@ if (!gotTheLock) {
     // 等待内容加载完成后再显示窗口
     mainWindow.once('ready-to-show', () => {
       emitWindowState();
-      // 开机自启时不显示窗口，仅显示托盘图标
-      if (!isAutoLaunched()) {
+      // 主窗口现在是按需打开的辅助面板；启动期的隐藏 renderer 只承载
+      // 旧的 renderer-side bootstrap，真正显示需由桌宠/托盘/Dock 显式触发。
+      if (showOnReady) {
         mainWindow?.show();
       }
-      // Initialize main-process i18n from stored language before creating UI elements.
-      const initLang = getStore().get<{ language?: string }>('app_config')?.language;
-      setLanguage(initLang === 'en' ? 'en' : 'zh');
-      // 窗口就绪后创建系统托盘
-      createTray(() => mainWindow, () => createPetWindow());
-
-      // Start cron polling after the window is ready.
-      (async () => {
-        try {
-          getCronJobService().startPolling();
-        } catch (err) {
-          console.warn('[Main] CronJobService not available yet, will start polling when OpenClaw is ready:', err);
-        }
-
-        // One-time migration: move tasks from legacy SQLite tables to OpenClaw gateway.
-        migrateScheduledTasksToOpenclaw({
-          db: getStore().getDatabase(),
-          getKv: (key) => getStore().get(key),
-          setKv: (key, value) => getStore().set(key, value),
-          cronJobService: getCronJobService(),
-        }).catch((err) => {
-          console.warn('[Main] Scheduled tasks migration failed:', err);
-        });
-
-        // One-time migration: copy legacy run history to OpenClaw cron/runs/ JSONL files.
-        migrateScheduledTaskRunsToOpenclaw({
-          db: getStore().getDatabase(),
-          getKv: (key) => getStore().get(key),
-          setKv: (key, value) => getStore().set(key, value),
-          openclawStateDir: getOpenClawEngineManager().getStateDir(),
-        }).catch((err) => {
-          console.warn('[Main] Scheduled task run history migration failed:', err);
-        });
-      })();
     });
   };
 
@@ -5275,18 +5248,61 @@ if (!gotTheLock) {
       });
     }
 
-    // ── Step 1: Show window ASAP ──────────────────────────────────────
-    // CSP + createWindow moved before skill initialisation so the user
-    // sees the loading UI within ~1-2 s instead of waiting for the full
-    // skill bootstrap (~6-8 s previously).
+    // ── Step 1: Show pet ASAP ────────────────────────────────────────
+    // Pet-first UX: the desktop pet is the default visible entry. The main
+    // window is now an on-demand auxiliary panel opened from pet/tray/Dock.
     setContentSecurityPolicy();
 
-    profiler.mark('createWindow');
-    console.log('[Main] initApp: creating window');
-    createWindow();
+    const getOrCreateMainWindow = () => {
+      createWindow();
+      return mainWindow;
+    };
+
+    // Initialize main-process i18n and tray independently of main-window
+    // readiness so pet-only startup still has a restore path and localized menu.
+    const initLang = getStore().get<{ language?: string }>('app_config')?.language;
+    setLanguage(initLang === 'en' ? 'en' : 'zh');
+    createTray(getOrCreateMainWindow, () => createPetWindow());
+
+    // Keep scheduled-task startup/migrations window-independent; these used to
+    // be tied to mainWindow.ready-to-show, which would no longer run at startup.
+    try {
+      getCronJobService().startPolling();
+    } catch (err) {
+      console.warn('[Main] CronJobService not available yet, will start polling when OpenClaw is ready:', err);
+    }
+
+    migrateScheduledTasksToOpenclaw({
+      db: getStore().getDatabase(),
+      getKv: (key) => getStore().get(key),
+      setKv: (key, value) => getStore().set(key, value),
+      cronJobService: getCronJobService(),
+    }).catch((err) => {
+      console.warn('[Main] Scheduled tasks migration failed:', err);
+    });
+
+    migrateScheduledTaskRunsToOpenclaw({
+      db: getStore().getDatabase(),
+      getKv: (key) => getStore().get(key),
+      setKv: (key, value) => getStore().set(key, value),
+      openclawStateDir: getOpenClawEngineManager().getStateDir(),
+    }).catch((err) => {
+      console.warn('[Main] Scheduled task run history migration failed:', err);
+    });
+
+    profiler.mark('createPetWindow');
+    console.log('[Main] initApp: creating pet window');
     createPetWindow();
-    profiler.measure('createWindow');
-    console.log('[Main] initApp: window created');
+    profiler.measure('createPetWindow');
+    console.log('[Main] initApp: pet window created');
+
+    // Keep the legacy renderer bootstrap alive without showing the heavy main
+    // window. Some startup listeners still live in App.tsx (auto-update and
+    // network-change recovery); later phases can migrate those into main.
+    profiler.mark('createHiddenMainWindow');
+    console.log('[Main] initApp: creating hidden main window bootstrap');
+    createWindow(false);
+    profiler.measure('createHiddenMainWindow');
 
     // ── Step 2-4: Skill bootstrap (non-blocking) ────────────────────
     console.log('[Main] initApp: starting skill bootstrap');
@@ -5406,7 +5422,7 @@ if (!gotTheLock) {
       if (currentLanguage !== lastLanguage) {
         lastLanguage = currentLanguage;
         setLanguage(currentLanguage === 'en' ? 'en' : 'zh');
-        updateTrayMenu(() => mainWindow, () => createPetWindow());
+        updateTrayMenu(getOrCreateMainWindow, () => createPetWindow());
       }
 
       const previousUseSystemProxy = oldConfig
@@ -5445,9 +5461,10 @@ if (!gotTheLock) {
         if (!mainWindow.isFocused()) mainWindow.focus();
         return;
       }
-      if (BrowserWindow.getAllWindows().length === 0) {
-        createWindow();
-      }
+
+      // In pet-first mode the pet window may already exist, so Dock activation
+      // should be treated as an explicit request for the auxiliary main window.
+      createWindow();
     });
   };
 

@@ -35,6 +35,26 @@ function getLabels(): { showWindow: string; newTask: string; settings: string; q
   };
 }
 
+function focusWindow(win: BrowserWindow | null): BrowserWindow | null {
+  if (!win || win.isDestroyed()) return null;
+  if (!win.isVisible()) win.show();
+  if (!win.isFocused()) win.focus();
+  return win;
+}
+
+function sendWhenReady(win: BrowserWindow, channel: string): void {
+  if (win.webContents.isLoadingMainFrame()) {
+    win.webContents.once('did-finish-load', () => {
+      if (!win.isDestroyed()) {
+        win.webContents.send(channel);
+      }
+    });
+    return;
+  }
+
+  win.webContents.send(channel);
+}
+
 function buildContextMenu(
   getWindow: () => BrowserWindow | null,
   getPetWindow?: () => BrowserWindow | null
@@ -45,33 +65,23 @@ function buildContextMenu(
     {
       label: labels.showWindow,
       click: () => {
-        const win = getWindow();
-        if (win && !win.isDestroyed()) {
-          if (!win.isVisible()) win.show();
-          if (!win.isFocused()) win.focus();
-        }
+        focusWindow(getWindow());
       },
     },
     ...(getPetWindow
       ? [{
           label: '显示桌宠',
           click: () => {
-            const win = getPetWindow();
-            if (win && !win.isDestroyed()) {
-              if (!win.isVisible()) win.show();
-              if (!win.isFocused()) win.focus();
-            }
+            focusWindow(getPetWindow());
           },
         }]
       : []),
     {
       label: labels.newTask,
       click: () => {
-        const win = getWindow();
-        if (win && !win.isDestroyed()) {
-          if (!win.isVisible()) win.show();
-          if (!win.isFocused()) win.focus();
-          win.webContents.send('app:newTask');
+        const win = focusWindow(getWindow());
+        if (win) {
+          sendWhenReady(win, 'app:newTask');
         }
       },
     },
@@ -79,11 +89,9 @@ function buildContextMenu(
     {
       label: labels.settings,
       click: () => {
-        const win = getWindow();
-        if (win && !win.isDestroyed()) {
-          if (!win.isVisible()) win.show();
-          if (!win.isFocused()) win.focus();
-          win.webContents.send('app:openSettings');
+        const win = focusWindow(getWindow());
+        if (win) {
+          sendWhenReady(win, 'app:openSettings');
         }
       },
     },
@@ -123,10 +131,7 @@ export function createTray(
   contextMenu = buildContextMenu(getWindow, getPetWindow);
 
   clickHandler = () => {
-    const win = getWindow();
-    if (!win || win.isDestroyed()) return;
-    if (!win.isVisible()) win.show();
-    if (!win.isFocused()) win.focus();
+    focusWindow(getWindow());
   };
 
   rightClickHandler = () => {
