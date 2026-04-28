@@ -56,7 +56,7 @@ export class McpBridgeServer {
   constructor(mcpManager: McpServerManager, secret: string) {
     this.mcpManager = mcpManager;
     this.secret = secret;
-    log('INFO', `McpBridgeServer created, secret prefix="${secret.slice(0, 8)}…"`);
+    log('INFO', 'McpBridgeServer created, secret=[REDACTED]');
   }
 
   get port(): number | null {

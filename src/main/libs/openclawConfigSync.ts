@@ -1836,10 +1836,7 @@ export class OpenClawConfigSync {
     }
 
     const D = '[GW-RESTART-DIAG]';
-    const keysSummary = Object.keys(env).sort().map(k => {
-      const v = env[k];
-      return `${k}=${v.length > 16 ? v.slice(0, 12) + '…(' + v.length + ')' : v}`;
-    });
+    const keysSummary = Object.keys(env).sort().map(k => `${k}=[REDACTED]`);
     console.log(`${D} collectSecretEnvVars: ${Object.keys(env).length} keys: ${keysSummary.join(', ')}`);
 
     return env;

@@ -527,7 +527,8 @@ export class OpenClawEngineManager extends EventEmitter {
     }
 
     const forkArgs = ['gateway', '--bind', 'loopback', '--port', String(port), '--token', token, '--verbose'];
-    console.log(`[OpenClaw] forking gateway: entry=${openclawEntry}, cwd=${runtime.root}, port=${port}, args=${JSON.stringify(forkArgs)}`);
+    const safeForkArgs = ['gateway', '--bind', 'loopback', '--port', String(port), '--token', '[REDACTED]', '--verbose'];
+    console.log(`[OpenClaw] forking gateway: entry=${openclawEntry}, cwd=${runtime.root}, port=${port}, args=${JSON.stringify(safeForkArgs)}`);
 
     // On Windows, use child_process.spawn with ELECTRON_RUN_AS_NODE=1 instead of
     // utilityProcess.fork(). Benchmark shows utilityProcess has ~5x overhead for

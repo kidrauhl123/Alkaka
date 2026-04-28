@@ -65,8 +65,13 @@ need_cmd() {
 
 need_cmd node
 need_cmd npm
-need_cmd pnpm
 need_cmd tar
+
+# Enable Corepack before checking pnpm. Fresh Node installations often ship
+# Corepack but do not create the pnpm shim until `corepack enable` runs, so
+# checking `command -v pnpm` first makes the runtime build fail on clean hosts.
+corepack enable >/dev/null 2>&1 || true
+need_cmd pnpm
 
 if [[ ! -d "$OPENCLAW_SRC" ]]; then
   echo "OPENCLAW_SRC does not exist: $OPENCLAW_SRC" >&2
@@ -94,8 +99,19 @@ READVER
 # Compute a fingerprint of version-specific patch files so the build is invalidated when patches change.
 PATCHES_DIR="$ELECTRON_ROOT/scripts/patches/$DESIRED_VERSION"
 PATCH_HASH=""
+hash_stdin_sha256() {
+  if command -v sha256sum >/dev/null 2>&1; then
+    sha256sum | cut -d' ' -f1
+  elif command -v shasum >/dev/null 2>&1; then
+    shasum -a 256 | cut -d' ' -f1
+  else
+    echo "Missing required command: sha256sum or shasum" >&2
+    exit 1
+  fi
+}
+
 if [[ -d "$PATCHES_DIR" ]]; then
-  PATCH_HASH=$(cat "$PATCHES_DIR"/*.patch 2>/dev/null | sha256sum | cut -d' ' -f1)
+  PATCH_HASH=$(cat "$PATCHES_DIR"/*.patch 2>/dev/null | hash_stdin_sha256)
 fi
 
 if [[ -n "$DESIRED_VERSION" && "${OPENCLAW_FORCE_BUILD:-}" != "1" ]]; then

@@ -1157,9 +1157,7 @@ const syncOpenClawConfig = async (
     if (added.length) console.log(`${D}   added: ${added.join(', ')}`);
     if (removed.length) console.log(`${D}   removed: ${removed.join(', ')}`);
     for (const k of modified) {
-      const p = (prevSecretEnvVars[k] || '').slice(0, 12);
-      const n = (nextSecretEnvVars[k] || '').slice(0, 12);
-      console.log(`${D}   modified: ${k} prev=${p}… next=${n}…`);
+      console.log(`${D}   modified: ${k} prev=[REDACTED] next=[REDACTED]`);
     }
   } else {
     console.log(`${D} secretEnvVars unchanged (${Object.keys(nextSecretEnvVars).length} keys)`);
