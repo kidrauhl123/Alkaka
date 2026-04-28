@@ -40,8 +40,8 @@ Alkaka 桌宠要从“应用 logo / mascot”变成 true Shimeji-style desktop c
 
 ### Silhouette Rules
 
-- The top of the head must stay smooth: no horns, no horn-like ears, no crown-like protrusions.
-- Low side panels or side fins are allowed only if they do not read as top horns.
+- The top of the egg body must stay open/smooth: remove the two triangular horn/ear shapes, but do not replace them with a filled hood, helmet, cap, or separate head mass.
+- Keep the original restrained egg silhouette as the baseline.
 - Tail/back accent should create asymmetry so walking direction is readable.
 - Chest gem should remain visible in idle/walk/sit, but may rotate/disappear in fall/hang.
 - Drag/hang/fall can break upright silhouette; these are required for Shimeji authenticity.
@@ -92,6 +92,9 @@ public/pets/alkaka-shimeji/alkaka-shimeji-concept-v2.json
 public/pets/alkaka-shimeji/alkaka-shimeji-atlas-v3.svg
 public/pets/alkaka-shimeji/alkaka-shimeji-contact-sheet-v3.svg
 public/pets/alkaka-shimeji/alkaka-shimeji-concept-v3.json
+public/pets/alkaka-shimeji/alkaka-shimeji-atlas-v4.svg
+public/pets/alkaka-shimeji/alkaka-shimeji-contact-sheet-v4.svg
+public/pets/alkaka-shimeji/alkaka-shimeji-concept-v4.json
 docs/shimeji-template-customization-plan.md
 ```
 
@@ -107,7 +110,9 @@ This is still concept art, not final polished production PNG. It exists to give 
 
 `v2` is the preferred direction after user feedback: less babyish / less overtly moe, with muted colors, smaller calmer eyes, no cheek blush, and a more competent desktop-companion personality.
 
-`v3` supersedes v2 for silhouette: it removes the disliked two top horn/ear-like shapes and switches to a smooth hooded head. It also starts the template-ready direction by recording `templateTokens` in the concept manifest and adding `docs/shimeji-template-customization-plan.md`.
+`v3` explored a smooth hooded head, but that was rejected because it changed the original egg-like character too much.
+
+`v4` is now the preferred silhouette correction: it keeps the original restrained egg-shaped v2 body and removes only the two disliked top horn/ear triangles. Do not fill the top into a hood/helmet/head cap. This version still records `templateTokens` so it can seed future user-customizable Shimeji templates.
 
 ### Contact Sheet
 

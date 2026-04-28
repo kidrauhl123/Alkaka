@@ -12,10 +12,11 @@
 
 ## Design Direction
 
-The current preferred Alkaka direction is v3:
+The current preferred Alkaka direction is v4:
 
-- no top horns / no top ear-like protrusions;
-- smooth hood-like head silhouette;
+- keep the original restrained egg-like body silhouette;
+- remove only the two top horn/ear triangles;
+- do not fill the top into a hood, helmet, cap, or separate head shape;
 - restrained warm-gray palette;
 - smaller calmer eyes;
 - no cheek blush;
@@ -145,10 +146,10 @@ The manifest remains compatible with `ShimejiCharacterPack`, so the pet runtime 
 Avoid letting `species` randomly rewrite the whole pose set. That causes inconsistent animation. Instead, define species as a controlled silhouette preset:
 
 ```text
-hooded-companion  -> smooth hood, no horns, side panels only
-cat-like          -> optional low rounded ears, not top horns
-bot-orb           -> smooth head, no tail, core emphasized
-fox-like          -> tail shape changes, head stays hornless unless selected
+hooded-companion  -> original egg body, top horn triangles removed, no hood fill
+cat-like          -> optional low rounded side hints, not top horns
+bot-orb           -> smooth egg body, no tail, core emphasized
+fox-like          -> tail shape changes, body stays egg-like unless selected
 ```
 
 Each species preset maps only a few layers:
@@ -266,12 +267,12 @@ src/renderer/index.css
 
 ## Immediate v3 Asset Deliverable
 
-The current visual-only v3 deliverable removes the disliked top horn/ear shapes and adds template metadata in the concept manifest:
+The current visual-only v4 deliverable fixes the silhouette correction narrowly: it keeps the v2 egg-shaped character and removes only the disliked top horn/ear triangles. It does **not** fill the head into a hood/helmet shape:
 
 ```text
-public/pets/alkaka-shimeji/alkaka-shimeji-atlas-v3.svg
-public/pets/alkaka-shimeji/alkaka-shimeji-contact-sheet-v3.svg
-public/pets/alkaka-shimeji/alkaka-shimeji-concept-v3.json
+public/pets/alkaka-shimeji/alkaka-shimeji-atlas-v4.svg
+public/pets/alkaka-shimeji/alkaka-shimeji-contact-sheet-v4.svg
+public/pets/alkaka-shimeji/alkaka-shimeji-concept-v4.json
 ```
 
-The v3 manifest includes `templateTokens` so it can become the seed for the future template generator.
+The v4 manifest includes `templateTokens` so it can become the seed for the future template generator.
