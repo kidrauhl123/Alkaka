@@ -83,6 +83,7 @@
 - **2026-04-28** 路线调整：Phase 2.2 Hermes 接入暂缓，下一步转向 OpenClaw 稳定性与桌宠工具集
 - **2026-04-28** **Phase 2.2 OpenClaw runtime 启动链路 checkpoint**——`electron:dev:openclaw` 已实测跑通，OpenClaw gateway health 返回 live；修复 clean host 上 pnpm/sha256sum 构建阻塞，并收敛启动日志中的 secret 泄露风险
 - **2026-04-28** **Phase 2.2 OpenClaw 启动降噪补丁**——默认配置显式禁用 OpenClaw bundled `acpx` 插件，避免无 API/model 配置时触发 Codex ACP runtime probe；补齐退出路径 window state IPC 防护
+- **2026-04-28** **本机用户验收 smoke**——用户在电脑旁实测 `npm run electron:dev:openclaw` 打开的真实 Electron 产品窗口可正常看到/操作，OpenClaw gateway health 为 live；下一步转入 Cowork / IM / 桌宠入口端到端链路验证
 
 ---
 
@@ -145,9 +146,9 @@ alkaka-marketplace/
 | # | 任务 | 状态 | 下一步 |
 |---|------|------|--------|
 | 2.1 | 把 `openclawRuntimeAdapter` 的接口提炼成 `AgentEngineProtocol` / Router 多 runtime map | ✅ checkpoint | 保留，不继续扩大抽象 |
-| 2.2 | OpenClaw runtime 稳定性收敛：启动、配置同步、错误恢复、日志定位 | ✅ 启动链路 checkpoint | `electron:dev:openclaw` 已跑通；已显式禁用默认 acpx probe；下一步继续 Cowork/IM 端到端 |
+| 2.2 | OpenClaw runtime 稳定性收敛：启动、配置同步、错误恢复、日志定位 | ✅ 本机验收通过 | `electron:dev:openclaw` 已跑通；已显式禁用默认 acpx probe；用户已实机确认窗口可操作 |
 | 2.3 | 设置里保留 engine 字段但不开放第二引擎 UI | 计划 | UI 只展示 OpenClaw 状态/诊断 |
-| 2.4 | IM 网关与 Cowork 通过同一 OpenClaw runtime 稳定工作 | 计划 | 用 Feishu/Telegram/本地 cowork 做端到端验证 |
+| 2.4 | IM 网关与 Cowork 通过同一 OpenClaw runtime 稳定工作 | 下一步 | 先测本地 Cowork 端到端，再测 Feishu/Telegram 入口，最后连桌宠入口 |
 
 **关键设计原则**：
 - Agent Engine 接口要做窄，只暴露 `startSession / streamMessage / requestPermission / stopSession` 这种核心能力
