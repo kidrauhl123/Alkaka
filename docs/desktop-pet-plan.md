@@ -72,7 +72,7 @@
 ### 当前 checkpoint（2026-04-28 19:56 CST）
 
 - 当前分支：`main`，跟踪 `alkaka/main`。
-- 最新功能提交：`722ea77 feat: add desktop pet status state machine`。
+- 最新功能提交：`c156e19 feat: add desktop pet status state machine`。
 - 已完成到：**Phase 3A.3 桌宠状态机**。
 - 最新真实 smoke 截图：`/tmp/alkaka-phase3a3/status-smoke.png`。
 - 最新验证：
