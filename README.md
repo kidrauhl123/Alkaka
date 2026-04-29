@@ -3,9 +3,11 @@
 Alkaka 是一个桌面 AI 助理项目。当前产品方向是：**AI 桌宠常驻桌面作为主入口，OpenClaw 作为 Agent runtime，主窗口作为轻量对话、历史、设置和技能/MCP 管理面板**。
 
 # 我的想法：
- 1. 多AI助理，每个都能单独对话和派发任务，skill团队通用，个性soul可以各不相同，memory通用（记录memory的时候如果判断为这段记忆更像是用户和当前Agent特有的记忆，则写进当前Agent特有的soul更合适）
+ 1. 多AI助理，每个都能单独对话和派发任务，skill在整个团队通用，个性soul可以各不相同，memory通用（记录memory的时候如果判断为这段记忆更像是用户和当前Agent特有的记忆，则写进当前Agent特有的soul更合适）
  2. 每个对话下方都可显示当前推理强度；权限大小
- 3. 有单独的手机APP，其对话界面与PC端基本一致
+ 3. 除了接受飞书、微信等IM，还有单独的手机APP
+    1. 其对话界面与PC端基本一致
+    2. 其通知显示图标，是AI助理的自定义头像
 
 > 原上游 README 见 [`README.upstream.md`](./README.upstream.md)。更细的历史开发日志见 [`docs/desktop-pet-plan.md`](./docs/desktop-pet-plan.md)。
 
