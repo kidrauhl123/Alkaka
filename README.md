@@ -1,29 +1,33 @@
 # Alkaka
 
-Alkaka 是一个桌面 AI 助理项目。当前产品方向是：**AI 桌宠常驻桌面作为主入口，OpenClaw 作为 Agent runtime，主窗口作为轻量对话、历史、设置和技能/MCP 管理面板**。
+Alkaka 是一个面向未来个人工作流的桌面 AI 助理项目。当前形态是：**AI 桌宠常驻桌面作为主入口，OpenClaw 作为短期 Agent runtime，主窗口作为轻量对话、历史、设置和技能/MCP 管理面板**。
 
-# 我的想法：
- 1. 多AI助理，每个都能单独对话和派发任务，skill在整个团队通用，个性soul可以各不相同，memory通用（记录memory的时候如果判断为这段记忆更像是用户和当前Agent特有的记忆，则写进当前Agent特有的soul更合适）
- 2. 每个对话下方都可显示当前推理强度；权限大小
- 3. 除了接受飞书、微信等IM，还有单独的手机APP
-    1. 其对话界面与PC端基本一致
-    2. 其通知显示图标，是AI助理的自定义头像
- 4. 搭子一起养桌宠的后续功能
+> 原上游 README 见 [`README.upstream.md`](./README.upstream.md)。详细历史日志见 [`docs/desktop-pet-plan.md`](./docs/desktop-pet-plan.md)。
 
-> 原上游 README 见 [`README.upstream.md`](./README.upstream.md)。更细的历史开发日志见 [`docs/desktop-pet-plan.md`](./docs/desktop-pet-plan.md)。
+## 产品远景
+
+Alkaka 的长期形态不是单个聊天机器人，而是一个常驻桌面的 **AI 助理团队**：
+
+- 多个 AI 助理可以分别对话、分别处理事情。
+- Skills / MCP / 工具能力在整个团队内共享。
+- 每个助理可以有不同头像、性格和 SOUL。
+- Memory 默认服务于用户和团队；如果某段记忆更像用户与某个助理之间的专属关系，则更适合进入该助理的私有 SOUL / persona memory。
+- 每个对话都应能显示当前处理模式和操作权限，例如快速回答 / 深度处理、只读 / 需确认 / 自动执行。
+- Alkaka 不只接入 Feishu、微信等 IM，也会有独立手机 APP；手机端对话体验与 PC 端保持一致，通知头像使用对应 AI 助理的自定义头像。
+- 远期探索“搭子一起养桌宠”等多人陪伴 / 协作体验。
 
 ## 当前状态
 
-**最新 checkpoint：2026-04-29 14:24 CST — Phase 3A.9 桌宠真实交互稳定化**
+**最新 checkpoint：2026-04-29 14:24 CST — 桌宠真实交互稳定化**
 
 已完成到：
 
 - 桌宠从“任务入口”纠偏为 **AI 桌宠 / 对话入口**。
 - 主窗口从重型工作台收敛为更轻的 **对话中心**。
-- OpenClaw是短期唯一 Agent 内核；Hermes后续有加入的计划。
-- 主题系统两套：`light` / `dark`。
+- OpenClaw 是短期唯一 Agent 内核；Hermes 后续保留接入可能，但不影响当前桌宠优先路线。
+- 主题系统收敛为 `light` / `dark` 两套。
 - 桌宠默认窗口收紧为 `140×164`，quick input 展开窗口为 `360×420`。
-- 桌宠命中区域是 **真实可见像素 alpha mask**：只有实际可见像素响应；透明区/空白区穿透。
+- 桌宠命中区域是 **真实可见像素 alpha mask**：只有实际可见像素响应；透明区 / 空白区穿透。
 - 单击桌宠不弹对话；双击真实像素才打开快速对话框。
 - 单击按下不会触发位置跳动；待机状态停止自动 sprite 帧切换，避免“一卡一卡、一变一变”。
 - 双击展开 quick input 后，蛋锚在窗口右下角 `right: 0; bottom: 0`，避免弹框时桌宠视觉位置偏移。
@@ -65,28 +69,30 @@ AI 桌宠（主入口）
   ├─ 我的 Agent
   └─ 定时任务
 
-Agent runtime
-  └─ OpenClaw（短期唯一 runtime）
+多端入口
+  ├─ IM：Feishu / 微信 / Telegram / Discord 等
+  └─ 手机 APP：远期独立入口，与 PC 端对话体验保持一致
 ```
 
-## 阶段进度
+## 路线图
 
-| 阶段 | 状态 | 说明 |
+| 方向 | 状态 | 说明 |
 |---|---:|---|
-| Phase 1 品牌/依赖清理 | ✅ | LobsterAI/NetEase/Youdao 残留清理，登录系统和旧私有依赖移除 |
-| Phase 2 OpenClaw 稳定性 | ✅ checkpoint | runtime host、Electron/OpenClaw 启动、配置同步、日志脱敏、shutdown 噪音处理 |
-| Phase 3A 桌宠主入口 | ✅ checkpoint | 桌宠默认启动、quick input、状态机、Shimeji 形象、最近对话恢复、真实像素 hitbox |
-| Phase 3A 主窗口轻量化 | ✅ checkpoint | 主窗口降级为对话/历史/设置面板，视觉改为低饱和纸面式，去 AI SaaS 模板感 |
-| Phase 3B 桌宠工具集 | ⏭ 下一阶段 | 气泡、划词翻译/提问、截图问答、OCR、提醒 |
-| Phase 4 人格与多端互通 | 远期 | 桌宠人格、移动端、跨设备 session 同步、可选云同步 |
+| 桌宠基础体验 | ✅ 当前重点 | 真实像素命中、双击对话、右键入口、稳定待机、quick input 不挪位 |
+| 主窗口轻量化 | ✅ 当前重点 | 对话中心、历史、设置、Skills/MCP、我的 Agent、定时任务 |
+| 视觉体系 | ✅ 当前重点 | 深浅双色主题、低饱和纸面式视觉、去 AI SaaS 模板感 |
+| 桌宠工具集 | 下一步 | 气泡、划词翻译 / 提问、截图问答、OCR、提醒 |
+| 多 Agent 团队 | 规划中 | 多助理、共享 skills、分层 memory、独立 SOUL / persona |
+| 多端互通 | 规划中 | IM 网关 + 独立手机 APP + 头像通知 |
+| 多人陪伴 | 远期 | 搭子一起养桌宠、协作空间、共享部分助理能力 |
 
 ## 关键决策
 
 - **桌宠优先**：桌宠是默认入口；主窗口只在需要历史、设置、复杂输入和管理能力时打开。
-- **短期只收敛 OpenClaw**：不在当前阶段接 Hermes，避免多 runtime 抽象拖慢桌宠体验交付。
-- **保留 IM 网关**：Feishu / Telegram / Discord / WeChat / DingTalk / Email 等公开协议入口仍是多端互通基础。
-- **弱化“任务”心智**：对用户呈现为对话、处理、继续上次、历史记录；技术上仍可映射到 Cowork/OpenClaw session。
-- **主题只保留深浅两套**：删除多皮肤入口，旧主题 id 兼容映射到深/浅主题。
+- **当前先稳 OpenClaw**：OpenClaw 是短期唯一 runtime；Hermes 作为后续可能接入方向保留。
+- **保留 IM 网关**：公开协议 IM 是多端互通基础，但未来也需要独立手机 APP。
+- **弱化“任务”心智**：对用户呈现为对话、处理、继续上次、历史记录；技术上仍可映射到 Cowork / OpenClaw session。
+- **主题只保留深浅两套**：删除多皮肤入口，旧主题 id 兼容映射到深 / 浅主题。
 - **桌宠命中必须真实**：不用矩形、椭圆或几何近似作为最终方案；以当前 sprite frame 的 alpha 像素判断。
 
 ## 代码速查
@@ -104,10 +110,10 @@ Agent runtime
 
 ## 下一步
 
-1. 用户先验收当前桌宠交互：真实像素命中、单击不跳、双击弹框不挪位、右键菜单入口。
-2. 若体验认可：做独立 code review，修必要问题。
-3. 更新 `docs/desktop-pet-plan.md` 的详细日志，提交并记录 SHA。
-4. 进入 Phase 3B：桌宠气泡与划词/截图工具集。
+1. 用户验收当前桌宠交互与主窗口视觉。
+2. 做独立 code review，修必要问题。
+3. 进入桌宠气泡、划词、截图等工具集。
+4. 开始为多 Agent 团队设计数据模型：共享 skills、共享 / 私有 memory、Agent SOUL。
 
 ## 常用验证命令
 
