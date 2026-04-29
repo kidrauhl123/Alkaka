@@ -29,9 +29,9 @@ export interface ShouldShowComposerOptions {
 }
 
 export const getMainWindowHomeCopy = (): MainWindowHomeCopy => ({
-  title: '和 Alkaka 对话',
-  subtitle: 'Alkaka 常驻在桌面旁边；这里像一张安静的便签纸，适合把想法、追问和处理过程接着写下去。',
-  hint: '不追求炫技，不堆满入口；需要长聊或深度处理时再展开完整输入区。',
+  title: 'Alkaka 对话营地',
+  subtitle: '和单个 AI 伙伴单聊，或回到项目组继续协作；桌宠仍常驻桌面旁边，负责陪伴、提醒和快速唤起。',
+  hint: '默认保持轻量：单聊像聊天，项目组需要深度处理时再展开完整工作台。',
 });
 
 export const buildMainWindowLiteActions = ({ canResumeSession }: BuildMainWindowLiteActionsOptions): MainWindowLiteAction[] => {

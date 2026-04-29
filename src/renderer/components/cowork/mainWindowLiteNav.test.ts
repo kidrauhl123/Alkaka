@@ -7,12 +7,14 @@ import {
 } from './mainWindowLiteNav';
 
 describe('main window lite navigation', () => {
-  it('positions the main window as a quiet conversation surface instead of an AI-looking task dashboard', () => {
+  it('positions the main window as an AI-first chat camp instead of an AI-looking task dashboard', () => {
     const copy = getMainWindowHomeCopy();
 
-    expect(copy.title).toBe('和 Alkaka 对话');
-    expect(copy.subtitle).toContain('便签纸');
-    expect(copy.hint).toContain('不追求炫技');
+    expect(copy.title).toBe('Alkaka 对话营地');
+    expect(copy.subtitle).toContain('AI 伙伴');
+    expect(copy.subtitle).toContain('项目组');
+    expect(copy.hint).toContain('单聊');
+    expect(copy.hint).toContain('项目组');
     expect(copy.subtitle).not.toContain('AI 桌宠');
     expect(copy.subtitle).not.toContain('任务桌宠');
     expect(copy.subtitle).not.toContain('任务历史');

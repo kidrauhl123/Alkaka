@@ -297,8 +297,8 @@ const translations: Record<LanguageType, Record<string, string>> = {
     // Alkaka
     cowork: 'Alkaka',
     coworkSettings: 'Alkaka 设置',
-    coworkHistory: '任务记录',
-    coworkNoSessions: '暂无任务记录',
+    coworkHistory: '对话记录',
+    coworkNoSessions: '暂无对话记录',
     coworkNoSessionsHint: '在右侧输入框中开始你的第一个对话',
     coworkPinSession: '置顶任务',
     coworkUnpinSession: '取消置顶',
@@ -497,8 +497,8 @@ const translations: Record<LanguageType, Record<string, string>> = {
     coworkDescription: '7×24 小时帮你干活的全场景个人助理 Agent',
 
     // Multi-Agent 管理
-    createAgent: '创建 Agent',
-    myAgents: '我的 Agent',
+    createAgent: '创建 AI 伙伴',
+    myAgents: 'AI 伙伴',
     customCreate: '自定义创建',
     choosePreset: '选择预设',
     agentSettings: 'Agent 设置',
@@ -1097,8 +1097,8 @@ const translations: Record<LanguageType, Record<string, string>> = {
     skipMissedJobsDescription: '启动时跳过离线期间未触发的定时任务，不补充执行（保存后生效）',
 
     // 定时任务
-    scheduledTasks: '定时任务',
-    scheduledTasksTitle: '定时任务',
+    scheduledTasks: '项目组',
+    scheduledTasksTitle: '项目组',
     scheduledTasksNewTask: '新建任务',
     scheduledTasksEmptyState: '暂无定时任务',
     scheduledTasksEmptyHint: '创建定时任务，让 AI 按计划自动执行',
@@ -1599,8 +1599,8 @@ const translations: Record<LanguageType, Record<string, string>> = {
     // Shortcuts
     keyboardShortcuts: 'Keyboard Shortcuts',
     shortcutNotSet: 'Not set',
-    newChat: 'New Task',
-    search: 'Search Tasks',
+    newChat: 'New Chat',
+    search: 'Search Conversations',
     openSettings: 'Open Settings',
     sendMessageShortcut: 'Send Message',
     shortcutConflict: 'Shortcut "{0}" is already used by "{1}"',
@@ -1654,8 +1654,8 @@ const translations: Record<LanguageType, Record<string, string>> = {
     confirmDeleteMessage:
       'Are you sure you want to delete this conversation? This action cannot be undone.',
     searchChats: 'Search Chats',
-    searchConversations: 'Search tasks...',
-    searchNoResults: 'No matching tasks',
+    searchConversations: 'Search conversations...',
+    searchNoResults: 'No matching conversations',
     projects: 'Projects',
     yourChats: 'Your Chats',
     createProject: 'New Project',
@@ -1727,8 +1727,8 @@ const translations: Record<LanguageType, Record<string, string>> = {
     // Alkaka
     cowork: 'Alkaka',
     coworkSettings: 'Alkaka Settings',
-    coworkHistory: 'Task History',
-    coworkNoSessions: 'No tasks yet',
+    coworkHistory: 'Conversations',
+    coworkNoSessions: 'No conversations yet',
     coworkNoSessionsHint: 'Start your first conversation in the input box',
     coworkPinSession: 'Pin task',
     coworkUnpinSession: 'Unpin task',
@@ -1941,8 +1941,8 @@ const translations: Record<LanguageType, Record<string, string>> = {
     coworkDescription: 'A 24/7 personal assistant agent that gets work done for you',
 
     // Multi-Agent management
-    createAgent: 'Create Agent',
-    myAgents: 'My Agents',
+    createAgent: 'Create AI Partner',
+    myAgents: 'AI Partners',
     customCreate: 'Custom Create',
     choosePreset: 'Choose Preset',
     agentSettings: 'Agent Settings',
@@ -2584,8 +2584,8 @@ const translations: Record<LanguageType, Record<string, string>> = {
       'Skip jobs that were missed while the app was offline (applies after Save)',
 
     // Scheduled Tasks
-    scheduledTasks: 'Scheduled Tasks',
-    scheduledTasksTitle: 'Scheduled Tasks',
+    scheduledTasks: 'Project Groups',
+    scheduledTasksTitle: 'Project Groups',
     scheduledTasksNewTask: 'New Task',
     scheduledTasksEmptyState: 'No scheduled tasks',
     scheduledTasksEmptyHint: 'Create scheduled tasks to automate AI execution on a schedule',

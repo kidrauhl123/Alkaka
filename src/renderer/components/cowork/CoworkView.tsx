@@ -20,6 +20,8 @@ import { clearSelection,selectAction, setActions } from '../../store/slices/quic
 import { clearActiveSkills, setActiveSkillIds } from '../../store/slices/skillSlice';
 import type { CoworkImageAttachment, CoworkSession, OpenClawEngineStatus } from '../../types/cowork';
 import { toOpenClawModelRef } from '../../utils/openclawModelRef';
+import { resolveChatWorkspaceLayout } from '../chat/chatWorkspaceLayout';
+import ChatWorkspaceShell from '../chat/ChatWorkspaceShell';
 import ComposeIcon from '../icons/ComposeIcon';
 import SidebarToggleIcon from '../icons/SidebarToggleIcon';
 import ModelSelector from '../ModelSelector';
@@ -32,8 +34,8 @@ import CoworkSessionDetail from './CoworkSessionDetail';
 import {
   buildMainWindowLiteActions,
   getMainWindowHomeCopy,
-  shouldShowComposerOnMainWindowHome,
   type MainWindowLiteActionId,
+  shouldShowComposerOnMainWindowHome,
 } from './mainWindowLiteNav';
 
 export interface CoworkViewProps {
@@ -530,6 +532,10 @@ const CoworkView: React.FC<CoworkViewProps> = ({ onRequestAppSettings, onShowSki
     requestedComposer: isComposerRequested,
     hasDraftPrompt: homeDraftPrompt.trim().length > 0,
   });
+  const homeWorkspaceLayout = resolveChatWorkspaceLayout({
+    mode: 'direct',
+    isDeepProcessing: shouldShowComposer,
+  });
 
   const handleLiteAction = (actionId: MainWindowLiteActionId) => {
     switch (actionId) {
@@ -651,109 +657,135 @@ const CoworkView: React.FC<CoworkViewProps> = ({ onRequestAppSettings, onShowSki
     );
   }
 
-  // Home view - no current session
-  return (
-    <div className="flex-1 flex flex-col bg-background h-full">
-      {/* Engine status banner for error states */}
-      {engineStatusBanner}
-
-      {/* Header */}
-      {homeHeader}
-
-      {/* Main Content */}
-      <div className="flex-1 overflow-y-auto min-h-0">
-        <div className="max-w-[680px] w-full min-w-[320px] mx-auto px-5 pt-[10vh] pb-8 space-y-6">
-          <div className="rounded-[18px] border border-border bg-surface px-6 py-6 shadow-[0_18px_60px_rgba(47,42,36,0.06),0_2px_10px_rgba(47,42,36,0.04)] dark:shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
-            <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
-              <div className="space-y-3 max-w-xl">
-                <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-secondary">
-                  Desktop companion
-                </div>
-                <div className="space-y-2">
-                  <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-                    {homeCopy.title}
-                  </h2>
-                  <p className="text-sm leading-6 text-secondary">
-                    {homeCopy.subtitle}
-                  </p>
-                  <p className="text-xs leading-5 text-tertiary">
-                    {homeCopy.hint}
-                  </p>
-                </div>
-              </div>
-              <img src="logo.png" alt="logo" className="hidden md:block h-14 w-14 opacity-80" />
-            </div>
-
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              {liteActions.map((action) => (
-                <button
-                  key={action.id}
-                  type="button"
-                  onClick={() => handleLiteAction(action.id)}
-                  className={`rounded-xl border px-4 py-3 text-left transition-colors ${
-                    action.tone === 'primary'
-                      ? 'border-foreground bg-foreground text-background hover:opacity-90'
-                      : action.tone === 'secondary'
-                        ? 'border-border bg-surface hover:bg-surface-raised'
-                        : 'border-transparent bg-transparent hover:bg-surface-raised'
-                  }`}
-                >
-                  <div className={`text-sm font-medium ${action.tone === 'primary' ? 'text-background' : 'text-foreground'}`}>{action.label}</div>
-                  <div className={`mt-1 text-xs leading-5 ${action.tone === 'primary' ? 'text-background opacity-75' : 'text-secondary'}`}>{action.description}</div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {shouldShowComposer ? (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between px-1">
-                <div>
-                  <h3 className="text-sm font-medium text-foreground">复杂 Cowork 输入</h3>
-                  <p className="text-xs text-secondary">主窗口只在需要长上下文时展开完整输入区。</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsComposerRequested(false)}
-                  className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-secondary hover:bg-surface-raised hover:text-foreground transition-colors"
-                >
-                  收起
-                </button>
-              </div>
-
-              <div className="shadow-glow-accent rounded-2xl">
-                <CoworkPromptInput
-                  ref={promptInputRef}
-                  onSubmit={handleStartSession}
-                  onStop={handleStopSession}
-                  isStreaming={isStreaming}
-                  disabled={!isEngineReady}
-                  placeholder={i18nService.t('coworkPlaceholder')}
-                  size="large"
-                  workingDirectory={config.workingDirectory}
-                  onWorkingDirectoryChange={async (dir: string) => {
-                    await coworkService.updateConfig({ workingDirectory: dir });
-                  }}
-                  showFolderSelector={true}
-                  onManageSkills={() => onShowSkills?.()}
-                />
-              </div>
-
-              <div className="space-y-4">
-                {selectedAction ? (
-                  <PromptPanel
-                    action={selectedAction}
-                    onPromptSelect={handleQuickActionPromptSelect}
-                  />
-                ) : (
-                  <QuickActionBar actions={quickActions} onActionSelect={handleActionSelect} />
-                )}
-              </div>
-            </div>
-          ) : null}
-        </div>
+  const homeWorkbench = (
+    <div className="flex h-full flex-col gap-4 p-4 text-sm">
+      <div>
+        <div className="text-xs font-medium uppercase tracking-[0.18em] text-tertiary">Workbench</div>
+        <h3 className="mt-2 text-base font-semibold text-foreground">项目组工作台</h3>
+        <p className="mt-1 text-xs leading-5 text-secondary">
+          深度处理时用于放置伙伴状态、当前目标、交付物和执行日志。
+        </p>
+      </div>
+      <div className="rounded-xl border border-border bg-background/70 p-3">
+        <div className="text-xs font-medium text-foreground">当前目标</div>
+        <p className="mt-1 text-xs leading-5 text-secondary">开始项目组协作后在这里固定目标与阶段进展。</p>
+      </div>
+      <div className="rounded-xl border border-border bg-background/70 p-3">
+        <div className="text-xs font-medium text-foreground">交付物</div>
+        <p className="mt-1 text-xs leading-5 text-secondary">文件、知识库和输出物入口会在后续任务接入。</p>
       </div>
     </div>
+  );
+
+  // Home view - no current session
+  return (
+    <ChatWorkspaceShell
+      workbenchState={homeWorkspaceLayout.workbench}
+      workbench={homeWorkbench}
+      conversation={(
+        <div className="flex-1 flex flex-col bg-background h-full">
+          {/* Engine status banner for error states */}
+          {engineStatusBanner}
+
+          {/* Header */}
+          {homeHeader}
+
+          {/* Main Content */}
+          <div className="flex-1 overflow-y-auto min-h-0">
+            <div className="max-w-[680px] w-full min-w-[320px] mx-auto px-5 pt-[10vh] pb-8 space-y-6">
+              <div className="rounded-[18px] border border-border bg-surface px-6 py-6 shadow-[0_18px_60px_rgba(47,42,36,0.06),0_2px_10px_rgba(47,42,36,0.04)] dark:shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
+                <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
+                  <div className="space-y-3 max-w-xl">
+                    <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-secondary">
+                      对话营地
+                    </div>
+                    <div className="space-y-2">
+                      <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+                        {homeCopy.title}
+                      </h2>
+                      <p className="text-sm leading-6 text-secondary">
+                        {homeCopy.subtitle}
+                      </p>
+                      <p className="text-xs leading-5 text-tertiary">
+                        {homeCopy.hint}
+                      </p>
+                    </div>
+                  </div>
+                  <img src="logo.png" alt="logo" className="hidden md:block h-14 w-14 opacity-80" />
+                </div>
+
+                <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                  {liteActions.map((action) => (
+                    <button
+                      key={action.id}
+                      type="button"
+                      onClick={() => handleLiteAction(action.id)}
+                      className={`rounded-xl border px-4 py-3 text-left transition-colors ${
+                        action.tone === 'primary'
+                          ? 'border-foreground bg-foreground text-background hover:opacity-90'
+                          : action.tone === 'secondary'
+                            ? 'border-border bg-surface hover:bg-surface-raised'
+                            : 'border-transparent bg-transparent hover:bg-surface-raised'
+                      }`}
+                    >
+                      <div className={`text-sm font-medium ${action.tone === 'primary' ? 'text-background' : 'text-foreground'}`}>{action.label}</div>
+                      <div className={`mt-1 text-xs leading-5 ${action.tone === 'primary' ? 'text-background opacity-75' : 'text-secondary'}`}>{action.description}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {shouldShowComposer ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between px-1">
+                    <div>
+                      <h3 className="text-sm font-medium text-foreground">深度对话输入</h3>
+                      <p className="text-xs text-secondary">单聊或项目组需要长上下文时，再展开完整输入区。</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsComposerRequested(false)}
+                      className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-secondary hover:bg-surface-raised hover:text-foreground transition-colors"
+                    >
+                      收起
+                    </button>
+                  </div>
+
+                  <div className="shadow-glow-accent rounded-2xl">
+                    <CoworkPromptInput
+                      ref={promptInputRef}
+                      onSubmit={handleStartSession}
+                      onStop={handleStopSession}
+                      isStreaming={isStreaming}
+                      disabled={!isEngineReady}
+                      placeholder={i18nService.t('coworkPlaceholder')}
+                      size="large"
+                      workingDirectory={config.workingDirectory}
+                      onWorkingDirectoryChange={async (dir: string) => {
+                        await coworkService.updateConfig({ workingDirectory: dir });
+                      }}
+                      showFolderSelector={true}
+                      onManageSkills={() => onShowSkills?.()}
+                    />
+                  </div>
+
+                  <div className="space-y-4">
+                    {selectedAction ? (
+                      <PromptPanel
+                        action={selectedAction}
+                        onPromptSelect={handleQuickActionPromptSelect}
+                      />
+                    ) : (
+                      <QuickActionBar actions={quickActions} onActionSelect={handleActionSelect} />
+                    )}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      )}
+    />
   );
 };
 

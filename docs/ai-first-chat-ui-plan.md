@@ -190,6 +190,15 @@ Expected health response:
 {"ok":true,"status":"live"}
 ```
 
+## Implementation checkpoints
+
+### 2026-04-29 19:53 CST — Task 1-2 起步 checkpoint
+
+- Task 1：主窗口首页文案改为“Alkaka 对话营地”，首屏明确单聊 / AI 伙伴 / 项目组；侧边导航文案新增测试覆盖（对话记录、AI 伙伴、项目组、搜索对话）。
+- Task 2：新增 `src/renderer/components/chat/chatWorkspaceLayout.ts` / `ChatWorkspaceShell.tsx`；普通单聊默认折叠右侧 workbench，项目组或深度处理展开右侧工作台。当前先在 Cowork home 接入静态壳层，不改 Cowork/OpenClaw 数据流。
+- 桌宠形象与真实像素交互未改动。
+- 验证：`npx vitest run src/renderer/components/cowork/mainWindowLiteNav.test.ts src/renderer/services/i18n.chatUi.test.ts src/renderer/components/chat/chatWorkspaceLayout.test.ts src/renderer/components/pet/petInteraction.test.ts src/main/petContextMenu.test.ts src/main/petWindow.test.ts`、`npm run compile:electron -- --pretty false`、`npm run build`、`git diff --check` 均通过；真实 `electron:dev:openclaw` health 为 `{"ok":true,"status":"live"}`。
+
 ## Non-goals for the first pass
 
 - 不实现完整甘特图。
