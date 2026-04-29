@@ -73,18 +73,19 @@
 - 每个可验收 checkpoint 必须同步更新本文件的“当前真实进度”和阶段表，记录验证命令、截图/日志证据、commit SHA 与下一步。
 - 只要涉及产品方向、阶段优先级或验收口径变化，也必须在本文件落地，避免进度只停留在对话里。
 
-### 当前 checkpoint（2026-04-29 20:39 CST）
+### 当前 checkpoint（2026-04-29 23:40 CST）
 
 - 当前分支：`main`（未提交工作区；本 checkpoint 待提交后记录 SHA）。
-- 最新功能范围：**参考图风格 Alkaka Chat 主窗口重构 checkpoint**。
-- 已完成到：根据用户提供的 UI 参考图，废掉无会话主窗口里的旧 Cowork 便签/任务面板视觉语言，新增 `src/renderer/components/chat/AlkakaProjectChatHome.tsx` 并在 `CoworkView` 首页接入完整三栏 Alkaka Chat 项目组界面：左侧品牌 / 新建对话 / 搜索 / 导航 / 最近对话，中间 `AI日报项目组` 群聊与置顶任务 / 富消息卡 / 代码进度 / composer，右侧 AI 团队运行状态 / 资源用量 / 伙伴状态 / 快捷操作。视觉系统改为参考图的白底、淡薰衣草背景、蓝紫渐变、圆角卡片、柔和阴影和状态 pill；发送按钮仍复用现有 `handleStartSession` 进入 Cowork/OpenClaw session，不改 runtime。
+- 最新功能范围：**默认伙伴头像接入与主窗口高级感优化 checkpoint**。
+- 已完成到：在参考图风格 `AlkakaProjectChatHome` 基础上，把已生成的 6 个默认伙伴头像复制到 `src/renderer/assets/partners/`，并在聊天首页、最近对话、任务分配、伙伴状态和团队概览里替换渐变字母占位头像。默认头像包括小课代表、情报姬、CodeMan、设计喵、数据君、审核官，图片已压到 512px 级别，避免把原始 1024px 资源直接塞进包体。
+- 文案收敛：左侧导航与搜索从“智能体”改为“伙伴”，右侧状态卡从“AI 团队运行状态”改为“伙伴团队运行状态”，继续统一产品语义。
+- 桌宠形象、真实像素命中、透明区穿透、单击/双击行为和窗口位置逻辑未改动。
 - 验证命令：
-  - `npx vitest run src/renderer/components/chat/AlkakaProjectChatHome.test.ts src/renderer/components/chat/chatWorkspaceLayout.test.ts src/renderer/components/cowork/mainWindowLiteNav.test.ts src/renderer/services/i18n.chatUi.test.ts src/renderer/components/pet/petInteraction.test.ts src/main/petContextMenu.test.ts src/main/petWindow.test.ts`：7 files / 25 tests passed。
+  - `npx vitest run src/renderer/components/chat/AlkakaProjectChatHome.test.ts src/renderer/components/chat/chatWorkspaceLayout.test.ts src/renderer/components/cowork/mainWindowLiteNav.test.ts src/renderer/services/i18n.chatUi.test.ts src/renderer/components/pet/petInteraction.test.ts src/main/petContextMenu.test.ts src/main/petWindow.test.ts`：7 files / 26 tests passed。
   - `npm run compile:electron -- --pretty false`：通过。
   - `npm run build`：通过。
   - `git diff --check`：通过。
-  - `npm run electron:dev:openclaw`：真实运行链路已启动；`http://127.0.0.1:18789/health` 返回 `200 {"ok":true,"status":"live"}`，Vite `http://127.0.0.1:5175/` 返回 `200`。
-- 下一优先级：让参考图里的静态项目组 UI 逐步绑定真实会话 / AI 伙伴 / 任务进度数据，并把侧边导航里的“任务中心”等旧概念收敛为聊天软件语义。
+- 下一优先级：继续做“大气感”精修：减少右栏信息噪音、放大中间聊天留白、统一伙伴头像裁切/阴影，并生成 Boss / 管管 / 大监 等更完整默认伙伴组。
 
 ### 上一 checkpoint（2026-04-29 19:53 CST）
 

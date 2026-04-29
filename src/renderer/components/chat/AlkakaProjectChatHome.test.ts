@@ -2,7 +2,11 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 
-import AlkakaProjectChatHome, { resolveComposerSubmitMessage, shouldClearComposerAfterSubmit } from './AlkakaProjectChatHome';
+import AlkakaProjectChatHome, {
+  defaultPartnerAvatarAssets,
+  resolveComposerSubmitMessage,
+  shouldClearComposerAfterSubmit,
+} from './AlkakaProjectChatHome';
 
 describe('AlkakaProjectChatHome reference-image redesign', () => {
   const html = renderToStaticMarkup(React.createElement(AlkakaProjectChatHome));
@@ -19,9 +23,9 @@ describe('AlkakaProjectChatHome reference-image redesign', () => {
   it('matches the reference image information architecture', () => {
     [
       '新建对话',
-      '搜索对话、智能体或消息',
+      '搜索对话、伙伴或消息',
       '对话',
-      '智能体',
+      '伙伴',
       '任务中心',
       '项目空间',
       '最近对话',
@@ -45,7 +49,7 @@ describe('AlkakaProjectChatHome reference-image redesign', () => {
 
   it('renders the right-side AI team dashboard required by the screenshot', () => {
     [
-      'AI 团队运行状态',
+      '伙伴团队运行状态',
       '系统正常',
       '活跃伙伴',
       '资源使用情况',
@@ -74,6 +78,28 @@ describe('AlkakaProjectChatHome reference-image redesign', () => {
   it('submits trimmed user draft text and refuses empty whitespace submissions', () => {
     expect(resolveComposerSubmitMessage('  请整理今天模型融资新闻  ')).toBe('请整理今天模型融资新闻');
     expect(resolveComposerSubmitMessage('   ')).toBeNull();
+  });
+
+  it('uses generated partner avatar assets instead of gradient-letter placeholders for default partners', () => {
+    expect(defaultPartnerAvatarAssets).toMatchObject({
+      classRep: expect.stringContaining('partner-class-rep'),
+      intelScout: expect.stringContaining('partner-intel-scout'),
+      codeman: expect.stringContaining('partner-codeman'),
+      designCat: expect.stringContaining('partner-design-cat'),
+      dataAnalyst: expect.stringContaining('partner-data-analyst'),
+      reviewer: expect.stringContaining('partner-reviewer'),
+    });
+
+    [
+      '小课代表 伙伴头像',
+      '情报姬 伙伴头像',
+      'CodeMan 伙伴头像',
+      '设计喵 伙伴头像',
+      '数据君 伙伴头像',
+      '审核官 伙伴头像',
+    ].forEach((alt) => expect(html).toContain(alt));
+    expect(html).not.toContain('搜索对话、智能体或消息');
+    expect(html).toContain('搜索对话、伙伴或消息');
   });
 
   it('keeps drafts when submission is rejected and clears only after accepted submit results', () => {

@@ -1,8 +1,26 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 
+import classRepAvatarUrl from '../../assets/partners/partner-class-rep.png';
+import codemanAvatarUrl from '../../assets/partners/partner-codeman.png';
+import dataAnalystAvatarUrl from '../../assets/partners/partner-data-analyst.png';
+import designCatAvatarUrl from '../../assets/partners/partner-design-cat.png';
+import intelScoutAvatarUrl from '../../assets/partners/partner-intel-scout.png';
+import reviewerAvatarUrl from '../../assets/partners/partner-reviewer.png';
+
+export const defaultPartnerAvatarAssets = {
+  classRep: classRepAvatarUrl,
+  intelScout: intelScoutAvatarUrl,
+  codeman: codemanAvatarUrl,
+  designCat: designCatAvatarUrl,
+  dataAnalyst: dataAnalystAvatarUrl,
+  reviewer: reviewerAvatarUrl,
+} as const;
+
 interface AvatarProps {
   name: string;
   tone: string;
+  imageSrc?: string;
+  imageAlt?: string;
   size?: 'sm' | 'md' | 'lg';
   className?: string;
 }
@@ -13,14 +31,20 @@ const sizeClasses = {
   lg: 'h-11 w-11 text-sm',
 };
 
-const Avatar = ({ name, tone, size = 'md', className = '' }: AvatarProps) => (
+const Avatar = ({ name, tone, imageSrc, imageAlt, size = 'md', className = '' }: AvatarProps) => (
   <div
     className={`${sizeClasses[size]} ${tone} ${className} relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-white font-bold text-white shadow-sm`}
     title={name}
   >
-    <span className="relative z-10 drop-shadow-sm">{name.slice(0, 1)}</span>
-    <span className="absolute -right-1 -top-1 h-4 w-4 rounded-full bg-white/35" />
-    <span className="absolute -bottom-2 left-1 h-5 w-5 rounded-full bg-black/10" />
+    {imageSrc ? (
+      <img src={imageSrc} alt={imageAlt ?? `${name} 伙伴头像`} className="h-full w-full object-cover" />
+    ) : (
+      <>
+        <span className="relative z-10 drop-shadow-sm">{name.slice(0, 1)}</span>
+        <span className="absolute -right-1 -top-1 h-4 w-4 rounded-full bg-white/35" />
+        <span className="absolute -bottom-2 left-1 h-5 w-5 rounded-full bg-black/10" />
+      </>
+    )}
   </div>
 );
 
@@ -33,6 +57,21 @@ const avatarTones = {
   design: 'bg-gradient-to-br from-pink-400 via-fuchsia-500 to-purple-600',
   data: 'bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-500',
   guard: 'bg-gradient-to-br from-red-400 via-orange-500 to-amber-500',
+};
+
+const partnerAvatarByRole = {
+  小课代表: { imageSrc: defaultPartnerAvatarAssets.classRep, imageAlt: '小课代表 伙伴头像' },
+  情报姬: { imageSrc: defaultPartnerAvatarAssets.intelScout, imageAlt: '情报姬 伙伴头像' },
+  CodeMan: { imageSrc: defaultPartnerAvatarAssets.codeman, imageAlt: 'CodeMan 伙伴头像' },
+  设计喵: { imageSrc: defaultPartnerAvatarAssets.designCat, imageAlt: '设计喵 伙伴头像' },
+  数据君: { imageSrc: defaultPartnerAvatarAssets.dataAnalyst, imageAlt: '数据君 伙伴头像' },
+  审核官: { imageSrc: defaultPartnerAvatarAssets.reviewer, imageAlt: '审核官 伙伴头像' },
+  大监: { imageSrc: defaultPartnerAvatarAssets.reviewer, imageAlt: '审核官 伙伴头像' },
+} as const;
+
+const getPartnerAvatar = (name: string): Pick<AvatarProps, 'imageSrc' | 'imageAlt'> => {
+  const match = Object.entries(partnerAvatarByRole).find(([role]) => name.includes(role));
+  return match?.[1] ?? {};
 };
 
 const StatusPill = ({ children, tone = 'purple' }: { children: ReactNode; tone?: 'purple' | 'green' | 'orange' | 'gray' }) => {
@@ -72,7 +111,7 @@ const ProgressBar = ({ value, tone = 'purple' }: { value: number; tone?: 'purple
 
 const navItems = [
   ['💬', '对话', null, true],
-  ['🤖', '智能体', null, false],
+  ['🧑‍🤝‍🧑', '伙伴', null, false],
   ['✅', '任务中心', '12', false],
   ['🗂', '项目空间', null, false],
   ['📚', '知识库', null, false],
@@ -165,7 +204,7 @@ const AlkakaProjectChatHome = ({
         <button type="button" onClick={onRequestNewChat} className="mb-3 h-10 rounded-xl bg-gradient-to-r from-[#3B5BFF] to-[#7C3AED] text-sm font-bold text-white shadow-[0_14px_28px_rgba(91,75,255,0.24)]">+ 新建对话</button>
         <div className="mb-4 flex h-10 items-center gap-2 rounded-xl border border-[#E6E9F2] bg-white px-3 text-sm text-[#9CA3AF] shadow-sm">
           <span>⌕</span>
-          <span className="flex-1 truncate">搜索对话、智能体或消息</span>
+          <span className="flex-1 truncate">搜索对话、伙伴或消息</span>
           <kbd className="rounded-md border border-[#E6E9F2] bg-[#F8FAFF] px-1.5 py-0.5 text-[11px] text-[#6B7280]">⌘K</kbd>
         </div>
 
@@ -192,7 +231,7 @@ const AlkakaProjectChatHome = ({
           <div className="space-y-1.5 overflow-y-auto pr-1">
             {conversations.map((chat) => (
               <div key={chat.title} className={`flex gap-2 rounded-2xl p-2.5 ${chat.selected ? 'bg-[#F1EFFF] shadow-sm' : 'hover:bg-white'}`}>
-                <Avatar name={chat.title} tone={chat.tone} />
+                <Avatar name={chat.title} tone={chat.tone} {...getPartnerAvatar(chat.title)} />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <span className="truncate text-sm font-bold">{chat.title}</span>
@@ -224,8 +263,8 @@ const AlkakaProjectChatHome = ({
           <div className="flex items-center gap-4">
             <div className="flex -space-x-3">
               <Avatar name="Boss" tone={avatarTones.boss} size="lg" />
-              <Avatar name="课" tone={avatarTones.rep} size="lg" />
-              <Avatar name="情" tone={avatarTones.intel} size="lg" />
+              <Avatar name="小课代表" tone={avatarTones.rep} size="lg" {...getPartnerAvatar('小课代表')} />
+              <Avatar name="情报姬" tone={avatarTones.intel} size="lg" {...getPartnerAvatar('情报姬')} />
             </div>
             <div>
               <div className="flex items-center gap-2"><h1 className="text-xl font-extrabold">AI日报项目组</h1><StatusPill>项目组</StatusPill></div>
@@ -259,7 +298,7 @@ const AlkakaProjectChatHome = ({
             </section>
 
             <section className="flex gap-3">
-              <Avatar name="课" tone={avatarTones.rep} size="lg" />
+              <Avatar name="小课代表" tone={avatarTones.rep} size="lg" {...getPartnerAvatar('小课代表')} />
               <div className="max-w-[720px] flex-1">
                 <div className="mb-2 flex items-center gap-2"><span className="font-bold">小课代表（课代表）</span><span className="text-xs text-[#9CA3AF]">09:31</span><StatusPill>整理中</StatusPill></div>
                 <div className="rounded-[20px] border border-[#DDDDFB] bg-gradient-to-br from-white to-[#F7F5FF] p-4 shadow-sm">
@@ -283,7 +322,7 @@ const AlkakaProjectChatHome = ({
                       <div key={task} className="flex items-center gap-3 rounded-xl bg-white/75 px-3 py-2 text-sm">
                         <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#FFF3E6] text-xs font-bold text-[#EA7A1A]">{index + 1}</span>
                         <span className="min-w-0 flex-1 truncate">{task}</span>
-                        <Avatar name={assignee} tone={tone} size="sm" />
+                        <Avatar name={assignee} tone={tone} size="sm" {...getPartnerAvatar(assignee)} />
                         <span className="text-[#6B7280]">{assignee}</span>
                       </div>
                     ))}
@@ -294,7 +333,7 @@ const AlkakaProjectChatHome = ({
             </section>
 
             <section className="flex gap-3">
-              <Avatar name="情" tone={avatarTones.intel} size="lg" />
+              <Avatar name="情报姬" tone={avatarTones.intel} size="lg" {...getPartnerAvatar('情报姬')} />
               <div className="max-w-[720px] flex-1">
                 <div className="mb-2 flex items-center gap-2"><span className="font-bold">情报姬（情报员）</span><span className="text-xs text-[#9CA3AF]">09:32</span><StatusPill tone="green">执行中</StatusPill></div>
                 <div className="rounded-[18px] border border-[#E6E9F2] bg-white px-4 py-3 text-sm shadow-sm">我来收集最新的 Agent 应用动态和产品发布。</div>
@@ -303,7 +342,7 @@ const AlkakaProjectChatHome = ({
             </section>
 
             <section className="flex gap-3">
-              <Avatar name="C" tone={avatarTones.code} size="lg" />
+              <Avatar name="CodeMan" tone={avatarTones.code} size="lg" {...getPartnerAvatar('CodeMan')} />
               <div className="max-w-[720px] flex-1">
                 <div className="mb-2 flex items-center gap-2"><span className="font-bold">CodeMan（代码工人）</span><span className="text-xs text-[#9CA3AF]">09:33</span><StatusPill tone="green">执行中</StatusPill></div>
                 <div className="rounded-[18px] border border-[#E6E9F2] bg-white px-4 py-3 text-sm shadow-sm">我来处理相关数据清洗和趋势分析，构建可视化图表。</div>
@@ -343,9 +382,9 @@ const AlkakaProjectChatHome = ({
       </main>
 
       <aside className="alkaka-right-dashboard flex w-[342px] shrink-0 flex-col gap-4 overflow-y-auto border-l border-[#E6E9F2] bg-[#FBFCFF] p-4">
-        <SectionCard title="AI 团队运行状态" action={<StatusPill tone="green">系统正常</StatusPill>}>
+        <SectionCard title="伙伴团队运行状态" action={<StatusPill tone="green">系统正常</StatusPill>}>
           <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-2xl bg-[#F8FAFF] p-3"><div className="text-xs text-[#6B7280]">活跃伙伴</div><div className="mt-1 text-2xl font-black">3 / 8</div><div className="text-xs text-[#9CA3AF]">3 个伙伴正在工作</div><div className="mt-3 flex -space-x-2"><Avatar name="课" tone={avatarTones.rep} size="sm" /><Avatar name="情" tone={avatarTones.intel} size="sm" /><Avatar name="C" tone={avatarTones.code} size="sm" /><span className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-[#EEF0FF] text-[10px] font-bold text-[#5B4BFF]">+5</span></div></div>
+            <div className="rounded-2xl bg-[#F8FAFF] p-3"><div className="text-xs text-[#6B7280]">活跃伙伴</div><div className="mt-1 text-2xl font-black">3 / 8</div><div className="text-xs text-[#9CA3AF]">3 个伙伴正在工作</div><div className="mt-3 flex -space-x-2"><Avatar name="小课代表" tone={avatarTones.rep} size="sm" {...getPartnerAvatar('小课代表')} /><Avatar name="情报姬" tone={avatarTones.intel} size="sm" {...getPartnerAvatar('情报姬')} /><Avatar name="CodeMan" tone={avatarTones.code} size="sm" {...getPartnerAvatar('CodeMan')} /><span className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-[#EEF0FF] text-[10px] font-bold text-[#5B4BFF]">+5</span></div></div>
             <div className="rounded-2xl bg-[#F8FAFF] p-3"><div className="text-xs text-[#6B7280]">当前状态</div><div className="mt-1 text-lg font-black">深度工作中</div><div className="text-xs text-[#9CA3AF]">任务推进顺利</div></div>
           </div>
         </SectionCard>
@@ -366,7 +405,7 @@ const AlkakaProjectChatHome = ({
           <div className="space-y-3">
             {partners.map(([name, status, task, progress, tone, statusTone]) => (
               <div key={name} className="flex gap-2">
-                <Avatar name={name} tone={tone} size="sm" />
+                <Avatar name={name} tone={tone} size="sm" {...getPartnerAvatar(name)} />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2"><span className="truncate text-xs font-bold">{name}</span><StatusPill tone={statusTone as 'purple' | 'green' | 'orange' | 'gray'}>{status}</StatusPill></div>
                   <div className="mt-0.5 truncate text-[11px] text-[#6B7280]">{task}</div>

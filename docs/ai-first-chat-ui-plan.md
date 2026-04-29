@@ -192,6 +192,15 @@ Expected health response:
 
 ## Implementation checkpoints
 
+### 2026-04-29 23:40 CST — 默认伙伴头像接入与主窗口高级感优化 checkpoint
+
+- 在 `AlkakaProjectChatHome` 中接入 6 个生成式默认伙伴头像资产：小课代表、情报姬、CodeMan、设计喵、数据君、审核官。
+- 新增资源目录 `src/renderer/assets/partners/`，将原始生成图压到 512px 级别后纳入 renderer 静态资源，避免继续使用渐变字母/emoji 作为主要伙伴头像。
+- 首页各处头像统一走 `defaultPartnerAvatarAssets` / `getPartnerAvatar`：最近对话、群聊 header、消息流、任务拆解、右侧活跃伙伴和伙伴状态。
+- 产品文案继续收敛为“伙伴”：搜索框从“搜索对话、智能体或消息”改为“搜索对话、伙伴或消息”，导航从“智能体”改为“伙伴”，右栏从“AI 团队运行状态”改为“伙伴团队运行状态”。
+- 桌宠形象与真实像素交互未改动。
+- 验证：`npx vitest run src/renderer/components/chat/AlkakaProjectChatHome.test.ts src/renderer/components/chat/chatWorkspaceLayout.test.ts src/renderer/components/cowork/mainWindowLiteNav.test.ts src/renderer/services/i18n.chatUi.test.ts src/renderer/components/pet/petInteraction.test.ts src/main/petContextMenu.test.ts src/main/petWindow.test.ts` 通过（7 files / 26 tests）；`npm run compile:electron -- --pretty false`、`npm run build`、`git diff --check` 均通过。
+
 ### 2026-04-29 20:39 CST — 参考图风格 Alkaka Chat 主窗口重构 checkpoint
 
 - 用户明确反馈 Task 1-2 仍像旧 Cowork 界面；本 checkpoint 不再只换文案/壳层，而是按参考图新增 `src/renderer/components/chat/AlkakaProjectChatHome.tsx`，把无会话主窗口替换为完整三栏 Alkaka Chat 项目组界面。
