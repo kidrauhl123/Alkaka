@@ -75,21 +75,20 @@ Alkaka 是一个正在从原桌面工作台改造而来的个人 AI 助理项目
 - 每个可验收 checkpoint 必须同步更新本文件的“当前真实进度”和阶段表，记录验证命令、截图/日志证据、commit SHA 与下一步。
 - 只要涉及产品方向、阶段优先级或验收口径变化，也必须在本文件落地，避免进度只停留在对话里。
 
-### 当前 checkpoint（2026-04-29 00:03 CST）
+### 当前 checkpoint（2026-04-29 09:08 CST）
 
-- 当前分支：`main`（commit `9aa35df`，准备 push 到 `alkaka/main`）。
-- 最新功能范围：**Phase 3A.4 主窗口轻量化导航**。
-- 已完成到：主窗口默认进入“桌宠主入口模式”的轻量辅助面板；左侧历史/工具栏默认折叠，主窗口首页优先提供“任务历史 / 设置 / 复杂 Cowork / Skills/MCP”等入口；完整 Cowork 输入区默认收起，仅在用户点击“复杂 Cowork”、有 home draft，或外部新建任务快捷事件触发时展开，避免主窗口继续像重型默认工作台。
-- 最新 smoke 证据：
-  - `npm run electron:dev:openclaw`：真实 Electron/OpenClaw 启动；gateway `/health` 返回 `{"ok":true,"status":"live"}`（本轮环境的实际 gateway 端口为 `18789`）；Electron 进程存在。
-  - macOS `screencapture` 在当前远程会话仍无法从 display `69733248` 创建截图，因此本 checkpoint 以真实 Electron/OpenClaw smoke、构建与测试作为证据；视觉截图后续可在本机交互会话补。
+- 当前分支：`main`（未提交工作区；本 checkpoint 待提交后记录 SHA）。
+- 最新功能范围：**Phase 3A.6 桌宠“继续上次”最近记录恢复**。
+- 已完成到：桌宠在 ready 状态且当前没有正在处理的 session 时，会从 Cowork 按 `updated_at DESC` 排序的最近记录里挑选最新的真实 session（不受 pinned 排序影响），状态快照带上 `sessionId/title`；展开 quick input 后按钮显示“继续上次”，点击可继续复用既有 `pet:openCoworkSession` 安全 IPC 打开/聚焦主窗口并跳到该 session 详情。
+- 本轮未重跑真实 Electron/OpenClaw smoke；当前证据为 targeted 单测、Electron TS 编译、production build 和 diff whitespace check。后续做气泡/热键前再跑 `npm run electron:dev:openclaw` 端到端 smoke。
 - 验证命令：
-  - `npx vitest run src/renderer/components/cowork/mainWindowLiteNav.test.ts src/renderer/components/pet/petTaskJump.test.ts src/renderer/components/pet/petState.test.ts src/main/petStatus.test.ts src/renderer/components/pet/petQuickTask.test.ts`：5 files / 16 tests passed
-  - `npm run compile:electron -- --pretty false`：通过
-  - `npm run build`：通过
-  - `git diff --check`：通过
-  - 独立 code review 子代理：APPROVED
-- 下一优先级：补桌宠“回到当前任务/继续任务”的最近任务记忆与恢复逻辑，然后继续打磨更自然的 Shimeji 行为。
+  - RED：`npx vitest run src/renderer/components/pet/petTaskJump.test.ts src/main/petStatus.test.ts`：新增用例先失败（缺少 `createPetReadyStatusFromRecentSessions`，ready+session label 仍为“查看详情”）。
+  - GREEN：同一命令通过：2 files / 7 tests passed。
+  - `npx vitest run mainWindowLiteNav petTaskJump petState petQuickTask petStatus src/main/coworkStore.test.ts`：7 files / 30 tests passed。
+  - `npm run compile:electron -- --pretty false`：通过。
+  - `npm run build`：通过。
+  - `git diff --check`：通过。
+- 下一优先级：进入 Phase 3B 前先做桌宠气泡反馈，让桌宠能直接显示简短结果/错误/状态；之后接全局热键 + 选区文本捕获。
 
 ### ✅ 已完成
 
@@ -119,6 +118,7 @@ Alkaka 是一个正在从原桌面工作台改造而来的个人 AI 助理项目
 - **2026-04-28** **Phase 3A.3b Shimeji v6 默认形象合入 checkpoint**——按“功能核心以主分支为准、美术/定格动画以二妹成果为准”的取舍，保留主分支 quick input、状态机、pet preload IPC 与 OpenClaw/Cowork 链路，将旧 `logo.png` 桌宠替换为二妹 v6 小蛋人 `ShimejiSprite` / atlas / manifest / 皮肤模板工具；完整 world behavior 暂不默认启用，只先接入默认形象和状态驱动动作。
 - **2026-04-28** **Phase 3A.5 桌宠 ↔ 主窗口任务跳转 checkpoint**——桌宠状态保留可打开的 `sessionId`，展开 quick input 后“查看任务”会通过 `pet:openCoworkSession` 安全 IPC 打开/聚焦主窗口并跳转到对应 Cowork session 详情；主窗口显示“从桌宠快速任务跳转而来”提示，避免用户从桌宠跳转后丢上下文。
 - **2026-04-28** **Phase 3A.4 主窗口轻量化导航 checkpoint**——主窗口首页改为桌宠主入口模式下的轻量辅助面板，默认折叠左侧重导航，优先提供任务历史、设置、复杂 Cowork、Skills/MCP 入口；完整输入区默认收起，只在明确需要复杂 Cowork 或有 draft/快捷事件时展开。
+- **2026-04-29** **Phase 3A.6 桌宠“继续上次”最近记录恢复 checkpoint**——桌宠 ready 状态会基于 Cowork 按更新时间排序的最近记录带上最新可打开 `sessionId/title`，quick input 按钮从泛化“查看详情”改成“继续上次”，复用现有安全 IPC 跳转主窗口详情，降低用户从桌宠回到上一条处理记录的断点成本。
 
 ---
 
@@ -215,6 +215,7 @@ alkaka-marketplace/
 | 3A.3b | Shimeji v6 默认形象与动画资源 | ✅ checkpoint | 合入二妹 v6 小蛋人、sprite atlas、manifest、皮肤模板和工具测试；主分支产品功能壳保持为准 |
 | 3A.4 | 主窗口轻量化导航 | ✅ checkpoint | 主窗口首页收敛为任务历史/设置/复杂 Cowork/Skills-MCP 入口，完整输入区默认收起，减少启动压迫感 |
 | 3A.5 | 桌宠 ↔ 主窗口任务跳转 | ✅ checkpoint | 桌宠任务可打开对应 Cowork session 详情；主窗口会标识该详情来自桌宠快速任务 |
+| 3A.6 | 桌宠“继续上次”最近记录恢复 | ✅ checkpoint | ready 状态自动挂上按更新时间排序的最近 Cowork session；quick input 提供“继续上次”跳转入口 |
 
 #### 3A.3 具体执行计划：桌宠状态机
 

@@ -107,12 +107,13 @@ function setupDb(): void {
 }
 
 /** Insert a session row directly. */
-function insertSession(id: string): void {
+function insertSession(id: string, options: { title?: string; pinned?: boolean; updatedAt?: number } = {}): void {
   const now = Date.now();
+  const updatedAt = options.updatedAt ?? now;
   db.prepare(
     `INSERT INTO cowork_sessions (id, title, claude_session_id, status, pinned, cwd, system_prompt, execution_mode, active_skill_ids, agent_id, created_at, updated_at)
-     VALUES (?, 'test', NULL, 'idle', 0, '/tmp', '', 'local', '[]', 'main', ?, ?)`,
-  ).run(id, now, now);
+     VALUES (?, ?, NULL, 'idle', ?, '/tmp', '', 'local', '[]', 'main', ?, ?)`,
+  ).run(id, options.title ?? 'test', options.pinned ? 1 : 0, now, updatedAt);
 }
 
 /** Insert a message row directly, bypassing CoworkStore.addMessage. */
@@ -227,6 +228,26 @@ test('getConfig defaults skipMissedJobs to true when config is missing', () => {
   const config = store.getConfig();
 
   expect(config.skipMissedJobs).toBe(true);
+});
+
+test('listRecentlyUpdatedSessions ignores pinned ordering and limits after updated time sort', () => {
+  for (let index = 0; index < 12; index += 1) {
+    insertSession(`pinned-old-${index}`, {
+      title: `Pinned Old ${index}`,
+      pinned: true,
+      updatedAt: 100 + index,
+    });
+  }
+  insertSession('recent-unpinned', {
+    title: 'Recent Unpinned',
+    pinned: false,
+    updatedAt: 999,
+  });
+
+  expect(store.listSessions().slice(0, 10).some((session) => session.id === 'recent-unpinned')).toBe(false);
+  expect(store.listRecentlyUpdatedSessions(1)).toMatchObject([
+    { id: 'recent-unpinned', title: 'Recent Unpinned', pinned: false, updatedAt: 999 },
+  ]);
 });
 
 test('backfillEmptyAgentModels assigns the current default model to empty agents only', () => {

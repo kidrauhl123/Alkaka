@@ -89,7 +89,7 @@ import { OpenClawSessionIpc } from './openclawSession/constants';
 import { OpenClawSessionPolicyIpc } from './openclawSessionPolicy/constants';
 import { loadOpenClawSessionPolicyConfig, saveOpenClawSessionPolicyConfig } from './openclawSessionPolicy/store';
 import { createPetWindow, destroyPetWindow, getPetWindow, resizePetWindowForQuickInput } from './petWindow';
-import { createPetStatusSnapshot, type PetStatusSnapshot } from './petStatus';
+import { createPetReadyStatusFromRecentSessions, createPetStatusSnapshot, type PetStatusSnapshot } from './petStatus';
 import { SkillManager } from './skillManager';
 import { getSkillServiceManager } from './skillServices';
 import { SqliteStore } from './sqliteStore';
@@ -131,7 +131,16 @@ const broadcastPetStatus = (input: PetStatusSnapshot): PetStatusSnapshot => {
   return currentPetStatusSnapshot;
 };
 
-const getCurrentPetStatusSnapshot = (): PetStatusSnapshot => currentPetStatusSnapshot;
+const getCurrentPetStatusSnapshot = (): PetStatusSnapshot => {
+  if (currentPetStatusSnapshot.phase === 'ready' && !currentPetStatusSnapshot.sessionId) {
+    try {
+      return createPetReadyStatusFromRecentSessions(getCoworkStore().listRecentlyUpdatedSessions(10));
+    } catch {
+      return currentPetStatusSnapshot;
+    }
+  }
+  return currentPetStatusSnapshot;
+};
 
 const resolvePetSessionTitle = (sessionId: string): string | undefined => {
   try {

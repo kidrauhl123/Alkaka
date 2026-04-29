@@ -39,6 +39,8 @@ export function getPetTaskDetailButtonLabel(status: PetTaskJumpStatus): string {
     case 'sending':
     case 'needs-approval':
       return '查看任务';
+    case 'ready':
+      return '继续上次';
     case 'error':
     default:
       return '查看详情';

@@ -27,6 +27,7 @@ describe('pet task jump helpers', () => {
     expect(getPetTaskDetailButtonLabel({ phase: 'working', sessionId: 'session-1' })).toBe('查看任务');
     expect(getPetTaskDetailButtonLabel({ phase: 'done', sessionId: 'session-1' })).toBe('查看结果');
     expect(getPetTaskDetailButtonLabel({ phase: 'error', sessionId: 'session-1' })).toBe('查看详情');
+    expect(getPetTaskDetailButtonLabel({ phase: 'ready', sessionId: 'session-1' })).toBe('继续上次');
     expect(getPetTaskDetailButtonLabel({ phase: 'ready' })).toBe('打开主窗口');
   });
 });

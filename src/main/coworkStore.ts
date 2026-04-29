@@ -756,7 +756,43 @@ export class CoworkStore {
       `);
     }
 
-    return rows.map(row => ({
+    return rows.map(row => this.mapSessionSummaryRow(row));
+  }
+
+  listRecentlyUpdatedSessions(limit: number = 10): CoworkSessionSummary[] {
+    interface SessionSummaryRow {
+      id: string;
+      title: string;
+      status: string;
+      pinned: number | null;
+      agent_id: string | null;
+      created_at: number;
+      updated_at: number;
+    }
+
+    const rows = this.getAll<SessionSummaryRow>(
+      `
+        SELECT id, title, status, pinned, agent_id, created_at, updated_at
+        FROM cowork_sessions
+        ORDER BY updated_at DESC
+        LIMIT ?
+      `,
+      [Math.max(1, Math.min(50, Math.round(limit)))],
+    );
+
+    return rows.map(row => this.mapSessionSummaryRow(row));
+  }
+
+  private mapSessionSummaryRow(row: {
+    id: string;
+    title: string;
+    status: string;
+    pinned: number | null;
+    agent_id: string | null;
+    created_at: number;
+    updated_at: number;
+  }): CoworkSessionSummary {
+    return {
       id: row.id,
       title: row.title,
       status: row.status as CoworkSessionStatus,
@@ -764,7 +800,7 @@ export class CoworkStore {
       agentId: row.agent_id || 'main',
       createdAt: row.created_at,
       updatedAt: row.updated_at,
-    }));
+    };
   }
 
   resetRunningSessions(): number {

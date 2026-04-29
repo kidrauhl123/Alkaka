@@ -15,6 +15,13 @@ export interface PetStatusSnapshot {
   error?: string;
 }
 
+export interface PetRecentSessionSummary {
+  id?: string;
+  title?: string;
+  updatedAt?: number;
+  pinned?: boolean;
+}
+
 const MAX_TITLE_LENGTH = 50;
 const MAX_MESSAGE_LENGTH = 160;
 
@@ -50,4 +57,20 @@ export function createPetStatusSnapshot(input: PetStatusSnapshot): PetStatusSnap
     message,
     error,
   };
+}
+
+export function createPetReadyStatusFromRecentSessions(sessions: PetRecentSessionSummary[]): PetStatusSnapshot {
+  const openableSessions = sessions
+    .filter((session) => {
+      const id = truncate(session.id, MAX_TITLE_LENGTH);
+      return Boolean(id && !id.startsWith('temp-'));
+    })
+    .sort((left, right) => (right.updatedAt ?? 0) - (left.updatedAt ?? 0));
+  const recentSession = openableSessions[0];
+
+  return createPetStatusSnapshot({
+    phase: 'ready',
+    sessionId: recentSession ? truncate(recentSession.id, MAX_TITLE_LENGTH) : undefined,
+    title: recentSession ? truncate(recentSession.title, MAX_TITLE_LENGTH) : undefined,
+  });
 }
