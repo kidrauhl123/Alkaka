@@ -73,7 +73,20 @@
 - 每个可验收 checkpoint 必须同步更新本文件的“当前真实进度”和阶段表，记录验证命令、截图/日志证据、commit SHA 与下一步。
 - 只要涉及产品方向、阶段优先级或验收口径变化，也必须在本文件落地，避免进度只停留在对话里。
 
-### 当前 checkpoint（2026-04-29 19:53 CST）
+### 当前 checkpoint（2026-04-29 20:39 CST）
+
+- 当前分支：`main`（未提交工作区；本 checkpoint 待提交后记录 SHA）。
+- 最新功能范围：**参考图风格 Alkaka Chat 主窗口重构 checkpoint**。
+- 已完成到：根据用户提供的 UI 参考图，废掉无会话主窗口里的旧 Cowork 便签/任务面板视觉语言，新增 `src/renderer/components/chat/AlkakaProjectChatHome.tsx` 并在 `CoworkView` 首页接入完整三栏 Alkaka Chat 项目组界面：左侧品牌 / 新建对话 / 搜索 / 导航 / 最近对话，中间 `AI日报项目组` 群聊与置顶任务 / 富消息卡 / 代码进度 / composer，右侧 AI 团队运行状态 / 资源用量 / 伙伴状态 / 快捷操作。视觉系统改为参考图的白底、淡薰衣草背景、蓝紫渐变、圆角卡片、柔和阴影和状态 pill；发送按钮仍复用现有 `handleStartSession` 进入 Cowork/OpenClaw session，不改 runtime。
+- 验证命令：
+  - `npx vitest run src/renderer/components/chat/AlkakaProjectChatHome.test.ts src/renderer/components/chat/chatWorkspaceLayout.test.ts src/renderer/components/cowork/mainWindowLiteNav.test.ts src/renderer/services/i18n.chatUi.test.ts src/renderer/components/pet/petInteraction.test.ts src/main/petContextMenu.test.ts src/main/petWindow.test.ts`：7 files / 25 tests passed。
+  - `npm run compile:electron -- --pretty false`：通过。
+  - `npm run build`：通过。
+  - `git diff --check`：通过。
+  - `npm run electron:dev:openclaw`：真实运行链路已启动；`http://127.0.0.1:18789/health` 返回 `200 {"ok":true,"status":"live"}`，Vite `http://127.0.0.1:5175/` 返回 `200`。
+- 下一优先级：让参考图里的静态项目组 UI 逐步绑定真实会话 / AI 伙伴 / 任务进度数据，并把侧边导航里的“任务中心”等旧概念收敛为聊天软件语义。
+
+### 上一 checkpoint（2026-04-29 19:53 CST）
 
 - 当前分支：`main`（未提交工作区；本 checkpoint 待提交后记录 SHA）。
 - 最新功能范围：**AI-first Chat UI Task 1-2 起步 checkpoint**。
@@ -118,6 +131,7 @@
 - **2026-04-29** **Phase 3A.7 AI 桌宠 / 对话中心语义纠偏 checkpoint**——产品定位从“任务桌宠”纠偏为“AI 桌宠”：桌宠默认窗口收紧到 `168×196` 贴近透明形象，移除底部常驻状态文案，右键菜单首项改为“对话”；主窗口默认尺寸降为 `960×640`，首页文案改为“和 Alkaka 对话”，顶部/侧边不再提供“搜索任务”主入口，搜索移动到历史记录旁边的放大镜按钮，同时保留定时任务、Skills/MCP、我的 Agent。
 - **2026-04-29** **Phase 3A.8 深浅双色主题与对话空间视觉降噪 checkpoint**——删除多皮肤主题 registry 和设置页皮肤墙，仅保留 `classic-light` / `classic-dark` 两套低饱和深浅主题；旧主题 id 兼容回落到深浅主题。主窗口首页去掉大面积渐变/发光/玻璃拟态，改为更安静的纸面/便签式对话空间。
 - **2026-04-29** **AI-first Chat UI Task 1-2 起步 checkpoint**——主窗口首页改为“Alkaka 对话营地”，首屏文案和导航第一步转向单聊 / AI 伙伴 / 项目组；新增 `src/renderer/components/chat/ChatWorkspaceShell.tsx` 与 `chatWorkspaceLayout.ts`，为三栏项目组全展开工作台提供可折叠右侧 workbench 壳层，同时保留普通单聊默认轻量和当前桌宠形象/交互。
+- **2026-04-29** **参考图风格 Alkaka Chat 主窗口重构 checkpoint**——根据用户提供的参考图重做无会话主窗口，不再停留在旧 Cowork 面板：新增 `AlkakaProjectChatHome` 三栏项目组群聊界面，包含左侧 Alkaka Chat 导航 / 最近对话、中间 AI 日报项目组群聊与富任务卡、右侧团队状态 / 资源用量 / 伙伴状态 / 快捷操作；保留桌宠形象和 Cowork/OpenClaw session 数据流。
 
 ---
 

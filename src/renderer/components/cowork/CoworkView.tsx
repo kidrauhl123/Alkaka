@@ -1,8 +1,6 @@
-import { ShieldCheckIcon } from '@heroicons/react/24/outline';
 import React, { useEffect, useRef,useState } from 'react';
 import { useDispatch,useSelector } from 'react-redux';
 
-import { agentService } from '../../services/agent';
 import { coworkService } from '../../services/cowork';
 import { i18nService } from '../../services/i18n';
 import { quickActionService } from '../../services/quickAction';
@@ -13,30 +11,15 @@ import {
   selectCurrentSession,
   selectDraftPrompts,
   selectIsOpenClawEngine,
-  selectIsStreaming,
 } from '../../store/selectors/coworkSelectors';
-import { addMessage, clearCurrentSession, setCurrentSession, setStreaming, updateSessionStatus } from '../../store/slices/coworkSlice';
-import { clearSelection,selectAction, setActions } from '../../store/slices/quickActionSlice';
-import { clearActiveSkills, setActiveSkillIds } from '../../store/slices/skillSlice';
+import { addMessage, clearCurrentSession, setCurrentSession, setDraftPrompt, setStreaming, updateSessionStatus } from '../../store/slices/coworkSlice';
+import { clearSelection, setActions } from '../../store/slices/quickActionSlice';
+import { clearActiveSkills } from '../../store/slices/skillSlice';
 import type { CoworkImageAttachment, CoworkSession, OpenClawEngineStatus } from '../../types/cowork';
-import { toOpenClawModelRef } from '../../utils/openclawModelRef';
-import { resolveChatWorkspaceLayout } from '../chat/chatWorkspaceLayout';
-import ChatWorkspaceShell from '../chat/ChatWorkspaceShell';
-import ComposeIcon from '../icons/ComposeIcon';
-import SidebarToggleIcon from '../icons/SidebarToggleIcon';
-import ModelSelector from '../ModelSelector';
-import { PromptPanel,QuickActionBar } from '../quick-actions';
+import AlkakaProjectChatHome from '../chat/AlkakaProjectChatHome';
 import type { SettingsOpenOptions } from '../Settings';
 import WindowTitleBar from '../window/WindowTitleBar';
-import { resolveAgentModelSelection } from './agentModelSelection';
-import CoworkPromptInput, { type CoworkPromptInputRef } from './CoworkPromptInput';
 import CoworkSessionDetail from './CoworkSessionDetail';
-import {
-  buildMainWindowLiteActions,
-  getMainWindowHomeCopy,
-  type MainWindowLiteActionId,
-  shouldShowComposerOnMainWindowHome,
-} from './mainWindowLiteNav';
 
 export interface CoworkViewProps {
   onRequestAppSettings?: (options?: SettingsOpenOptions) => void;
@@ -51,7 +34,6 @@ export interface CoworkViewProps {
 
 const CoworkView: React.FC<CoworkViewProps> = ({ onRequestAppSettings, onShowSkills, isSidebarCollapsed, onToggleSidebar, onNewChat, updateBadge, petOpenedSessionId }) => {
   const dispatch = useDispatch();
-  const isMac = window.electron.platform === 'darwin';
   const [isInitialized, setIsInitialized] = useState(false);
   const [openClawStatus, setOpenClawStatus] = useState<OpenClawEngineStatus | null>(null);
   const [isRestartingGateway, setIsRestartingGateway] = useState(false);
@@ -66,32 +48,14 @@ const CoworkView: React.FC<CoworkViewProps> = ({ onRequestAppSettings, onShowSki
     cancellationAction: 'stop' | 'delete' | null;
   } | null>(null);
   const startRequestIdRef = useRef(0);
-  // Ref for CoworkPromptInput
-  const promptInputRef = useRef<CoworkPromptInputRef>(null);
 
   const currentSession = useSelector(selectCurrentSession);
   const homeDraftPrompt = useSelector((state: RootState) => selectDraftPrompts(state).__home__ || '');
-  const isStreaming = useSelector(selectIsStreaming);
   const config = useSelector(selectCoworkConfig);
   const isOpenClawEngine = useSelector(selectIsOpenClawEngine);
 
   const activeSkillIds = useSelector((state: RootState) => state.skill.activeSkillIds);
-  const skills = useSelector((state: RootState) => state.skill.skills);
-  const quickActions = useSelector((state: RootState) => state.quickAction.actions);
-  const selectedActionId = useSelector((state: RootState) => state.quickAction.selectedActionId);
   const currentAgentId = useSelector((state: RootState) => state.agent.currentAgentId);
-  const agents = useSelector((state: RootState) => state.agent.agents);
-  const availableModels = useSelector((state: RootState) => state.model.availableModels);
-  const globalSelectedModel = useSelector((state: RootState) => state.model.selectedModel);
-  const currentAgent = agents.find((agent) => agent.id === currentAgentId);
-  const {
-    selectedModel: headerSelectedModel,
-  } = resolveAgentModelSelection({
-    agentModel: currentAgent?.model ?? '',
-    availableModels,
-    fallbackModel: globalSelectedModel,
-    engine: config.agentEngine,
-  });
 
   const buildApiConfigNotice = (error?: string): { noticeI18nKey: string; noticeExtra?: string } => {
     const key = 'coworkModelSettingsRequired';
@@ -414,42 +378,6 @@ const CoworkView: React.FC<CoworkViewProps> = ({ onRequestAppSettings, onShowSki
     await coworkService.deleteSession(sessionId);
   };
 
-  // Get selected quick action
-  const selectedAction = React.useMemo(() => {
-    return quickActions.find(action => action.id === selectedActionId);
-  }, [quickActions, selectedActionId]);
-
-  // Handle quick action button click: select action + activate skill in one batch
-  const handleActionSelect = (actionId: string) => {
-    dispatch(selectAction(actionId));
-    const action = quickActions.find(a => a.id === actionId);
-    if (action) {
-      const targetSkill = skills.find(s => s.id === action.skillMapping);
-      if (targetSkill) {
-        dispatch(setActiveSkillIds([targetSkill.id]));
-      }
-    }
-  };
-
-  // When the mapped skill is deactivated from input area, restore the QuickActionBar
-  useEffect(() => {
-    if (!selectedActionId) return;
-    const action = quickActions.find(a => a.id === selectedActionId);
-    if (action) {
-      const skillStillActive = activeSkillIds.includes(action.skillMapping);
-      if (!skillStillActive) {
-        dispatch(clearSelection());
-      }
-    }
-  }, [activeSkillIds, dispatch, quickActions, selectedActionId]);
-
-  // Handle prompt selection from QuickAction
-  const handleQuickActionPromptSelect = (prompt: string) => {
-    // Fill the prompt into input
-    promptInputRef.current?.setValue(prompt);
-    promptInputRef.current?.focus();
-  };
-
   useEffect(() => {
     if (currentSession) {
       setIsComposerRequested(false);
@@ -491,20 +419,19 @@ const CoworkView: React.FC<CoworkViewProps> = ({ onRequestAppSettings, onShowSki
   useEffect(() => {
     const handleFocusInput = (event: Event) => {
       if (currentSession) return;
-      if (isComposerRequested || homeDraftPrompt.trim().length > 0) return;
 
+      const detail = (event as CustomEvent<{ clear?: boolean }>).detail;
+      if (detail?.clear) {
+        dispatch(setDraftPrompt({ sessionId: '__home__', draft: '' }));
+      }
       setIsComposerRequested(true);
-      const detail = (event as CustomEvent).detail;
-      window.setTimeout(() => {
-        window.dispatchEvent(new CustomEvent('cowork:focus-input', { detail }));
-      }, 0);
     };
 
     window.addEventListener('cowork:focus-input', handleFocusInput);
     return () => {
       window.removeEventListener('cowork:focus-input', handleFocusInput);
     };
-  }, [currentSession, homeDraftPrompt, isComposerRequested]);
+  }, [currentSession, dispatch]);
 
   if (!isInitialized) {
     return (
@@ -523,88 +450,6 @@ const CoworkView: React.FC<CoworkViewProps> = ({ onRequestAppSettings, onShowSki
 
   const shouldShowEngineStatus = Boolean(isOpenClawEngine && openClawStatus && openClawStatus.phase !== 'running');
   const isEngineError = openClawStatus?.phase === 'error';
-  const isEngineReady = isOpenClawEngine
-    ? isOpenClawReadyForSession(openClawStatus)
-    : true;
-  const homeCopy = getMainWindowHomeCopy();
-  const liteActions = buildMainWindowLiteActions({ canResumeSession: Boolean(petOpenedSessionId) });
-  const shouldShowComposer = shouldShowComposerOnMainWindowHome({
-    requestedComposer: isComposerRequested,
-    hasDraftPrompt: homeDraftPrompt.trim().length > 0,
-  });
-  const homeWorkspaceLayout = resolveChatWorkspaceLayout({
-    mode: 'direct',
-    isDeepProcessing: shouldShowComposer,
-  });
-
-  const handleLiteAction = (actionId: MainWindowLiteActionId) => {
-    switch (actionId) {
-      case 'resume-current-task':
-        if (petOpenedSessionId) {
-          void coworkService.loadSession(petOpenedSessionId);
-        }
-        return;
-      case 'open-settings':
-        onRequestAppSettings?.();
-        return;
-      case 'new-complex-task':
-        setIsComposerRequested(true);
-        window.setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('cowork:focus-input', { detail: { clear: false } }));
-        }, 0);
-        return;
-      case 'manage-skills':
-        onShowSkills?.();
-        return;
-      default:
-        return;
-    }
-  };
-
-  const homeHeader = (
-    <div className="draggable flex h-12 items-center justify-between px-4 border-b border-border shrink-0">
-      <div className="non-draggable h-8 flex items-center">
-        {isSidebarCollapsed && (
-          <div className={`flex items-center gap-1 mr-2 ${isMac ? 'pl-[68px]' : ''}`}>
-            <button
-              type="button"
-              onClick={onToggleSidebar}
-              className="h-8 w-8 inline-flex items-center justify-center rounded-lg text-secondary hover:bg-surface-raised transition-colors"
-            >
-              <SidebarToggleIcon className="h-4 w-4" isCollapsed={true} />
-            </button>
-            <button
-              type="button"
-              onClick={onNewChat}
-              className="h-8 w-8 inline-flex items-center justify-center rounded-lg text-secondary hover:bg-surface-raised transition-colors"
-            >
-              <ComposeIcon className="h-4 w-4" />
-            </button>
-            {updateBadge}
-          </div>
-        )}
-        <ModelSelector
-          value={isOpenClawEngine ? headerSelectedModel : undefined}
-          onChange={isOpenClawEngine
-            ? async (nextModel) => {
-                if (!currentAgent || !nextModel) return;
-                await agentService.updateAgent(currentAgent.id, { model: toOpenClawModelRef(nextModel) });
-              }
-            : undefined}
-        />
-      </div>
-      <div className="non-draggable flex items-center">
-        <div className="flex items-center gap-1.5 mr-2 px-2.5 py-1">
-          <ShieldCheckIcon className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
-          <span className="text-xs text-green-600 dark:text-green-400 whitespace-nowrap">
-            {i18nService.t('alkakaGuardEnabled')}
-          </span>
-        </div>
-        <WindowTitleBar inline />
-      </div>
-    </div>
-  );
-
   // Engine status banner for error/non-running states (starting overlay is now global in App.tsx)
   const engineStatusBanner = shouldShowEngineStatus && openClawStatus && openClawStatus.phase !== 'starting' ? (
     <div className={`shrink-0 flex items-center justify-between px-4 py-2 text-xs ${isEngineError
@@ -657,135 +502,30 @@ const CoworkView: React.FC<CoworkViewProps> = ({ onRequestAppSettings, onShowSki
     );
   }
 
-  const homeWorkbench = (
-    <div className="flex h-full flex-col gap-4 p-4 text-sm">
-      <div>
-        <div className="text-xs font-medium uppercase tracking-[0.18em] text-tertiary">Workbench</div>
-        <h3 className="mt-2 text-base font-semibold text-foreground">项目组工作台</h3>
-        <p className="mt-1 text-xs leading-5 text-secondary">
-          深度处理时用于放置伙伴状态、当前目标、交付物和执行日志。
-        </p>
-      </div>
-      <div className="rounded-xl border border-border bg-background/70 p-3">
-        <div className="text-xs font-medium text-foreground">当前目标</div>
-        <p className="mt-1 text-xs leading-5 text-secondary">开始项目组协作后在这里固定目标与阶段进展。</p>
-      </div>
-      <div className="rounded-xl border border-border bg-background/70 p-3">
-        <div className="text-xs font-medium text-foreground">交付物</div>
-        <p className="mt-1 text-xs leading-5 text-secondary">文件、知识库和输出物入口会在后续任务接入。</p>
-      </div>
-    </div>
-  );
-
-  // Home view - no current session
+  // Home view - no current session. This intentionally replaces the old Cowork landing card with
+  // the reference-image Alkaka Chat workspace: three columns, project group chat, and AI team dashboard.
   return (
-    <ChatWorkspaceShell
-      workbenchState={homeWorkspaceLayout.workbench}
-      workbench={homeWorkbench}
-      conversation={(
-        <div className="flex-1 flex flex-col bg-background h-full">
-          {/* Engine status banner for error states */}
-          {engineStatusBanner}
-
-          {/* Header */}
-          {homeHeader}
-
-          {/* Main Content */}
-          <div className="flex-1 overflow-y-auto min-h-0">
-            <div className="max-w-[680px] w-full min-w-[320px] mx-auto px-5 pt-[10vh] pb-8 space-y-6">
-              <div className="rounded-[18px] border border-border bg-surface px-6 py-6 shadow-[0_18px_60px_rgba(47,42,36,0.06),0_2px_10px_rgba(47,42,36,0.04)] dark:shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
-                <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
-                  <div className="space-y-3 max-w-xl">
-                    <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-secondary">
-                      对话营地
-                    </div>
-                    <div className="space-y-2">
-                      <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-                        {homeCopy.title}
-                      </h2>
-                      <p className="text-sm leading-6 text-secondary">
-                        {homeCopy.subtitle}
-                      </p>
-                      <p className="text-xs leading-5 text-tertiary">
-                        {homeCopy.hint}
-                      </p>
-                    </div>
-                  </div>
-                  <img src="logo.png" alt="logo" className="hidden md:block h-14 w-14 opacity-80" />
-                </div>
-
-                <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                  {liteActions.map((action) => (
-                    <button
-                      key={action.id}
-                      type="button"
-                      onClick={() => handleLiteAction(action.id)}
-                      className={`rounded-xl border px-4 py-3 text-left transition-colors ${
-                        action.tone === 'primary'
-                          ? 'border-foreground bg-foreground text-background hover:opacity-90'
-                          : action.tone === 'secondary'
-                            ? 'border-border bg-surface hover:bg-surface-raised'
-                            : 'border-transparent bg-transparent hover:bg-surface-raised'
-                      }`}
-                    >
-                      <div className={`text-sm font-medium ${action.tone === 'primary' ? 'text-background' : 'text-foreground'}`}>{action.label}</div>
-                      <div className={`mt-1 text-xs leading-5 ${action.tone === 'primary' ? 'text-background opacity-75' : 'text-secondary'}`}>{action.description}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {shouldShowComposer ? (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between px-1">
-                    <div>
-                      <h3 className="text-sm font-medium text-foreground">深度对话输入</h3>
-                      <p className="text-xs text-secondary">单聊或项目组需要长上下文时，再展开完整输入区。</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setIsComposerRequested(false)}
-                      className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-secondary hover:bg-surface-raised hover:text-foreground transition-colors"
-                    >
-                      收起
-                    </button>
-                  </div>
-
-                  <div className="shadow-glow-accent rounded-2xl">
-                    <CoworkPromptInput
-                      ref={promptInputRef}
-                      onSubmit={handleStartSession}
-                      onStop={handleStopSession}
-                      isStreaming={isStreaming}
-                      disabled={!isEngineReady}
-                      placeholder={i18nService.t('coworkPlaceholder')}
-                      size="large"
-                      workingDirectory={config.workingDirectory}
-                      onWorkingDirectoryChange={async (dir: string) => {
-                        await coworkService.updateConfig({ workingDirectory: dir });
-                      }}
-                      showFolderSelector={true}
-                      onManageSkills={() => onShowSkills?.()}
-                    />
-                  </div>
-
-                  <div className="space-y-4">
-                    {selectedAction ? (
-                      <PromptPanel
-                        action={selectedAction}
-                        onPromptSelect={handleQuickActionPromptSelect}
-                      />
-                    ) : (
-                      <QuickActionBar actions={quickActions} onActionSelect={handleActionSelect} />
-                    )}
-                  </div>
-                </div>
-              ) : null}
-            </div>
+    <div className="relative flex h-full flex-1 flex-col overflow-hidden">
+      {engineStatusBanner}
+      <div className="relative min-h-0 flex-1 overflow-hidden">
+        <div className="draggable pointer-events-none absolute right-2 top-2 z-20 flex items-center rounded-xl bg-white/70 px-1.5 py-1 shadow-sm backdrop-blur">
+          <div className="non-draggable pointer-events-auto">
+            <WindowTitleBar inline />
           </div>
         </div>
-      )}
-    />
+        <AlkakaProjectChatHome
+          composerValue={homeDraftPrompt}
+          onComposerChange={(draft) => dispatch(setDraftPrompt({ sessionId: '__home__', draft }))}
+          onRequestNewChat={() => {
+            dispatch(setDraftPrompt({ sessionId: '__home__', draft: '' }));
+            onNewChat?.();
+            setIsComposerRequested(true);
+          }}
+          shouldFocusComposer={isComposerRequested || homeDraftPrompt.trim().length > 0}
+          onSubmitMessage={(message) => handleStartSession(message)}
+        />
+      </div>
+    </div>
   );
 };
 

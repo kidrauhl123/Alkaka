@@ -192,6 +192,16 @@ Expected health response:
 
 ## Implementation checkpoints
 
+### 2026-04-29 20:39 CST — 参考图风格 Alkaka Chat 主窗口重构 checkpoint
+
+- 用户明确反馈 Task 1-2 仍像旧 Cowork 界面；本 checkpoint 不再只换文案/壳层，而是按参考图新增 `src/renderer/components/chat/AlkakaProjectChatHome.tsx`，把无会话主窗口替换为完整三栏 Alkaka Chat 项目组界面。
+- 左栏：Alkaka Chat 渐变 logo、新建对话、搜索框、对话/智能体/任务中心/项目空间等导航、最近对话和 Boss profile。
+- 中间：`AI日报项目组` 群聊 header、置顶“生成今日 AI 行业日报”任务、Boss / 小课代表 / 项目管理 / 情报姬 / CodeMan 消息流、课代表总结卡、任务拆解卡、思考过程折叠卡、代码执行进度卡和底部 composer。
+- 右栏：AI 团队运行状态、资源使用情况、伙伴状态、快捷操作卡片，使用浅色白 / 淡薰衣草背景、蓝紫渐变、圆角卡片、柔和阴影和状态 pill。
+- 接入点：`CoworkView` 在没有 current session 时直接显示参考图风格 home；点击发送按钮仍走现有 `handleStartSession`，不重写 Cowork/OpenClaw 数据流。
+- 桌宠形象与真实像素交互未改动。
+- 验证：`npx vitest run src/renderer/components/chat/AlkakaProjectChatHome.test.ts src/renderer/components/chat/chatWorkspaceLayout.test.ts src/renderer/components/cowork/mainWindowLiteNav.test.ts src/renderer/services/i18n.chatUi.test.ts src/renderer/components/pet/petInteraction.test.ts src/main/petContextMenu.test.ts src/main/petWindow.test.ts` 通过（7 files / 25 tests）；`npm run compile:electron -- --pretty false`、`npm run build`、`git diff --check` 均通过；真实 `electron:dev:openclaw` health 为 `{"ok":true,"status":"live"}`，Vite 返回 `HTTP/1.1 200 OK`。
+
 ### 2026-04-29 19:53 CST — Task 1-2 起步 checkpoint
 
 - Task 1：主窗口首页文案改为“Alkaka 对话营地”，首屏明确单聊 / AI 伙伴 / 项目组；侧边导航文案新增测试覆盖（对话记录、AI 伙伴、项目组、搜索对话）。
