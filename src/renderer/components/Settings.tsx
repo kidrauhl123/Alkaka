@@ -544,7 +544,6 @@ const Settings: React.FC<SettingsProps> = ({ onClose, initialTab, notice, notice
   // 状态
   const [activeTab, setActiveTab] = useState<TabType>(initialTab ?? 'general');
   const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('system');
-  const [themeId, setThemeId] = useState<string>(themeService.getThemeId());
   const [language, setLanguage] = useState<LanguageType>('zh');
   const [autoLaunch, setAutoLaunchState] = useState(false);
   const [useSystemProxy, setUseSystemProxy] = useState(false);
@@ -2742,16 +2741,17 @@ const Settings: React.FC<SettingsProps> = ({ onClose, initialTab, notice, notice
               </label>
             </div>
 
-            {/* Appearance Section — mode selector + theme gallery */}
+            {/* Appearance Section — only two deliberate modes */}
             <div>
               <h4 className="text-sm font-medium mb-3" style={{ color: 'var(--alkaka-text-primary)' }}>
                 {i18nService.t('appearance')}
               </h4>
-
-              {/* Level 1: Mode selector */}
-              <div className="grid grid-cols-3 gap-3 mb-4">
-                {(['light', 'dark', 'system'] as const).map((mode) => {
-                  const isSelected = theme === mode;
+              <div className="grid grid-cols-2 gap-3">
+                {(['light', 'dark'] as const).map((mode) => {
+                  const isSelected = theme === mode || (theme === 'system' && themeService.getEffectiveTheme() === mode);
+                  const preview = mode === 'light'
+                    ? { bg: '#F7F4EF', surface: '#FFFDF8', rail: '#EFE9DF', ink: '#2F2A24', muted: '#9B9185' }
+                    : { bg: '#171512', surface: '#211E1A', rail: '#27231E', ink: '#EEE8DC', muted: '#8F8477' };
                   return (
                     <button
                       key={mode}
@@ -2759,153 +2759,34 @@ const Settings: React.FC<SettingsProps> = ({ onClose, initialTab, notice, notice
                       onClick={() => {
                         setTheme(mode);
                         themeService.setTheme(mode);
-                        setThemeId(themeService.getThemeId());
                       }}
-                      className="flex flex-col items-center rounded-xl border-2 p-3 transition-colors cursor-pointer"
+                      className="rounded-2xl border p-3 text-left transition-colors cursor-pointer"
                       style={{
-                        borderColor: isSelected ? 'var(--alkaka-primary)' : 'var(--alkaka-border)',
-                        backgroundColor: isSelected ? 'var(--alkaka-primary-muted)' : undefined,
+                        borderColor: isSelected ? 'var(--alkaka-text-primary)' : 'var(--alkaka-border)',
+                        backgroundColor: isSelected ? 'var(--alkaka-primary-muted)' : 'var(--alkaka-surface)',
                       }}
                     >
-                      <svg viewBox="0 0 120 80" className="w-full h-auto rounded-md mb-2 overflow-hidden" xmlns="http://www.w3.org/2000/svg">
-                        {mode === 'light' && (
-                          <>
-                            <rect width="120" height="80" fill="#F8F9FB" />
-                            <rect x="0" y="0" width="30" height="80" fill="#EBEDF0" />
-                            <rect x="4" y="8" width="22" height="4" rx="2" fill="#C8CBD0" />
-                            <rect x="4" y="16" width="18" height="3" rx="1.5" fill="#D5D7DB" />
-                            <rect x="4" y="22" width="20" height="3" rx="1.5" fill="#D5D7DB" />
-                            <rect x="4" y="28" width="16" height="3" rx="1.5" fill="#D5D7DB" />
-                            <rect x="36" y="8" width="78" height="64" rx="4" fill="#FFFFFF" />
-                            <rect x="42" y="16" width="50" height="4" rx="2" fill="#D5D7DB" />
-                            <rect x="42" y="24" width="66" height="3" rx="1.5" fill="#E2E4E7" />
-                            <rect x="42" y="30" width="60" height="3" rx="1.5" fill="#E2E4E7" />
-                            <rect x="42" y="36" width="55" height="3" rx="1.5" fill="#E2E4E7" />
-                            <rect x="42" y="46" width="40" height="4" rx="2" fill="#D5D7DB" />
-                            <rect x="42" y="54" width="66" height="3" rx="1.5" fill="#E2E4E7" />
-                            <rect x="42" y="60" width="58" height="3" rx="1.5" fill="#E2E4E7" />
-                          </>
-                        )}
-                        {mode === 'dark' && (
-                          <>
-                            <rect width="120" height="80" fill="#0F1117" />
-                            <rect x="0" y="0" width="30" height="80" fill="#151820" />
-                            <rect x="4" y="8" width="22" height="4" rx="2" fill="#3A3F4B" />
-                            <rect x="4" y="16" width="18" height="3" rx="1.5" fill="#2A2F3A" />
-                            <rect x="4" y="22" width="20" height="3" rx="1.5" fill="#2A2F3A" />
-                            <rect x="4" y="28" width="16" height="3" rx="1.5" fill="#2A2F3A" />
-                            <rect x="36" y="8" width="78" height="64" rx="4" fill="#1A1D27" />
-                            <rect x="42" y="16" width="50" height="4" rx="2" fill="#3A3F4B" />
-                            <rect x="42" y="24" width="66" height="3" rx="1.5" fill="#252930" />
-                            <rect x="42" y="30" width="60" height="3" rx="1.5" fill="#252930" />
-                            <rect x="42" y="36" width="55" height="3" rx="1.5" fill="#252930" />
-                            <rect x="42" y="46" width="40" height="4" rx="2" fill="#3A3F4B" />
-                            <rect x="42" y="54" width="66" height="3" rx="1.5" fill="#252930" />
-                            <rect x="42" y="60" width="58" height="3" rx="1.5" fill="#252930" />
-                          </>
-                        )}
-                        {mode === 'system' && (
-                          <>
-                            <defs>
-                              <clipPath id="left-half">
-                                <rect x="0" y="0" width="60" height="80" />
-                              </clipPath>
-                              <clipPath id="right-half">
-                                <rect x="60" y="0" width="60" height="80" />
-                              </clipPath>
-                            </defs>
-                            <g clipPath="url(#left-half)">
-                              <rect width="120" height="80" fill="#F8F9FB" />
-                              <rect x="0" y="0" width="30" height="80" fill="#EBEDF0" />
-                              <rect x="4" y="8" width="22" height="4" rx="2" fill="#C8CBD0" />
-                              <rect x="4" y="16" width="18" height="3" rx="1.5" fill="#D5D7DB" />
-                              <rect x="4" y="22" width="20" height="3" rx="1.5" fill="#D5D7DB" />
-                              <rect x="4" y="28" width="16" height="3" rx="1.5" fill="#D5D7DB" />
-                              <rect x="36" y="8" width="78" height="64" rx="4" fill="#FFFFFF" />
-                              <rect x="42" y="16" width="50" height="4" rx="2" fill="#D5D7DB" />
-                              <rect x="42" y="24" width="66" height="3" rx="1.5" fill="#E2E4E7" />
-                              <rect x="42" y="30" width="60" height="3" rx="1.5" fill="#E2E4E7" />
-                              <rect x="42" y="36" width="55" height="3" rx="1.5" fill="#E2E4E7" />
-                              <rect x="42" y="46" width="40" height="4" rx="2" fill="#D5D7DB" />
-                              <rect x="42" y="54" width="66" height="3" rx="1.5" fill="#E2E4E7" />
-                            </g>
-                            <g clipPath="url(#right-half)">
-                              <rect width="120" height="80" fill="#0F1117" />
-                              <rect x="0" y="0" width="30" height="80" fill="#151820" />
-                              <rect x="4" y="8" width="22" height="4" rx="2" fill="#3A3F4B" />
-                              <rect x="4" y="16" width="18" height="3" rx="1.5" fill="#2A2F3A" />
-                              <rect x="4" y="22" width="20" height="3" rx="1.5" fill="#2A2F3A" />
-                              <rect x="4" y="28" width="16" height="3" rx="1.5" fill="#2A2F3A" />
-                              <rect x="36" y="8" width="78" height="64" rx="4" fill="#1A1D27" />
-                              <rect x="42" y="16" width="50" height="4" rx="2" fill="#3A3F4B" />
-                              <rect x="42" y="24" width="66" height="3" rx="1.5" fill="#252930" />
-                              <rect x="42" y="30" width="60" height="3" rx="1.5" fill="#252930" />
-                              <rect x="42" y="36" width="55" height="3" rx="1.5" fill="#252930" />
-                              <rect x="42" y="46" width="40" height="4" rx="2" fill="#3A3F4B" />
-                              <rect x="42" y="54" width="66" height="3" rx="1.5" fill="#252930" />
-                            </g>
-                            <line x1="60" y1="0" x2="60" y2="80" stroke="#888" strokeWidth="0.5" />
-                          </>
-                        )}
+                      <svg viewBox="0 0 132 84" className="w-full h-auto rounded-xl mb-3 overflow-hidden" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="132" height="84" fill={preview.bg} />
+                        <rect x="10" y="10" width="28" height="64" rx="8" fill={preview.rail} />
+                        <rect x="46" y="10" width="76" height="64" rx="10" fill={preview.surface} stroke={preview.muted} strokeOpacity="0.22" />
+                        <rect x="18" y="20" width="12" height="4" rx="2" fill={preview.ink} opacity="0.55" />
+                        <rect x="18" y="32" width="12" height="3" rx="1.5" fill={preview.muted} opacity="0.55" />
+                        <rect x="56" y="23" width="42" height="5" rx="2.5" fill={preview.ink} opacity="0.82" />
+                        <rect x="56" y="36" width="52" height="3" rx="1.5" fill={preview.muted} opacity="0.48" />
+                        <rect x="56" y="46" width="38" height="3" rx="1.5" fill={preview.muted} opacity="0.35" />
+                        <rect x="56" y="58" width="22" height="6" rx="3" fill={preview.ink} opacity="0.78" />
                       </svg>
-                      <span className="text-xs font-medium" style={{ color: isSelected ? 'var(--alkaka-primary)' : 'var(--alkaka-text-primary)' }}>
+                      <span className="block text-sm font-medium" style={{ color: 'var(--alkaka-text-primary)' }}>
                         {i18nService.t(mode)}
+                      </span>
+                      <span className="mt-1 block text-xs leading-5" style={{ color: 'var(--alkaka-text-secondary)' }}>
+                        {mode === 'light' ? '温暖纸面，不再使用彩色皮肤。' : '低饱和炭黑，只保留必要层次。'}
                       </span>
                     </button>
                   );
                 })}
               </div>
-
-              {/* Theme color gallery — all themes */}
-              <h4 className="text-sm font-medium mb-3 mt-5" style={{ color: 'var(--alkaka-text-primary)' }}>
-                {i18nService.t('themeColor')}
-              </h4>
-              {(() => {
-                const allThemes = themeService.getAllThemes();
-                const classicThemes = allThemes.filter(t => t.meta.id === 'classic-light' || t.meta.id === 'classic-dark');
-                const otherThemes = allThemes.filter(t => t.meta.id !== 'classic-light' && t.meta.id !== 'classic-dark');
-                const renderTile = (t: import('../theme').ThemeDefinition) => {
-                  const isSelected = themeId === t.meta.id;
-                  const [bg, c1, c2, c3] = t.meta.preview;
-                  return (
-                    <button
-                      key={t.meta.id}
-                      type="button"
-                      onClick={() => {
-                        themeService.setThemeById(t.meta.id);
-                        setThemeId(t.meta.id);
-                        setTheme(t.meta.appearance as 'light' | 'dark');
-                      }}
-                      className="flex flex-col items-center rounded-xl border-2 p-2 transition-colors cursor-pointer"
-                      style={{
-                        borderColor: isSelected ? 'var(--alkaka-primary)' : 'var(--alkaka-border)',
-                        backgroundColor: isSelected ? 'var(--alkaka-primary-muted)' : undefined,
-                      }}
-                    >
-                      <svg viewBox="0 0 80 48" className="w-full h-auto rounded-md mb-1.5 overflow-hidden" xmlns="http://www.w3.org/2000/svg">
-                        <rect width="80" height="48" fill={bg} />
-                        <rect x="4" y="6" width="20" height="36" rx="3" fill={c1} opacity="0.7" />
-                        <rect x="28" y="6" width="48" height="36" rx="3" fill={c2} opacity="0.5" />
-                        <circle cx="52" cy="24" r="8" fill={c3} opacity="0.8" />
-                        <rect x="32" y="34" width="40" height="4" rx="2" fill={c1} opacity="0.6" />
-                      </svg>
-                      <span className="text-[10px] font-medium truncate w-full text-center" style={{ color: isSelected ? 'var(--alkaka-primary)' : 'var(--alkaka-text-primary)' }}>
-                        {i18nService.t('theme-name-' + t.meta.id) || t.meta.name}
-                      </span>
-                    </button>
-                  );
-                };
-                return (
-                  <>
-                    <div className="grid grid-cols-2 gap-3 mb-3">
-                      {classicThemes.map(renderTile)}
-                    </div>
-                    <div className="grid grid-cols-4 gap-3">
-                      {otherThemes.map(renderTile)}
-                    </div>
-                  </>
-                );
-              })()}
             </div>
           </div>
         );

@@ -32,12 +32,12 @@ const PET_STATUS_PHASES = new Set<PetStatusPhase>([
 
 const DEFAULT_MESSAGES: Record<PetStatusPhase, string> = {
   idle: '点我开始',
-  ready: '随时待命',
-  sending: '正在交给 Alkaka…',
+  ready: '准备好对话',
+  sending: '正在发给 Alkaka…',
   working: 'Alkaka 正在处理…',
   'needs-approval': '需要你确认权限',
-  error: '任务遇到问题',
-  done: '任务已完成',
+  error: 'AI 对话遇到问题',
+  done: '处理完成',
 };
 
 export function createInitialPetStatus(): PetStatusSnapshot {

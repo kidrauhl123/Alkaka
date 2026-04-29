@@ -47,7 +47,7 @@ export interface CoworkViewProps {
   petOpenedSessionId?: string | null;
 }
 
-const CoworkView: React.FC<CoworkViewProps> = ({ onRequestAppSettings, onShowSkills, isSidebarCollapsed, onToggleSidebar, onNewChat, onSearchHistory, updateBadge, petOpenedSessionId }) => {
+const CoworkView: React.FC<CoworkViewProps> = ({ onRequestAppSettings, onShowSkills, isSidebarCollapsed, onToggleSidebar, onNewChat, updateBadge, petOpenedSessionId }) => {
   const dispatch = useDispatch();
   const isMac = window.electron.platform === 'darwin';
   const [isInitialized, setIsInitialized] = useState(false);
@@ -538,9 +538,6 @@ const CoworkView: React.FC<CoworkViewProps> = ({ onRequestAppSettings, onShowSki
           void coworkService.loadSession(petOpenedSessionId);
         }
         return;
-      case 'search-history':
-        onSearchHistory?.();
-        return;
       case 'open-settings':
         onRequestAppSettings?.();
         return;
@@ -636,7 +633,7 @@ const CoworkView: React.FC<CoworkViewProps> = ({ onRequestAppSettings, onShowSki
         {engineStatusBanner}
         {openedFromPet ? (
           <div className="shrink-0 px-4 py-2 text-xs bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-200 border-b border-amber-200/70 dark:border-amber-800/50">
-            🐣 从桌宠快速任务跳转而来
+            🐣 从桌宠快速对话跳转而来
           </div>
         ) : null}
         <CoworkSessionDetail
@@ -665,12 +662,12 @@ const CoworkView: React.FC<CoworkViewProps> = ({ onRequestAppSettings, onShowSki
 
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto min-h-0">
-        <div className="max-w-4xl w-full min-w-[320px] mx-auto px-4 pt-[12vh] pb-8 space-y-8">
-          <div className="rounded-3xl border border-border bg-surface/70 px-6 py-7 shadow-sm">
+        <div className="max-w-[680px] w-full min-w-[320px] mx-auto px-5 pt-[10vh] pb-8 space-y-6">
+          <div className="rounded-[18px] border border-border bg-surface px-6 py-6 shadow-[0_18px_60px_rgba(47,42,36,0.06),0_2px_10px_rgba(47,42,36,0.04)] dark:shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
             <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
               <div className="space-y-3 max-w-xl">
-                <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-                  🐣 桌宠主入口模式
+                <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-secondary">
+                  Desktop companion
                 </div>
                 <div className="space-y-2">
                   <h2 className="text-2xl font-semibold tracking-tight text-foreground">
@@ -687,22 +684,22 @@ const CoworkView: React.FC<CoworkViewProps> = ({ onRequestAppSettings, onShowSki
               <img src="logo.png" alt="logo" className="hidden md:block h-14 w-14 opacity-80" />
             </div>
 
-            <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
               {liteActions.map((action) => (
                 <button
                   key={action.id}
                   type="button"
                   onClick={() => handleLiteAction(action.id)}
-                  className={`rounded-2xl border px-4 py-3 text-left transition-all ${
+                  className={`rounded-xl border px-4 py-3 text-left transition-colors ${
                     action.tone === 'primary'
-                      ? 'border-primary/40 bg-primary/10 text-foreground hover:bg-primary/15'
+                      ? 'border-foreground bg-foreground text-background hover:opacity-90'
                       : action.tone === 'secondary'
-                        ? 'border-border bg-background hover:border-primary/30 hover:bg-surface-raised'
+                        ? 'border-border bg-surface hover:bg-surface-raised'
                         : 'border-transparent bg-transparent hover:bg-surface-raised'
                   }`}
                 >
-                  <div className="text-sm font-medium text-foreground">{action.label}</div>
-                  <div className="mt-1 text-xs leading-5 text-secondary">{action.description}</div>
+                  <div className={`text-sm font-medium ${action.tone === 'primary' ? 'text-background' : 'text-foreground'}`}>{action.label}</div>
+                  <div className={`mt-1 text-xs leading-5 ${action.tone === 'primary' ? 'text-background opacity-75' : 'text-secondary'}`}>{action.description}</div>
                 </button>
               ))}
             </div>

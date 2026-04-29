@@ -1028,6 +1028,7 @@ interface IPetElectronAPI {
   showContextMenu: (position?: { x: number; y: number }) => Promise<void>;
   moveWindowBy: (dx: number, dy: number) => void;
   setQuickInputExpanded: (expanded: boolean) => Promise<void>;
+  setPointerPassthrough: (passthrough: boolean) => void;
   startQuickTask: (options: { prompt: string; title: string }) => Promise<{ success: boolean; error?: string; session?: { id?: string; title?: string } }>;
   getStatus: () => Promise<PetStatusSnapshot | null>;
   onStatusChanged: (listener: (status: PetStatusSnapshot) => void) => () => void;

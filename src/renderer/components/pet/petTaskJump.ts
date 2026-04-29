@@ -30,7 +30,7 @@ export function createPetTaskJumpRequest(status: PetTaskJumpStatus): PetTaskJump
 }
 
 export function getPetTaskDetailButtonLabel(status: PetTaskJumpStatus): string {
-  if (!hasOpenablePetSession(status)) return '打开主窗口';
+  if (!hasOpenablePetSession(status)) return '打开对话窗口';
 
   switch (status.phase) {
     case 'done':
@@ -38,7 +38,7 @@ export function getPetTaskDetailButtonLabel(status: PetTaskJumpStatus): string {
     case 'working':
     case 'sending':
     case 'needs-approval':
-      return '查看任务';
+      return '查看对话';
     case 'ready':
       return '继续上次';
     case 'error':

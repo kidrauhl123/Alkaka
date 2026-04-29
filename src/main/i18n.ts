@@ -18,7 +18,7 @@ const translations: Record<LanguageType, Record<string, string>> = {
   zh: {
     // Tray menu
     trayShowWindow: '打开 Alkaka',
-    trayNewTask: '新建任务',
+    trayNewTask: '新建对话',
     traySettings: '设置',
     trayQuit: '退出',
 

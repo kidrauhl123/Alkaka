@@ -176,17 +176,6 @@ const Sidebar: React.FC<SidebarProps> = ({
           <button
             type="button"
             onClick={() => {
-              onShowCowork();
-              setIsSearchOpen(true);
-            }}
-            className="w-full inline-flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm font-medium text-secondary hover:text-foreground hover:bg-surface-raised transition-colors"
-          >
-            <SearchIcon className="h-4 w-4" />
-            {i18nService.t('search')}
-          </button>
-          <button
-            type="button"
-            onClick={() => {
               setIsSearchOpen(false);
               onShowScheduledTasks();
             }}
@@ -251,8 +240,20 @@ const Sidebar: React.FC<SidebarProps> = ({
           onShowCowork={onShowCowork}
           onSessionsLoadingChange={setSessionsLoading}
         />
-        <div className="px-3 pb-2 text-sm font-medium text-secondary">
-          {i18nService.t('coworkHistory')}
+        <div className="px-3 pb-2 flex items-center justify-between gap-2">
+          <span className="text-sm font-medium text-secondary">{i18nService.t('coworkHistory')}</span>
+          <button
+            type="button"
+            onClick={() => {
+              onShowCowork();
+              setIsSearchOpen(true);
+            }}
+            className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-tertiary hover:text-foreground hover:bg-surface-raised transition-colors"
+            aria-label={i18nService.t('searchConversations')}
+            title={i18nService.t('searchConversations')}
+          >
+            <SearchIcon className="h-4 w-4" />
+          </button>
         </div>
         <CoworkSessionList
           sessions={filteredSessions}

@@ -17,6 +17,7 @@ import {
   getPetTaskDetailButtonLabel,
   hasOpenablePetSession,
 } from './petTaskJump';
+import { getPetPrimaryClickAction, PET_VISIBLE_ALPHA_THRESHOLD } from './petInteraction';
 import {
   createInitialPetStatus,
   reducePetStatus,
@@ -91,7 +92,16 @@ export default function PetView({
   const [world, setWorld] = useState(() => createViewportWorld());
   const clickTimerRef = useRef<number | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const quickInputRef = useRef<HTMLFormElement | null>(null);
   const petButtonRef = useRef<HTMLButtonElement | null>(null);
+  const pointerPassthroughRef = useRef(false);
+  const spriteMaskRef = useRef<{
+    canvas: HTMLCanvasElement;
+    context: CanvasRenderingContext2D | null;
+    image: HTMLImageElement;
+    ready: boolean;
+    url: string;
+  } | null>(null);
   const scheduleRef = useRef(createInitialShimejiSchedule('idle'));
   const dragPointerRef = useRef({ x: 0, y: 0 });
   const dragStateRef = useRef({
@@ -157,7 +167,93 @@ export default function PetView({
 
   useEffect(() => () => {
     if (clickTimerRef.current) window.clearTimeout(clickTimerRef.current);
+    window.petElectron?.setPointerPassthrough?.(false);
   }, []);
+
+  const setPointerPassthrough = useCallback((passthrough: boolean) => {
+    if (pointerPassthroughRef.current === passthrough) return;
+    pointerPassthroughRef.current = passthrough;
+    window.petElectron?.setPointerPassthrough?.(passthrough);
+  }, []);
+
+  const getSpriteMask = useCallback((url: string) => {
+    const normalizedUrl = new URL(url, window.location.href).href;
+    if (spriteMaskRef.current?.url === normalizedUrl) return spriteMaskRef.current;
+
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d', { willReadFrequently: true });
+    const image = new Image();
+    const mask = { canvas, context, image, ready: false, url: normalizedUrl };
+    spriteMaskRef.current = mask;
+    image.onload = () => {
+      canvas.width = image.naturalWidth || image.width;
+      canvas.height = image.naturalHeight || image.height;
+      context?.clearRect(0, 0, canvas.width, canvas.height);
+      context?.drawImage(image, 0, 0, canvas.width, canvas.height);
+      mask.ready = true;
+    };
+    image.src = normalizedUrl;
+    return mask;
+  }, []);
+
+  const isVisiblePetPixelAt = useCallback((clientX: number, clientY: number) => {
+    const frame = petButtonRef.current?.querySelector<HTMLElement>('.pet-shimeji-frame');
+    if (!frame) return false;
+
+    const rect = frame.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return false;
+    if (clientX < rect.left || clientX > rect.right || clientY < rect.top || clientY > rect.bottom) return false;
+
+    const spriteSheetUrl = frame.dataset.shimejiSpriteSheetUrl;
+    const frameX = Number(frame.dataset.shimejiFrameX);
+    const frameY = Number(frame.dataset.shimejiFrameY);
+    const frameWidth = Number(frame.dataset.shimejiFrameWidth);
+    const frameHeight = Number(frame.dataset.shimejiFrameHeight);
+    if (!spriteSheetUrl || !Number.isFinite(frameX) || !Number.isFinite(frameY) || !Number.isFinite(frameWidth) || !Number.isFinite(frameHeight)) {
+      return false;
+    }
+
+    const mask = getSpriteMask(spriteSheetUrl);
+    if (!mask.ready || !mask.context) {
+      return true;
+    }
+
+    const atlasX = Math.floor(frameX + ((clientX - rect.left) / rect.width) * frameWidth);
+    const atlasY = Math.floor(frameY + ((clientY - rect.top) / rect.height) * frameHeight);
+    if (atlasX < 0 || atlasY < 0 || atlasX >= mask.canvas.width || atlasY >= mask.canvas.height) return false;
+
+    const alpha = mask.context.getImageData(atlasX, atlasY, 1, 1).data[3];
+    return alpha > PET_VISIBLE_ALPHA_THRESHOLD;
+  }, [getSpriteMask]);
+
+  const updatePointerPassthrough = useCallback((clientX: number, clientY: number) => {
+    if (dragStateRef.current.isDragging) {
+      setPointerPassthrough(false);
+      return;
+    }
+
+    const button = petButtonRef.current;
+    const quickInput = quickInputRef.current;
+    const overQuickInput = Boolean(quickInput && (() => {
+      const rect = quickInput.getBoundingClientRect();
+      return clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom;
+    })());
+    const overPetPixels = Boolean(button && isVisiblePetPixelAt(clientX, clientY));
+
+    setPointerPassthrough(!(overQuickInput || overPetPixels));
+  }, [isVisiblePetPixelAt, setPointerPassthrough]);
+
+  useEffect(() => {
+    const handleMouseMove = (event: MouseEvent) => updatePointerPassthrough(event.clientX, event.clientY);
+    const handleMouseLeave = () => setPointerPassthrough(true);
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseleave', handleMouseLeave);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseleave', handleMouseLeave);
+      setPointerPassthrough(false);
+    };
+  }, [setPointerPassthrough, updatePointerPassthrough]);
 
   const stopDrag = useCallback(() => {
     dragStateRef.current.isDragging = false;
@@ -230,7 +326,6 @@ export default function PetView({
 
     dragStateRef.current = state;
     dragPointerRef.current = { x: event.clientX, y: event.clientY };
-    setIsDragging(true);
 
     const handleWindowMouseMove = (moveEvent: MouseEvent) => {
       if (!state.isDragging) return;
@@ -249,7 +344,10 @@ export default function PetView({
         return;
       }
 
-      state.hasMoved = true;
+      if (!state.hasMoved) {
+        state.hasMoved = true;
+        setIsDragging(true);
+      }
       if (!behaviorDemo) {
         window.petElectron?.moveWindowBy(dx, dy);
       }
@@ -265,22 +363,16 @@ export default function PetView({
     window.addEventListener('mouseup', handleWindowMouseUp, { once: true });
   };
 
-  const handleClick = () => {
-    if (dragStateRef.current.hasMoved) return;
-    if (clickTimerRef.current) window.clearTimeout(clickTimerRef.current);
-    clickTimerRef.current = window.setTimeout(() => {
+  const handleClick = (event: ReactMouseEvent<HTMLButtonElement>) => {
+    const hitVisiblePixels = isVisiblePetPixelAt(event.clientX, event.clientY);
+    if (getPetPrimaryClickAction({ detail: event.detail, hasMoved: dragStateRef.current.hasMoved, hitVisiblePixels }) === 'openQuickInput') {
       setQuickInputOpen(true);
-      clickTimerRef.current = null;
-    }, 180);
+    }
   };
 
-  const handleDoubleClick = () => {
-    if (dragStateRef.current.hasMoved) return;
-    if (clickTimerRef.current) {
-      window.clearTimeout(clickTimerRef.current);
-      clickTimerRef.current = null;
-    }
-    void window.petElectron?.openMainWindow();
+  const handleDoubleClick = (event: ReactMouseEvent<HTMLButtonElement>) => {
+    if (dragStateRef.current.hasMoved || !isVisiblePetPixelAt(event.clientX, event.clientY)) return;
+    setQuickInputOpen(true);
   };
 
   const handleContextMenu = (event: ReactMouseEvent<HTMLDivElement>) => {
@@ -294,12 +386,12 @@ export default function PetView({
     if (!result.ok) {
       setStatus('error');
       setStatusText(result.error);
-      dispatchPetStatus({ type: 'snapshot', snapshot: { phase: 'error', message: '任务遇到问题', error: result.error } });
+      dispatchPetStatus({ type: 'snapshot', snapshot: { phase: 'error', message: 'AI 对话遇到问题', error: result.error } });
       return;
     }
 
     setStatus('sending');
-    setStatusText('正在交给 Alkaka…');
+    setStatusText('正在发给 Alkaka…');
     dispatchPetStatus({ type: 'snapshot', snapshot: { phase: 'sending', title: result.payload.title } });
     try {
       const response = await window.petElectron?.startQuickTask?.(result.payload);
@@ -318,13 +410,13 @@ export default function PetView({
       }
 
       setStatus('error');
-      setStatusText(response?.error || '任务创建失败');
-      dispatchPetStatus({ type: 'snapshot', snapshot: { phase: 'error', error: response?.error || '任务创建失败' } });
+      setStatusText(response?.error || '对话发送失败');
+      dispatchPetStatus({ type: 'snapshot', snapshot: { phase: 'error', error: response?.error || '对话发送失败' } });
     } catch (error) {
-      const message = error instanceof Error ? error.message : '任务创建失败';
+      const message = error instanceof Error ? error.message : '对话发送失败';
       setStatus('error');
       setStatusText(message);
-      dispatchPetStatus({ type: 'snapshot', snapshot: { phase: 'error', message: '任务遇到问题', error: message } });
+      dispatchPetStatus({ type: 'snapshot', snapshot: { phase: 'error', message: 'AI 对话遇到问题', error: message } });
     }
   };
 
@@ -354,18 +446,14 @@ export default function PetView({
   return (
     <div className={`pet-view pet-status--${petStatus.phase}${isQuickInputOpen ? ' pet-view-expanded' : ''}`} onContextMenu={handleContextMenu}>
       <div className="pet-drag-region" />
-      <div className="pet-status-bubble" role="status" aria-live="polite">
-        <span className="pet-status-dot" aria-hidden="true" />
-        <span>{petStatus.message}</span>
-      </div>
       <button
         ref={petButtonRef}
         type="button"
         className="pet-character"
         data-shimeji-world={behaviorDemo ? 'enabled' : 'disabled'}
         style={characterStyle}
-        title="点击快速提问，双击打开 Alkaka"
-        aria-label="Alkaka 桌宠，点击快速提问，双击打开主窗口"
+        title="双击打开快速对话"
+        aria-label="Alkaka AI 桌宠，双击打开快速对话框"
         onClick={handleClick}
         onDoubleClick={handleDoubleClick}
         onMouseDown={handleMouseDown}
@@ -375,20 +463,21 @@ export default function PetView({
           characterPack={characterPack}
           status={visualStatus}
           forcedAction={behaviorDemo ? world.action : isDragging ? 'drag' : undefined}
+          animate={behaviorDemo || isDragging || petStatus.phase === 'sending' || petStatus.phase === 'working'}
         />
       </button>
 
       {isQuickInputOpen ? (
-        <form className="pet-quick-input" onSubmit={handleSubmit} onKeyDown={handleQuickInputKeyDown}>
+        <form ref={quickInputRef} className="pet-quick-input" onSubmit={handleSubmit} onKeyDown={handleQuickInputKeyDown}>
           <div className="pet-quick-input-header">
-            <span>交给 Alkaka</span>
+            <span>和 Alkaka 对话</span>
             <button type="button" aria-label="收起快速输入" onClick={closeQuickInput}>×</button>
           </div>
           <textarea
             ref={textareaRef}
             value={prompt}
-            placeholder="想让 Alkaka 做什么？"
-            aria-label="快速任务内容"
+            placeholder="想和 Alkaka 聊什么？也可以让它帮你处理事情。"
+            aria-label="快速对话内容"
             onChange={(event) => {
               setPrompt(event.target.value);
               if (status !== 'sending') {

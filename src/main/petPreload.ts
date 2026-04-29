@@ -11,6 +11,8 @@ contextBridge.exposeInMainWorld('petElectron', {
     ipcRenderer.send('pet:moveWindowBy', dx, dy),
   setQuickInputExpanded: (expanded: boolean) =>
     ipcRenderer.invoke('pet:setQuickInputExpanded', expanded),
+  setPointerPassthrough: (passthrough: boolean) =>
+    ipcRenderer.send('pet:setPointerPassthrough', passthrough),
   startQuickTask: (options: { prompt: string; title: string }) =>
     ipcRenderer.invoke('pet:quickTask:start', options),
   getStatus: () => ipcRenderer.invoke('pet:status:current'),

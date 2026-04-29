@@ -4,6 +4,36 @@ import type { ThemeDefinition } from '../theme';
 
 type ThemeType = 'light' | 'dark' | 'system';
 
+const LEGACY_DARK_THEME_IDS = new Set([
+  'claude-dark',
+  'corporate-dark',
+  'notion-dark',
+  'ocean',
+  'midnight',
+]);
+
+const LEGACY_LIGHT_THEME_IDS = new Set([
+  'claude-light',
+  'corporate-light',
+  'notion-light',
+  'dawn',
+  'daylight',
+  'paper',
+  'forest',
+  'sunset',
+  'lavender',
+]);
+
+export const normalizeThemeId = (id: string): string => {
+  if (LEGACY_DARK_THEME_IDS.has(id)) {
+    return 'classic-dark';
+  }
+  if (LEGACY_LIGHT_THEME_IDS.has(id)) {
+    return 'classic-light';
+  }
+  return id;
+};
+
 class ThemeService {
   private mediaQuery: MediaQueryList | null = null;
   private currentTheme: ThemeType = 'system';
@@ -62,19 +92,21 @@ class ThemeService {
       }
     } else {
       // Direct theme ID
+      const normalizedThemeId = normalizeThemeId(theme);
       this.currentTheme = 'light'; // fallback for getTheme()
-      const def = allThemes.find(t => t.meta.id === theme);
+      const def = allThemes.find(t => t.meta.id === normalizedThemeId);
       if (def) {
         this.currentTheme = def.meta.appearance as ThemeType;
       }
-      void this.manager.setTheme(theme);
+      void this.manager.setTheme(normalizedThemeId);
     }
   }
 
-  // 设置主题 by ID (for the new 12-theme picker)
+  // 设置主题 by ID (for the two-theme picker and legacy callers)
   setThemeById(id: string): void {
-    void this.manager.setTheme(id);
-    const def = allThemes.find(t => t.meta.id === id);
+    const normalizedThemeId = normalizeThemeId(id);
+    void this.manager.setTheme(normalizedThemeId);
+    const def = allThemes.find(t => t.meta.id === normalizedThemeId);
     if (def) {
       this.currentTheme = def.meta.appearance as ThemeType;
     }
@@ -110,8 +142,9 @@ class ThemeService {
   // 根据 appearance 选择第一个匹配的主题，或恢复已保存的主题
   private applyByAppearance(appearance: 'light' | 'dark'): void {
     // Check if there's a saved theme ID with the right appearance
-    const savedId = localStorage.getItem('alkaka-theme-id');
-    if (savedId) {
+    const savedIdFromStorage = localStorage.getItem('alkaka-theme-id');
+    if (savedIdFromStorage) {
+      const savedId = normalizeThemeId(savedIdFromStorage);
       const saved = allThemes.find(t => t.meta.id === savedId);
       if (saved && saved.meta.appearance === appearance) {
         void this.manager.setTheme(savedId);

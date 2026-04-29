@@ -90,6 +90,7 @@ import { OpenClawSessionPolicyIpc } from './openclawSessionPolicy/constants';
 import { loadOpenClawSessionPolicyConfig, saveOpenClawSessionPolicyConfig } from './openclawSessionPolicy/store';
 import { createPetWindow, destroyPetWindow, getPetWindow, resizePetWindowForQuickInput } from './petWindow';
 import { createPetReadyStatusFromRecentSessions, createPetStatusSnapshot, type PetStatusSnapshot } from './petStatus';
+import { buildPetContextMenuTemplate } from './petContextMenu';
 import { SkillManager } from './skillManager';
 import { getSkillServiceManager } from './skillServices';
 import { SqliteStore } from './sqliteStore';
@@ -615,9 +616,8 @@ const reloadOnChildProcessGone =
   process.env.ELECTRON_RELOAD_ON_CHILD_PROCESS_GONE === 'true';
 const TITLEBAR_HEIGHT = 48;
 const TITLEBAR_COLORS = {
-  dark: { color: '#0F1117', symbolColor: '#E4E5E9' },
-  // Align light title bar with app light surface-muted tone to reduce visual contrast.
-  light: { color: '#F3F4F6', symbolColor: '#1A1D23' },
+  dark: { color: '#171512', symbolColor: '#EEE8DC' },
+  light: { color: '#F7F4EF', symbolColor: '#2F2A24' },
 } as const;
 
 const safeDecodeURIComponent = (value: string): string => {
@@ -4810,8 +4810,8 @@ if (!gotTheLock) {
     }
 
     mainWindow = new BrowserWindow({
-      width: 1200,
-      height: 800,
+      width: 960,
+      height: 640,
       title: APP_NAME,
       icon: getAppIconPath(),
       ...(isMac
@@ -4892,7 +4892,7 @@ if (!gotTheLock) {
     });
 
     // 设置窗口的最小尺寸
-    mainWindow.setMinimumSize(800, 600);
+    mainWindow.setMinimumSize(760, 520);
 
     // 设置窗口加载超时
     const loadTimeout = setTimeout(() => {
@@ -5048,21 +5048,12 @@ if (!gotTheLock) {
   };
 
   const showPetContextMenu = (senderWindow: BrowserWindow, position?: { x?: number; y?: number }) => {
-    const menu = Menu.buildFromTemplate([
-      {
-        label: '打开主窗口',
-        click: showMainWindow,
-      },
-      {
-        label: '隐藏桌宠',
-        click: () => senderWindow.hide(),
-      },
-      { type: 'separator' },
-      {
-        label: '退出应用',
-        click: () => app.quit(),
-      },
-    ]);
+    const menu = Menu.buildFromTemplate(buildPetContextMenuTemplate({
+      openConversation: showMainWindow,
+      openMainWindow: showMainWindow,
+      hidePet: () => senderWindow.hide(),
+      quitApp: () => app.quit(),
+    }));
 
     menu.popup({
       window: senderWindow,
@@ -5110,6 +5101,12 @@ if (!gotTheLock) {
   ipcMain.handle('pet:setQuickInputExpanded', (event, expanded: boolean) => {
     if (!getPetWindowFromSender(event.sender)) return;
     resizePetWindowForQuickInput(Boolean(expanded));
+  });
+
+  ipcMain.on('pet:setPointerPassthrough', (event, passthrough: boolean) => {
+    const win = getPetWindowFromSender(event.sender);
+    if (!win) return;
+    win.setIgnoreMouseEvents(Boolean(passthrough), { forward: true });
   });
 
   ipcMain.handle('pet:status:current', (event) => {

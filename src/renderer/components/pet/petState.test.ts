@@ -16,7 +16,7 @@ describe('reducePetStatus', () => {
       phase: 'sending',
       sessionId: 'session-1',
       title: '整理今天任务',
-      message: '正在交给 Alkaka…',
+      message: '正在发给 Alkaka…',
     });
   });
 
@@ -53,7 +53,7 @@ describe('reducePetStatus', () => {
       phase: 'done',
       sessionId: 'session-1',
       title: '整理今天任务',
-      message: '任务已完成',
+      message: '处理完成',
     });
   });
 

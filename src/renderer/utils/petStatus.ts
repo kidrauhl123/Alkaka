@@ -3,7 +3,7 @@ import type { PetStatus, PetStatusPresentation, PetStatusTone } from '../types/p
 const PET_STATUS_PRESENTATIONS: Record<PetStatus, PetStatusPresentation> = {
   idle: {
     label: '待命中',
-    message: '双击打开 Alkaka，或等待下一次任务。',
+    message: '双击打开 Alkaka，或直接开始一次对话。',
     tone: 'neutral',
     ariaLabel: 'Alkaka 桌宠当前待命中',
   },
@@ -15,7 +15,7 @@ const PET_STATUS_PRESENTATIONS: Record<PetStatus, PetStatusPresentation> = {
   },
   working: {
     label: '工作中',
-    message: '正在处理任务，完成后会把结果带回来。',
+    message: '正在处理你的请求，完成后会把结果带回来。',
     tone: 'active',
     ariaLabel: 'Alkaka 桌宠当前工作中',
   },
@@ -27,7 +27,7 @@ const PET_STATUS_PRESENTATIONS: Record<PetStatus, PetStatusPresentation> = {
   },
   error: {
     label: '遇到问题',
-    message: '任务遇到异常，可以打开主窗口查看详情。',
+    message: '对话遇到异常，可以打开对话窗口查看详情。',
     tone: 'danger',
     ariaLabel: 'Alkaka 桌宠遇到问题',
   },

@@ -6,7 +6,7 @@ describe('createPetStatusSnapshot', () => {
   test('creates safe pet snapshots with default messages for cowork phases', () => {
     expect(createPetStatusSnapshot({ phase: 'ready' })).toEqual({
       phase: 'ready',
-      message: '随时待命',
+      message: '准备好对话',
     });
 
     expect(createPetStatusSnapshot({
@@ -30,7 +30,7 @@ describe('createPetStatusSnapshot', () => {
     });
 
     expect(snapshot.title).toHaveLength(50);
-    expect(snapshot.message).toBe('任务遇到问题');
+    expect(snapshot.message).toBe('AI 对话遇到问题');
     expect(snapshot.error).toHaveLength(160);
   });
 });
@@ -45,7 +45,7 @@ describe('createPetReadyStatusFromRecentSessions', () => {
       phase: 'ready',
       sessionId: 'session-2',
       title: '整理今天的问题',
-      message: '随时待命',
+      message: '准备好对话',
     });
   });
 
@@ -65,7 +65,7 @@ describe('createPetReadyStatusFromRecentSessions', () => {
       { id: '   ', title: '空 id' },
     ])).toEqual({
       phase: 'ready',
-      message: '随时待命',
+      message: '准备好对话',
     });
   });
 });

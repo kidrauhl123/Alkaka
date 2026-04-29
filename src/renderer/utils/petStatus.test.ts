@@ -10,7 +10,7 @@ describe('pet status presentation', () => {
   test('maps idle status to a calm ready presentation', () => {
     expect(getPetStatusPresentation('idle')).toEqual({
       label: '待命中',
-      message: '双击打开 Alkaka，或等待下一次任务。',
+      message: '双击打开 Alkaka，或直接开始一次对话。',
       tone: 'neutral',
       ariaLabel: 'Alkaka 桌宠当前待命中',
     });

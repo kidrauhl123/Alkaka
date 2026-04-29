@@ -1,10 +1,13 @@
 import { app, BrowserWindow, screen } from 'electron';
 import path from 'path';
 
-const PET_WIDTH = 220;
-const PET_HEIGHT = 260;
-const PET_QUICK_INPUT_WIDTH = 360;
-const PET_QUICK_INPUT_HEIGHT = 420;
+export const PET_WINDOW_DEFAULT_BOUNDS = { width: 140, height: 164 } as const;
+export const PET_WINDOW_QUICK_INPUT_BOUNDS = { width: 360, height: 420 } as const;
+
+const PET_WIDTH = PET_WINDOW_DEFAULT_BOUNDS.width;
+const PET_HEIGHT = PET_WINDOW_DEFAULT_BOUNDS.height;
+const PET_QUICK_INPUT_WIDTH = PET_WINDOW_QUICK_INPUT_BOUNDS.width;
+const PET_QUICK_INPUT_HEIGHT = PET_WINDOW_QUICK_INPUT_BOUNDS.height;
 
 let petWindow: BrowserWindow | null = null;
 

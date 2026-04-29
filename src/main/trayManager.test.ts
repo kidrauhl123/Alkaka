@@ -41,7 +41,7 @@ vi.mock('electron', () => ({
 vi.mock('./i18n', () => ({
   t: (key: string) => ({
     trayShowWindow: '显示主窗口',
-    trayNewTask: '新建任务',
+    trayNewTask: '新建对话',
     traySettings: '设置',
     trayQuit: '退出',
   }[key] ?? key),
@@ -74,13 +74,13 @@ describe('trayManager pet-first main window actions', () => {
     lastTemplate = [];
   });
 
-  test('new task waits for a newly-created main window to finish loading before sending IPC', async () => {
+  test('new conversation waits for a newly-created main window to finish loading before sending IPC', async () => {
     const { createTray, destroyTray } = await import('./trayManager');
     const win = makeWindow(true);
 
     createTray(() => win as never);
 
-    lastTemplate.find((item) => item.label === '新建任务')?.click?.();
+    lastTemplate.find((item) => item.label === '新建对话')?.click?.();
 
     expect(win.show).toHaveBeenCalled();
     expect(win.focus).toHaveBeenCalled();

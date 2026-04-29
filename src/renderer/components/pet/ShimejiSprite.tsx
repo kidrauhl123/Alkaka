@@ -22,9 +22,10 @@ interface ShimejiSpriteProps {
   status: PetStatus;
   forcedAction?: ShimejiAction;
   characterPack?: ShimejiCharacterPack;
+  animate?: boolean;
 }
 
-export function ShimejiSprite({ appearance, status, forcedAction, characterPack }: ShimejiSpriteProps) {
+export function ShimejiSprite({ appearance, status, forcedAction, characterPack, animate = true }: ShimejiSpriteProps) {
   const action = forcedAction ?? resolvePetActionFromStatus(status);
   const framePlan = useMemo(() => getShimejiFramePlan(), []);
   const [animationState, setAnimationState] = useState<ShimejiAnimationState>({
@@ -38,12 +39,14 @@ export function ShimejiSprite({ appearance, status, forcedAction, characterPack 
   }, [action]);
 
   useEffect(() => {
+    if (!animate) return undefined;
+
     const intervalId = window.setInterval(() => {
       setAnimationState((current) => advanceShimejiFrame(current, TICK_MS, framePlan));
     }, TICK_MS);
 
     return () => window.clearInterval(intervalId);
-  }, [framePlan]);
+  }, [animate, framePlan]);
 
   const frames = framePlan[animationState.action];
   const frame = frames[Math.min(animationState.frameIndex, frames.length - 1)];
@@ -61,6 +64,11 @@ export function ShimejiSprite({ appearance, status, forcedAction, characterPack 
           aria-hidden="true"
           className="pet-shimeji-frame"
           data-shimeji-frame-id={atlasFrame.id}
+          data-shimeji-frame-x={atlasFrame.x}
+          data-shimeji-frame-y={atlasFrame.y}
+          data-shimeji-frame-width={atlasFrame.width}
+          data-shimeji-frame-height={atlasFrame.height}
+          data-shimeji-sprite-sheet-url={characterPack.spriteSheetUrl}
           style={buildSpriteSheetFrameStyle(characterPack, atlasFrame)}
         />
       ) : (

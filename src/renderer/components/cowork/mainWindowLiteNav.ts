@@ -1,6 +1,5 @@
 export type MainWindowLiteActionId =
   | 'resume-current-task'
-  | 'search-history'
   | 'open-settings'
   | 'new-complex-task'
   | 'manage-skills';
@@ -30,9 +29,9 @@ export interface ShouldShowComposerOptions {
 }
 
 export const getMainWindowHomeCopy = (): MainWindowHomeCopy => ({
-  title: '主窗口',
-  subtitle: '桌宠负责日常输入和状态反馈；这里作为任务历史、详情和设置的轻量辅助面板。',
-  hint: '需要更长上下文或复杂 Cowork 时，再从这里展开完整输入区。',
+  title: '和 Alkaka 对话',
+  subtitle: 'Alkaka 常驻在桌面旁边；这里像一张安静的便签纸，适合把想法、追问和处理过程接着写下去。',
+  hint: '不追求炫技，不堆满入口；需要长聊或深度处理时再展开完整输入区。',
 });
 
 export const buildMainWindowLiteActions = ({ canResumeSession }: BuildMainWindowLiteActionsOptions): MainWindowLiteAction[] => {
@@ -41,29 +40,23 @@ export const buildMainWindowLiteActions = ({ canResumeSession }: BuildMainWindow
   if (canResumeSession) {
     actions.push({
       id: 'resume-current-task',
-      label: '回到当前任务',
-      description: '继续查看刚才打开的 Cowork 详情',
+      label: '回到刚才的对话',
+      description: '继续查看从桌宠打开的上下文和处理结果',
       tone: 'primary',
     });
   }
 
   actions.push(
     {
-      id: 'search-history',
-      label: '任务历史',
-      description: '搜索或打开最近的 Cowork 记录',
+      id: 'new-complex-task',
+      label: '新建对话',
+      description: '打开完整输入区，长聊、追问或深度处理',
       tone: canResumeSession ? 'secondary' : 'primary',
     },
     {
       id: 'open-settings',
       label: '设置',
       description: '模型、OpenClaw、更新和偏好设置',
-      tone: 'secondary',
-    },
-    {
-      id: 'new-complex-task',
-      label: '复杂 Cowork',
-      description: '展开完整输入区，处理长上下文任务',
       tone: 'secondary',
     },
     {

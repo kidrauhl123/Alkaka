@@ -577,7 +577,7 @@ const App: React.FC = () => {
     return unsubscribe;
   }, [handleShowSettings]);
 
-  // 监听托盘菜单新建任务的 IPC 事件
+  // 监听托盘菜单新建对话的 IPC 事件
   useEffect(() => {
     const unsubscribe = window.electron.ipcRenderer.on('app:newTask', () => {
       handleNewChat();
@@ -700,11 +700,11 @@ const App: React.FC = () => {
         {windowsStandaloneTitleBar}
         <div className="flex-1 flex items-center justify-center bg-background">
           <div className="flex flex-col items-center space-y-4">
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary-hover flex items-center justify-center shadow-glow-accent animate-pulse">
-              <ChatBubbleLeftRightIcon className="h-8 w-8 text-white" />
+            <div className="w-12 h-12 rounded-2xl border border-border bg-surface flex items-center justify-center shadow-subtle">
+              <ChatBubbleLeftRightIcon className="h-6 w-6 text-secondary" />
             </div>
-            <div className="w-24 h-1 rounded-full bg-primary/20 overflow-hidden">
-              <div className="h-full w-1/2 rounded-full bg-primary animate-shimmer" />
+            <div className="w-20 h-px bg-border overflow-hidden">
+              <div className="h-full w-1/2 bg-foreground/40 animate-shimmer" />
             </div>
             <div className="text-foreground text-xl font-medium">{i18nService.t('loading')}</div>
           </div>
@@ -745,7 +745,7 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="h-screen overflow-hidden flex flex-col bg-surface-raised">
+    <div className="h-screen overflow-hidden flex flex-col bg-background">
       {toastMessage && (
         <Toast message={toastMessage} onClose={() => setToastMessage(null)} />
       )}
@@ -763,8 +763,8 @@ const App: React.FC = () => {
           onToggleCollapse={handleToggleSidebar}
           updateBadge={!isSidebarCollapsed ? updateBadge : null}
         />
-        <div className={`flex-1 min-w-0 py-1.5 pr-1.5 ${isSidebarCollapsed ? 'pl-1.5' : ''}`}>
-          <div className="relative h-full min-h-0 rounded-xl bg-background overflow-hidden">
+        <div className={`flex-1 min-w-0 py-2 pr-2 ${isSidebarCollapsed ? 'pl-2' : ''}`}>
+          <div className="relative h-full min-h-0 rounded-[18px] border border-border bg-background overflow-hidden">
             <EngineStartupOverlay />
             {mainView === 'skills' ? (
               <SkillsView

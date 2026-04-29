@@ -7,36 +7,38 @@ import {
 } from './mainWindowLiteNav';
 
 describe('main window lite navigation', () => {
-  it('positions the main window as an auxiliary panel instead of the default daily entry', () => {
+  it('positions the main window as a quiet conversation surface instead of an AI-looking task dashboard', () => {
     const copy = getMainWindowHomeCopy();
 
-    expect(copy.title).toBe('主窗口');
-    expect(copy.subtitle).toContain('桌宠');
-    expect(copy.subtitle).toContain('任务历史');
-    expect(copy.subtitle).not.toContain('默认入口');
+    expect(copy.title).toBe('和 Alkaka 对话');
+    expect(copy.subtitle).toContain('便签纸');
+    expect(copy.hint).toContain('不追求炫技');
+    expect(copy.subtitle).not.toContain('AI 桌宠');
+    expect(copy.subtitle).not.toContain('任务桌宠');
+    expect(copy.subtitle).not.toContain('任务历史');
   });
 
-  it('keeps task history and settings before heavyweight composition actions', () => {
+  it('keeps conversation entry first and moves history search into records instead of a top-level task action', () => {
     const actions = buildMainWindowLiteActions({ canResumeSession: true });
 
     expect(actions.map(action => action.id)).toEqual([
       'resume-current-task',
-      'search-history',
-      'open-settings',
       'new-complex-task',
+      'open-settings',
       'manage-skills',
     ]);
-    expect(actions[0]).toMatchObject({ tone: 'primary' });
-    expect(actions.find(action => action.id === 'new-complex-task')).toMatchObject({ tone: 'secondary' });
+    expect(actions[0]).toMatchObject({ label: '回到刚才的对话', tone: 'primary' });
+    expect(actions.find(action => action.id === 'new-complex-task')).toMatchObject({ label: '新建对话', tone: 'secondary' });
+    expect(actions.map(action => action.label)).not.toContain('搜索任务');
+    expect(actions.map(action => action.label)).not.toContain('任务历史');
   });
 
   it('does not show a fake resume action when no openable session exists', () => {
     const actions = buildMainWindowLiteActions({ canResumeSession: false });
 
     expect(actions.map(action => action.id)).toEqual([
-      'search-history',
-      'open-settings',
       'new-complex-task',
+      'open-settings',
       'manage-skills',
     ]);
   });

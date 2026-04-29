@@ -8,11 +8,11 @@ import {
 
 describe('pet task jump helpers', () => {
   test('allows opening a cowork task only when the pet status has a real session id', () => {
-    expect(hasOpenablePetSession({ phase: 'done', sessionId: 'session-1', message: '任务已完成' })).toBe(true);
+    expect(hasOpenablePetSession({ phase: 'done', sessionId: 'session-1', message: '处理完成' })).toBe(true);
     expect(hasOpenablePetSession({ phase: 'working', sessionId: ' session-2 ', message: 'Alkaka 正在处理…' })).toBe(true);
-    expect(hasOpenablePetSession({ phase: 'ready', message: '随时待命' })).toBe(false);
-    expect(hasOpenablePetSession({ phase: 'done', sessionId: 'temp-123', message: '任务已完成' })).toBe(false);
-    expect(hasOpenablePetSession({ phase: 'error', sessionId: '   ', message: '任务遇到问题' })).toBe(false);
+    expect(hasOpenablePetSession({ phase: 'ready', message: '准备好对话' })).toBe(false);
+    expect(hasOpenablePetSession({ phase: 'done', sessionId: 'temp-123', message: '处理完成' })).toBe(false);
+    expect(hasOpenablePetSession({ phase: 'error', sessionId: '   ', message: 'AI 对话遇到问题' })).toBe(false);
   });
 
   test('normalizes the payload sent from pet window to main process', () => {
@@ -24,10 +24,10 @@ describe('pet task jump helpers', () => {
   });
 
   test('uses a short label that matches the pet task state', () => {
-    expect(getPetTaskDetailButtonLabel({ phase: 'working', sessionId: 'session-1' })).toBe('查看任务');
+    expect(getPetTaskDetailButtonLabel({ phase: 'working', sessionId: 'session-1' })).toBe('查看对话');
     expect(getPetTaskDetailButtonLabel({ phase: 'done', sessionId: 'session-1' })).toBe('查看结果');
     expect(getPetTaskDetailButtonLabel({ phase: 'error', sessionId: 'session-1' })).toBe('查看详情');
     expect(getPetTaskDetailButtonLabel({ phase: 'ready', sessionId: 'session-1' })).toBe('继续上次');
-    expect(getPetTaskDetailButtonLabel({ phase: 'ready' })).toBe('打开主窗口');
+    expect(getPetTaskDetailButtonLabel({ phase: 'ready' })).toBe('打开对话窗口');
   });
 });

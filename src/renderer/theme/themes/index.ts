@@ -2,35 +2,11 @@ import type { ThemeDefinition } from './types';
 
 import { classicLight } from './classic-light';
 import { classicDark }  from './classic-dark';
-import { dawn } from './dawn';
-import { daylight } from './daylight';
-import { paper } from './paper';
-import { sakura } from './sakura';
-import { midnight } from './midnight';
-import { ocean } from './ocean';
-import { emerald } from './emerald';
-import { rose } from './rose';
-import { mocha } from './mocha';
-import { sunset } from './sunset';
-import { nord } from './nord';
-import { cyber } from './cyber';
 
-/** All built-in themes. First entry is the default. */
+/** Built-in themes. Alkaka intentionally ships one calm light theme and one calm dark theme. */
 export const allThemes: ThemeDefinition[] = [
   classicLight,
   classicDark,
-  dawn,
-  daylight,
-  paper,
-  sakura,
-  midnight,
-  ocean,
-  emerald,
-  rose,
-  mocha,
-  sunset,
-  nord,
-  cyber,
 ];
 
 /** Quick lookup by theme ID */
