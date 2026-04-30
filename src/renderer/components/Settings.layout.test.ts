@@ -23,7 +23,8 @@ describe('Settings Alkaka Chat shell layout', () => {
     expect(SETTINGS_OVERLAY_CLASSNAME).toContain('sm:px-4');
     expect(SETTINGS_MODAL_CLASSNAME).toContain('w-full');
     expect(SETTINGS_MODAL_CLASSNAME).toContain('min-w-0');
-    expect(SETTINGS_MODAL_CLASSNAME).toContain('max-w-[1180px]');
+    expect(SETTINGS_MODAL_CLASSNAME).toContain('max-w-[calc(100vw-8px)]');
+    expect(SETTINGS_MODAL_CLASSNAME).toContain('sm:max-w-[min(1180px,calc(100vw-32px))]');
     expect(SETTINGS_MODAL_CLASSNAME).toContain('h-[calc(100vh-46px)]');
     expect(SETTINGS_MODAL_CLASSNAME).toContain('min-[420px]:h-[calc(100vh-52px)]');
     expect(SETTINGS_MODAL_CLASSNAME).toContain('max-h-[calc(100vh-46px)]');

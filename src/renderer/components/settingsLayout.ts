@@ -4,7 +4,8 @@ export const SETTINGS_OVERLAY_CLASSNAME = [
 ].join(' ');
 
 export const SETTINGS_MODAL_CLASSNAME = [
-  'relative flex flex-col md:flex-row w-full max-w-[1180px] min-w-0',
+  'relative flex flex-col md:flex-row w-full min-w-0 box-border',
+  'max-w-[calc(100vw-8px)] min-[420px]:max-w-[calc(100vw-16px)] sm:max-w-[min(1180px,calc(100vw-32px))]',
   'h-[calc(100vh-46px)] min-[420px]:h-[calc(100vh-52px)] sm:h-[calc(100vh-68px)]',
   'max-h-[calc(100vh-46px)] min-[420px]:max-h-[calc(100vh-52px)] sm:max-h-[820px]',
   'rounded-xl min-[420px]:rounded-2xl border border-[#E7E2FF] bg-[#FBFAFF] shadow-[0_24px_80px_rgba(91,75,255,0.18)] overflow-hidden modal-content',
