@@ -35,6 +35,12 @@ import { GitHubCopilotIcon } from './icons/providers';
 import TrashIcon from './icons/TrashIcon';
 import IMSettings from './im/IMSettings';
 import EmailSkillConfig from './skills/EmailSkillConfig';
+import {
+  SETTINGS_CONTENT_CLASSNAME,
+  SETTINGS_MODAL_CLASSNAME,
+  SETTINGS_OVERLAY_CLASSNAME,
+  SETTINGS_SIDEBAR_CLASSNAME,
+} from './settingsLayout';
 import ThemedSelect from './ui/ThemedSelect';
 
 type TabType = 'general'| 'coworkAgentEngine' | 'model' | 'coworkMemory' | 'coworkAgent' | 'shortcuts' | 'im' | 'email' | 'about';
@@ -4172,42 +4178,46 @@ const Settings: React.FC<SettingsProps> = ({ onClose, initialTab, notice, notice
   };
 
   return (
-    <Modal onClose={onClose} overlayClassName="fixed inset-0 z-50 modal-backdrop flex items-center justify-center">
+    <Modal onClose={onClose} overlayClassName={SETTINGS_OVERLAY_CLASSNAME}>
       <div
-        className="relative flex w-[900px] h-[80vh] rounded-2xl border-border border shadow-modal overflow-hidden modal-content"
+        className={SETTINGS_MODAL_CLASSNAME}
         onClick={handleSettingsClick}
       >
         {/* Left sidebar */}
-        <div className="w-[220px] shrink-0 flex flex-col bg-surface-raised border-r border-border rounded-l-2xl overflow-y-auto">
-          <div className="px-5 pt-5 pb-3">
-            <h2 className="text-lg font-semibold text-foreground">{i18nService.t('settings')}</h2>
+        <div className={SETTINGS_SIDEBAR_CLASSNAME}>
+          <div className="px-5 pt-4 pb-2 md:pt-5 md:pb-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8B7CF6]">Alkaka</p>
+            <h2 className="mt-1 text-lg font-semibold text-[#24212F]">{i18nService.t('settings')}</h2>
           </div>
-          <nav className="flex flex-col gap-0.5 px-3 pb-4">
+          <nav className="flex flex-row md:flex-col gap-1 px-3 pb-3 overflow-x-auto md:overflow-x-visible">
             {sidebarTabs.map((tab) => (
               <button
                 key={tab.key}
                 onClick={() => handleTabChange(tab.key)}
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left ${
+                className={`flex shrink-0 items-center gap-2 md:gap-3 px-3 py-2 rounded-xl text-sm font-semibold transition-colors text-left ${
                   activeTab === tab.key
-                    ? 'bg-primary-muted text-primary'
-                    : 'text-secondary hover:text-foreground hover:bg-surface-raised'
+                    ? 'bg-white text-[#5B4BFF] shadow-sm ring-1 ring-[#E7E2FF]'
+                    : 'text-[#6B667A] hover:text-[#24212F] hover:bg-white/70'
                 }`}
               >
-                {tab.icon}
-                <span>{tab.label}</span>
+                <span className="text-[#8B7CF6]">{tab.icon}</span>
+                <span className="whitespace-nowrap">{tab.label}</span>
               </button>
             ))}
           </nav>
         </div>
 
         {/* Right content */}
-        <div className="relative flex-1 flex flex-col min-w-0 overflow-hidden bg-background rounded-r-2xl">
+        <div className={SETTINGS_CONTENT_CLASSNAME}>
           {/* Content header */}
-          <div className="flex justify-between items-center px-6 pt-5 pb-3 shrink-0">
-            <h3 className="text-lg font-semibold text-foreground">{activeTabLabel}</h3>
+          <div className="flex justify-between items-center gap-3 px-4 sm:px-6 pt-4 sm:pt-5 pb-3 shrink-0 border-b border-[#F0ECFF]">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#A29AFB]">Settings</p>
+              <h3 className="mt-1 text-lg font-semibold text-[#24212F]">{activeTabLabel}</h3>
+            </div>
             <button
               onClick={onClose}
-              className="text-secondary hover:text-foreground p-1.5 hover:bg-surface-raised rounded-lg transition-colors"
+              className="text-[#6B667A] hover:text-[#24212F] p-1.5 hover:bg-[#F5F2FF] rounded-lg transition-colors"
             >
               <XMarkIcon className="h-5 w-5" />
             </button>
@@ -4235,14 +4245,14 @@ const Settings: React.FC<SettingsProps> = ({ onClose, initialTab, notice, notice
             {/* Tab content */}
             <div
               ref={contentRef}
-              className="px-6 py-4 flex-1 overflow-y-auto"
+              className="px-4 sm:px-6 py-4 flex-1 overflow-y-auto bg-white"
               style={{ scrollbarGutter: 'stable' }}
             >
               {renderTabContent()}
             </div>
 
             {/* Footer buttons */}
-            <div className="flex justify-end space-x-4 p-4 border-border border-t bg-background shrink-0">
+            <div className="flex justify-end space-x-3 p-3 sm:p-4 border-[#F0ECFF] border-t bg-[#FBFAFF] shrink-0">
               <button
                 type="button"
                 onClick={onClose}
