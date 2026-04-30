@@ -3,10 +3,13 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 
 import AlkakaProjectChatHome, {
+  buildRecentConversationItems,
   defaultPartnerAvatarAssets,
   resolveComposerSubmitMessage,
   shouldClearComposerAfterSubmit,
 } from './AlkakaProjectChatHome';
+
+import type { CoworkSessionSummary } from '../../types/cowork';
 
 describe('AlkakaProjectChatHome reference-image redesign', () => {
   const html = renderToStaticMarkup(React.createElement(AlkakaProjectChatHome));
@@ -100,6 +103,67 @@ describe('AlkakaProjectChatHome reference-image redesign', () => {
     ].forEach((alt) => expect(html).toContain(alt));
     expect(html).not.toContain('搜索对话、智能体或消息');
     expect(html).toContain('搜索对话、伙伴或消息');
+  });
+
+  it('maps real Cowork session summaries into recent conversations before falling back to demo content', () => {
+    const sessions: CoworkSessionSummary[] = [
+      {
+        id: 's1',
+        title: '真实项目会话',
+        status: 'running',
+        pinned: true,
+        createdAt: 1_714_541_100_000,
+        updatedAt: 1_714_541_234_000,
+      },
+      {
+        id: 's2',
+        title: 'CodeMan 修 bug',
+        status: 'completed',
+        pinned: false,
+        createdAt: 1_714_450_000_000,
+        updatedAt: 1_714_450_500_000,
+      },
+    ];
+
+    const items = buildRecentConversationItems({ sessions, unreadSessionIds: ['s2'], currentSessionId: 's1', now: 1_714_541_300_000 });
+
+    expect(items[0]).toMatchObject({
+      id: 's1',
+      title: '真实项目会话',
+      preview: '运行中 · 最近更新',
+      selected: true,
+      pin: true,
+      unread: undefined,
+    });
+    expect(items[1]).toMatchObject({
+      id: 's2',
+      title: 'CodeMan 修 bug',
+      preview: '已完成 · 最近更新',
+      unread: '1',
+    });
+    expect(items.map((item) => item.title)).not.toContain('AI日报项目组');
+  });
+
+  it('renders real Cowork sessions in the recent conversation rail when provided', () => {
+    const sessionHtml = renderToStaticMarkup(React.createElement(AlkakaProjectChatHome, {
+      recentSessions: [
+        {
+          id: 'real-session',
+          title: '真实 OpenClaw 会话',
+          status: 'running',
+          pinned: false,
+          createdAt: 1_714_541_100_000,
+          updatedAt: 1_714_541_234_000,
+        },
+      ],
+      now: 1_714_541_300_000,
+      onOpenConversation: () => undefined,
+    }));
+
+    expect(sessionHtml).toContain('真实 OpenClaw 会话');
+    expect(sessionHtml).toContain('运行中 · 最近更新');
+    expect(sessionHtml).toContain('aria-label="打开对话：真实 OpenClaw 会话"');
+    expect(sessionHtml).not.toContain('小课代表：已整理今日AI行业日报初稿');
   });
 
   it('keeps drafts when submission is rejected and clears only after accepted submit results', () => {

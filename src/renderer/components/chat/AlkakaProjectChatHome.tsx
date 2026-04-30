@@ -1,5 +1,7 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 
+import type { CoworkSessionSummary, CoworkSessionStatus } from '../../types/cowork';
+
 import classRepAvatarUrl from '../../assets/partners/partner-class-rep.png';
 import codemanAvatarUrl from '../../assets/partners/partner-codeman.png';
 import dataAnalystAvatarUrl from '../../assets/partners/partner-data-analyst.png';
@@ -120,14 +122,86 @@ const navItems = [
   ['⚙️', '设置', null, false],
 ] as const;
 
-const conversations = [
-  { title: 'AI日报项目组', preview: '小课代表：已整理今日AI行业日报初稿', time: '10:45', tone: avatarTones.rep, selected: true, pin: true },
-  { title: '产品研发群', preview: 'CodeMan：接口文档已更新', time: '09:32', tone: avatarTones.code, unread: '5' },
-  { title: '情报收集小队', preview: '情报姬：找到3篇相关论文', time: '昨天', tone: avatarTones.intel },
-  { title: 'CodeMan（代码工人）', preview: '我：帮我处理权限校验的问题', time: '昨天', tone: avatarTones.code },
-  { title: '设计喵（设计师）', preview: '我：做个日报的图表视觉', time: '昨天', tone: avatarTones.design },
-  { title: '大监（御前监督使）', preview: '我：任务进度如何了？', time: '前天', tone: avatarTones.guard },
+export interface RecentConversationItem {
+  id: string;
+  title: string;
+  preview: string;
+  time: string;
+  tone: string;
+  selected?: boolean;
+  pin?: boolean;
+  unread?: string;
+}
+
+const demoConversations: RecentConversationItem[] = [
+  { id: 'demo-ai-daily', title: 'AI日报项目组', preview: '小课代表：已整理今日AI行业日报初稿', time: '10:45', tone: avatarTones.rep, selected: true, pin: true },
+  { id: 'demo-product-rd', title: '产品研发群', preview: 'CodeMan：接口文档已更新', time: '09:32', tone: avatarTones.code, unread: '5' },
+  { id: 'demo-intel', title: '情报收集小队', preview: '情报姬：找到3篇相关论文', time: '昨天', tone: avatarTones.intel },
+  { id: 'demo-codeman', title: 'CodeMan（代码工人）', preview: '我：帮我处理权限校验的问题', time: '昨天', tone: avatarTones.code },
+  { id: 'demo-design-cat', title: '设计喵（设计师）', preview: '我：做个日报的图表视觉', time: '昨天', tone: avatarTones.design },
+  { id: 'demo-guard', title: '大监（御前监督使）', preview: '我：任务进度如何了？', time: '前天', tone: avatarTones.guard },
 ];
+
+const sessionStatusCopy: Record<CoworkSessionStatus, string> = {
+  idle: '待启动',
+  running: '运行中',
+  completed: '已完成',
+  error: '需要处理',
+};
+
+const formatRelativeSessionTime = (updatedAt: number, now = Date.now()): string => {
+  const diffMs = Math.max(0, now - updatedAt);
+  const minute = 60_000;
+  const hour = 60 * minute;
+  const day = 24 * hour;
+
+  if (diffMs < minute) return '刚刚';
+  if (diffMs < hour) return `${Math.max(1, Math.floor(diffMs / minute))}分钟前`;
+  if (diffMs < day) return `${Math.max(1, Math.floor(diffMs / hour))}小时前`;
+  if (diffMs < 2 * day) return '昨天';
+  return `${Math.floor(diffMs / day)}天前`;
+};
+
+const toneForSession = (session: CoworkSessionSummary): string => {
+  const title = session.title;
+  if (title.includes('CodeMan') || title.includes('代码')) return avatarTones.code;
+  if (title.includes('情报')) return avatarTones.intel;
+  if (title.includes('设计')) return avatarTones.design;
+  if (title.includes('数据')) return avatarTones.data;
+  if (title.includes('审核') || title.includes('大监')) return avatarTones.guard;
+  if (session.status === 'running') return avatarTones.rep;
+  if (session.status === 'error') return avatarTones.guard;
+  return avatarTones.boss;
+};
+
+export const buildRecentConversationItems = ({
+  sessions = [],
+  unreadSessionIds = [],
+  currentSessionId = null,
+  now = Date.now(),
+}: {
+  sessions?: CoworkSessionSummary[];
+  unreadSessionIds?: string[];
+  currentSessionId?: string | null;
+  now?: number;
+} = {}): RecentConversationItem[] => {
+  if (sessions.length === 0) return demoConversations;
+
+  const unread = new Set(unreadSessionIds);
+  return [...sessions]
+    .sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.updatedAt - a.updatedAt)
+    .slice(0, 8)
+    .map((session) => ({
+      id: session.id,
+      title: session.title || '未命名对话',
+      preview: `${sessionStatusCopy[session.status]} · 最近更新`,
+      time: formatRelativeSessionTime(session.updatedAt, now),
+      tone: toneForSession(session),
+      selected: session.id === currentSessionId,
+      pin: session.pinned,
+      unread: unread.has(session.id) ? '1' : undefined,
+    }));
+};
 
 const taskRows = [
   ['Agent 相关动态收集', '情报姬', avatarTones.intel],
@@ -156,7 +230,12 @@ export interface AlkakaProjectChatHomeProps {
   onComposerChange?: (value: string) => void;
   onSubmitMessage?: (message: string) => SubmitResult | Promise<SubmitResult>;
   onRequestNewChat?: () => void;
+  onOpenConversation?: (sessionId: string) => unknown | Promise<unknown>;
   shouldFocusComposer?: boolean;
+  recentSessions?: CoworkSessionSummary[];
+  unreadSessionIds?: string[];
+  currentSessionId?: string | null;
+  now?: number;
 }
 
 const starterMessage = '各位，开始做今天的 AI 行业日报，重点关注 Agent、模型、融资这三个方向。';
@@ -173,9 +252,15 @@ const AlkakaProjectChatHome = ({
   onComposerChange,
   onSubmitMessage,
   onRequestNewChat,
+  onOpenConversation,
   shouldFocusComposer = false,
+  recentSessions = [],
+  unreadSessionIds = [],
+  currentSessionId = null,
+  now,
 }: AlkakaProjectChatHomeProps) => {
   const composerRef = useRef<HTMLTextAreaElement>(null);
+  const recentConversations = buildRecentConversationItems({ sessions: recentSessions, unreadSessionIds, currentSessionId, now });
 
   useEffect(() => {
     if (shouldFocusComposer) {
@@ -191,6 +276,13 @@ const AlkakaProjectChatHome = ({
     if (shouldClearComposerAfterSubmit(result)) {
       onComposerChange?.('');
     }
+  };
+
+  const handleOpenConversation = (sessionId: string) => {
+    if (!onOpenConversation) return;
+    void Promise.resolve(onOpenConversation(sessionId)).catch((error) => {
+      console.error('[AlkakaProjectChatHome] Failed to open conversation:', error);
+    });
   };
 
   return (
@@ -229,22 +321,35 @@ const AlkakaProjectChatHome = ({
             ))}
           </div>
           <div className="space-y-1.5 overflow-y-auto pr-1">
-            {conversations.map((chat) => (
-              <div key={chat.title} className={`flex gap-2 rounded-2xl p-2.5 ${chat.selected ? 'bg-[#F1EFFF] shadow-sm' : 'hover:bg-white'}`}>
-                <Avatar name={chat.title} tone={chat.tone} {...getPartnerAvatar(chat.title)} />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="truncate text-sm font-bold">{chat.title}</span>
-                    <span className="ml-auto shrink-0 text-[11px] text-[#9CA3AF]">{chat.time}</span>
+            {recentConversations.map((chat) => {
+              const content = (
+                <>
+                  <Avatar name={chat.title} tone={chat.tone} {...getPartnerAvatar(chat.title)} />
+                  <div className="min-w-0 flex-1 text-left">
+                    <div className="flex items-center gap-2">
+                      <span className="truncate text-sm font-bold">{chat.title}</span>
+                      <span className="ml-auto shrink-0 text-[11px] text-[#9CA3AF]">{chat.time}</span>
+                    </div>
+                    <div className="mt-0.5 flex items-center gap-2 text-xs text-[#6B7280]">
+                      <span className="min-w-0 flex-1 truncate">{chat.preview}</span>
+                      {'pin' in chat && chat.pin ? <span className="text-[#7C3AED]">⌖</span> : null}
+                      {'unread' in chat && chat.unread ? <span className="rounded-full bg-[#5B4BFF] px-1.5 text-[10px] font-bold text-white">{chat.unread}</span> : null}
+                    </div>
                   </div>
-                  <div className="mt-0.5 flex items-center gap-2 text-xs text-[#6B7280]">
-                    <span className="min-w-0 flex-1 truncate">{chat.preview}</span>
-                    {'pin' in chat && chat.pin ? <span className="text-[#7C3AED]">⌖</span> : null}
-                    {'unread' in chat && chat.unread ? <span className="rounded-full bg-[#5B4BFF] px-1.5 text-[10px] font-bold text-white">{chat.unread}</span> : null}
-                  </div>
+                </>
+              );
+
+              const rowClassName = `flex w-full gap-2 rounded-2xl p-2.5 ${chat.selected ? 'bg-[#F1EFFF] shadow-sm' : 'hover:bg-white'}`;
+              return onOpenConversation ? (
+                <button key={chat.id} type="button" aria-label={`打开对话：${chat.title}`} onClick={() => handleOpenConversation(chat.id)} className={rowClassName}>
+                  {content}
+                </button>
+              ) : (
+                <div key={chat.id} className={rowClassName}>
+                  {content}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 

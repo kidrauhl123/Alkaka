@@ -161,6 +161,13 @@ npx vitest run src/renderer/components/chat/chatWorkspaceLayout.test.ts
 
 ## Task 7: 端到端验证与文档更新
 
+### Checkpoint 2026-04-30: 首页最近对话接入真实 Cowork sessions
+
+- `AlkakaProjectChatHome` 新增 `buildRecentConversationItems()`，把真实 `CoworkSessionSummary[]` 映射到左栏最近对话，保留 pinned、未读、当前会话高亮和相对更新时间。
+- `CoworkView` 无当前 session 的首页会把 Redux 中的 `sessions`、`unreadSessionIds`、`currentSessionId` 传入 `AlkakaProjectChatHome`；真实会话行点击后调用 `coworkService.loadSession(sessionId)` 打开对应 Cowork session，只有没有真实 sessions 时才显示 AI 日报等示例内容。
+- 首页 composer 仍沿用 `handleStartSession(message)`，继续进入真实 Cowork/OpenClaw session，而不是截图 harness 或纯前端假输入。
+- Verified: `npx vitest run src/renderer/components/chat/AlkakaProjectChatHome.test.ts`、桌宠 4 个回归测试、`npm run compile:electron -- --pretty false`、`npm run build`、`git diff --check` passed。
+
 **Objective:** 确认聊天软件方向的 UI 重构没有破坏 Electron/OpenClaw runtime 和桌宠基础交互。
 
 **Files:**

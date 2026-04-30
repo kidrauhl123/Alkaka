@@ -8,9 +8,12 @@ import { skillService } from '../../services/skill';
 import { RootState } from '../../store';
 import {
   selectCoworkConfig,
+  selectCoworkSessions,
   selectCurrentSession,
+  selectCurrentSessionId,
   selectDraftPrompts,
   selectIsOpenClawEngine,
+  selectUnreadSessionIds,
 } from '../../store/selectors/coworkSelectors';
 import { addMessage, clearCurrentSession, setCurrentSession, setDraftPrompt, setStreaming, updateSessionStatus } from '../../store/slices/coworkSlice';
 import { clearSelection, setActions } from '../../store/slices/quickActionSlice';
@@ -50,6 +53,9 @@ const CoworkView: React.FC<CoworkViewProps> = ({ onRequestAppSettings, onShowSki
   const startRequestIdRef = useRef(0);
 
   const currentSession = useSelector(selectCurrentSession);
+  const recentSessions = useSelector(selectCoworkSessions);
+  const unreadSessionIds = useSelector(selectUnreadSessionIds);
+  const currentSessionId = useSelector(selectCurrentSessionId);
   const homeDraftPrompt = useSelector((state: RootState) => selectDraftPrompts(state).__home__ || '');
   const config = useSelector(selectCoworkConfig);
   const isOpenClawEngine = useSelector(selectIsOpenClawEngine);
@@ -522,6 +528,10 @@ const CoworkView: React.FC<CoworkViewProps> = ({ onRequestAppSettings, onShowSki
             setIsComposerRequested(true);
           }}
           shouldFocusComposer={isComposerRequested || homeDraftPrompt.trim().length > 0}
+          recentSessions={recentSessions}
+          unreadSessionIds={unreadSessionIds}
+          currentSessionId={currentSessionId}
+          onOpenConversation={recentSessions.length > 0 ? (sessionId) => coworkService.loadSession(sessionId) : undefined}
           onSubmitMessage={(message) => handleStartSession(message)}
         />
       </div>
