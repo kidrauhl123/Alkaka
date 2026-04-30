@@ -18,6 +18,7 @@ export interface PetStatusSnapshot {
 export interface PetRecentSessionSummary {
   id?: string;
   title?: string;
+  status?: string;
   updatedAt?: number;
   pinned?: boolean;
 }
@@ -43,6 +44,19 @@ function truncate(value: string | undefined, maxLength: number): string | undefi
   return trimmed.length > maxLength ? trimmed.slice(0, maxLength) : trimmed;
 }
 
+function getOpenableSessionsByRecency(sessions: PetRecentSessionSummary[]): PetRecentSessionSummary[] {
+  return sessions
+    .filter((session) => {
+      const id = truncate(session.id, MAX_TITLE_LENGTH);
+      return Boolean(id && !id.startsWith('temp-'));
+    })
+    .sort((left, right) => (right.updatedAt ?? 0) - (left.updatedAt ?? 0));
+}
+
+function getLatestOpenableSession(sessions: PetRecentSessionSummary[]): PetRecentSessionSummary | undefined {
+  return getOpenableSessionsByRecency(sessions)[0];
+}
+
 export function createPetStatusSnapshot(input: PetStatusSnapshot): PetStatusSnapshot {
   const error = truncate(input.error, MAX_MESSAGE_LENGTH);
   const explicitMessage = truncate(input.message, MAX_MESSAGE_LENGTH);
@@ -60,17 +74,34 @@ export function createPetStatusSnapshot(input: PetStatusSnapshot): PetStatusSnap
 }
 
 export function createPetReadyStatusFromRecentSessions(sessions: PetRecentSessionSummary[]): PetStatusSnapshot {
-  const openableSessions = sessions
-    .filter((session) => {
-      const id = truncate(session.id, MAX_TITLE_LENGTH);
-      return Boolean(id && !id.startsWith('temp-'));
-    })
-    .sort((left, right) => (right.updatedAt ?? 0) - (left.updatedAt ?? 0));
-  const recentSession = openableSessions[0];
+  const recentSession = getLatestOpenableSession(sessions);
 
   return createPetStatusSnapshot({
     phase: 'ready',
     sessionId: recentSession ? truncate(recentSession.id, MAX_TITLE_LENGTH) : undefined,
     title: recentSession ? truncate(recentSession.title, MAX_TITLE_LENGTH) : undefined,
   });
+}
+
+export function createPetStatusFromCoworkActivity(sessions: PetRecentSessionSummary[]): PetStatusSnapshot {
+  const openableSessions = getOpenableSessionsByRecency(sessions);
+  const runningSession = openableSessions.find((session) => session.status === 'running');
+  if (runningSession) {
+    return createPetStatusSnapshot({
+      phase: 'working',
+      sessionId: truncate(runningSession.id, MAX_TITLE_LENGTH),
+      title: truncate(runningSession.title, MAX_TITLE_LENGTH),
+    });
+  }
+
+  const errorSession = openableSessions.find((session) => session.status === 'error');
+  if (errorSession) {
+    return createPetStatusSnapshot({
+      phase: 'error',
+      sessionId: truncate(errorSession.id, MAX_TITLE_LENGTH),
+      title: truncate(errorSession.title, MAX_TITLE_LENGTH),
+    });
+  }
+
+  return createPetReadyStatusFromRecentSessions(openableSessions);
 }

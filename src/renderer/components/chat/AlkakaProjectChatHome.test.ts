@@ -4,6 +4,8 @@ import { describe, expect, it } from 'vitest';
 
 import AlkakaProjectChatHome, {
   buildProjectGroupPreview,
+  buildProjectMessageTimeline,
+  buildProjectWorkbenchStats,
   buildRecentConversationItems,
   defaultPartnerAvatarAssets,
   resolveChatResponsiveLayout,
@@ -11,7 +13,7 @@ import AlkakaProjectChatHome, {
   shouldClearComposerAfterSubmit,
 } from './AlkakaProjectChatHome';
 
-import type { CoworkSessionSummary } from '../../types/cowork';
+import type { CoworkMessage, CoworkSession, CoworkSessionSummary, OpenClawEngineStatus } from '../../types/cowork';
 
 describe('AlkakaProjectChatHome reference-image redesign', () => {
   const html = renderToStaticMarkup(React.createElement(AlkakaProjectChatHome));
@@ -52,18 +54,18 @@ describe('AlkakaProjectChatHome reference-image redesign', () => {
     ].forEach((copy) => expect(html).toContain(copy));
   });
 
-  it('renders the right-side AI team dashboard required by the screenshot', () => {
+  it('renders the right-side dashboard with real Cowork/OpenClaw state instead of fake usage metrics', () => {
     [
       '伙伴团队运行状态',
-      '系统正常',
-      '活跃伙伴',
-      '资源使用情况',
-      'Token 用量',
-      '费用预估',
-      'API 调用',
-      '伙伴状态',
-      '快捷操作',
+      '状态未知',
+      '活跃会话',
+      '真实链路状态',
+      '全部会话',
+      '运行中',
+      '最近真实会话',
+      '真实能力入口',
     ].forEach((copy) => expect(html).toContain(copy));
+    ['资源使用情况', 'Token 用量', '费用预估', 'API 调用', '快捷操作'].forEach((copy) => expect(html).not.toContain(copy));
   });
 
   it('uses the pale lavender and purple visual system instead of old neutral cards', () => {
@@ -218,6 +220,188 @@ describe('AlkakaProjectChatHome reference-image redesign', () => {
     expect(sessionHtml).toContain('Boss 置顶了对话：真实中间会话');
     expect(sessionHtml).toContain('运行中 · 最近更新于 1分钟前');
     expect(sessionHtml).not.toContain('Boss 置顶了任务：生成今日 AI 行业日报');
+  });
+
+  it('maps real Cowork messages into the project timeline instead of demo operational cards', () => {
+    const messages: CoworkMessage[] = [
+      { id: 'u1', type: 'user', content: '真正跑一下 Alkaka 链路', timestamp: 1_714_541_100_000 },
+      { id: 'a1', type: 'assistant', content: '我已开始调用 OpenClaw。', timestamp: 1_714_541_120_000 },
+      { id: 't1', type: 'tool_use', content: '', timestamp: 1_714_541_130_000, metadata: { toolName: 'terminal', toolInput: { command: 'npm test' } } },
+      { id: 'r1', type: 'tool_result', content: '5 tests passed', timestamp: 1_714_541_140_000, metadata: { toolName: 'terminal' } },
+    ];
+
+    expect(buildProjectMessageTimeline({ messages })).toMatchObject([
+      { id: 'u1', speaker: 'Boss（你）', body: '真正跑一下 Alkaka 链路', kind: 'user' },
+      { id: 'a1', speaker: 'Alkaka', body: '我已开始调用 OpenClaw。', kind: 'assistant' },
+      { id: 't1', speaker: 'OpenClaw 工具', title: '调用工具：terminal', body: '{\n  "command": "npm test"\n}', kind: 'tool_use' },
+      { id: 'r1', speaker: 'OpenClaw 结果', title: '工具结果：terminal', body: '5 tests passed', kind: 'tool_result' },
+    ]);
+  });
+
+  it('bounds long real OpenClaw outputs in the chat timeline while preserving session data', () => {
+    const longOutput = 'x'.repeat(4_500);
+    const timeline = buildProjectMessageTimeline({
+      messages: [{ id: 'huge-tool-result', type: 'tool_result', content: longOutput, timestamp: 1_714_541_140_000, metadata: { toolName: 'terminal' } }],
+    });
+
+    expect(timeline).toHaveLength(1);
+    expect(timeline[0].body.length).toBeLessThan(longOutput.length);
+    expect(timeline[0].bodyTruncated).toBe(true);
+    expect(timeline[0].body).toContain('已截断 500 个字符');
+  });
+
+  it('keeps only the latest real messages in the main chat timeline to avoid freezing on large sessions', () => {
+    const messages: CoworkMessage[] = Array.from({ length: 130 }, (_, index) => ({
+      id: `m${index}`,
+      type: 'assistant',
+      content: `真实消息 ${index}`,
+      timestamp: 1_714_541_140_000 + index,
+    }));
+
+    const timeline = buildProjectMessageTimeline({ messages });
+
+    expect(timeline).toHaveLength(120);
+    expect(timeline[0].id).toBe('m10');
+    expect(timeline[timeline.length - 1]?.id).toBe('m129');
+  });
+
+  it('renders real current Cowork session messages and removes fake AI daily cards', () => {
+    const currentSession: CoworkSession = {
+      id: 'real-current',
+      title: '真实前后端一体化会话',
+      claudeSessionId: null,
+      status: 'running',
+      pinned: false,
+      cwd: '/Users/zuiyou/github/Alkaka',
+      systemPrompt: '',
+      modelOverride: '',
+      executionMode: 'local',
+      activeSkillIds: ['desktop-app-engineering'],
+      agentId: 'main',
+      createdAt: 1_714_541_000_000,
+      updatedAt: 1_714_541_200_000,
+      messages: [
+        { id: 'u1', type: 'user', content: '不要假的，接真实链路', timestamp: 1_714_541_100_000 },
+        { id: 'a1', type: 'assistant', content: '收到，我会通过真实 Cowork/OpenClaw 链路推进。', timestamp: 1_714_541_120_000 },
+        { id: 't1', type: 'tool_use', content: '', timestamp: 1_714_541_130_000, metadata: { toolName: 'terminal', toolInput: { command: 'npm run build' } } },
+      ],
+    };
+
+    const sessionHtml = renderToStaticMarkup(React.createElement(AlkakaProjectChatHome, {
+      currentSession,
+      recentSessions: [{ id: currentSession.id, title: currentSession.title, status: currentSession.status, pinned: false, createdAt: currentSession.createdAt, updatedAt: currentSession.updatedAt }],
+      currentSessionId: currentSession.id,
+    }));
+
+    expect(sessionHtml).toContain('真实前后端一体化会话');
+    expect(sessionHtml).toContain('不要假的，接真实链路');
+    expect(sessionHtml).toContain('收到，我会通过真实 Cowork/OpenClaw 链路推进。');
+    expect(sessionHtml).toContain('调用工具：terminal');
+    expect(sessionHtml).toContain('npm run build');
+    expect(sessionHtml).not.toContain('课代表总结（已理解）');
+    expect(sessionHtml).not.toContain('任务拆解与分配');
+    expect(sessionHtml).not.toContain('analysis/report_generator.py');
+  });
+
+  it('renders a real empty current session as an empty state instead of demo AI daily cards', () => {
+    const currentSession: CoworkSession = {
+      id: 'empty-current',
+      title: '真实空会话',
+      claudeSessionId: null,
+      status: 'idle',
+      pinned: false,
+      cwd: '/Users/zuiyou/github/Alkaka',
+      systemPrompt: '',
+      modelOverride: '',
+      executionMode: 'local',
+      activeSkillIds: [],
+      agentId: 'main',
+      createdAt: 1_714_541_000_000,
+      updatedAt: 1_714_541_200_000,
+      messages: [],
+    };
+
+    const sessionHtml = renderToStaticMarkup(React.createElement(AlkakaProjectChatHome, {
+      currentSession,
+      recentSessions: [{ id: currentSession.id, title: currentSession.title, status: currentSession.status, pinned: false, createdAt: currentSession.createdAt, updatedAt: currentSession.updatedAt }],
+      currentSessionId: currentSession.id,
+    }));
+
+    expect(sessionHtml).toContain('真实空会话');
+    expect(sessionHtml).toContain('这个真实 Cowork 会话还没有消息');
+    expect(sessionHtml).not.toContain('课代表总结（已理解）');
+    expect(sessionHtml).not.toContain('analysis/report_generator.py');
+  });
+
+  it('keeps real session management controls in the Alkaka Chat shell for running Cowork sessions', () => {
+    const currentSession: CoworkSession = {
+      id: 'running-current',
+      title: '可停止的真实会话',
+      claudeSessionId: null,
+      status: 'running',
+      pinned: false,
+      cwd: '/Users/zuiyou/github/Alkaka',
+      systemPrompt: '',
+      modelOverride: '',
+      executionMode: 'local',
+      activeSkillIds: [],
+      agentId: 'main',
+      createdAt: 1_714_541_000_000,
+      updatedAt: 1_714_541_200_000,
+      messages: [],
+    };
+
+    const sessionHtml = renderToStaticMarkup(React.createElement(AlkakaProjectChatHome, {
+      currentSession,
+      recentSessions: [{ id: currentSession.id, title: currentSession.title, status: currentSession.status, pinned: false, createdAt: currentSession.createdAt, updatedAt: currentSession.updatedAt }],
+      currentSessionId: currentSession.id,
+      onStopCurrentSession: () => undefined,
+      onDeleteCurrentSession: () => undefined,
+      onToggleCurrentSessionPin: () => undefined,
+      onRenameCurrentSession: () => undefined,
+    }));
+
+    expect(sessionHtml).toContain('停止会话');
+    expect(sessionHtml).toContain('aria-label="停止当前真实 Cowork 会话"');
+    expect(sessionHtml).toContain('置顶');
+    expect(sessionHtml).toContain('重命名');
+    expect(sessionHtml).toContain('删除');
+  });
+
+  it('builds the right workbench from real sessions and OpenClaw status instead of fixed fake metrics', () => {
+    const sessions: CoworkSessionSummary[] = [
+      { id: 'a', title: '正在处理的真实会话', status: 'running', pinned: false, createdAt: 1, updatedAt: 10 },
+      { id: 'b', title: '失败的真实会话', status: 'error', pinned: false, createdAt: 1, updatedAt: 9 },
+      { id: 'c', title: '完成的真实会话', status: 'completed', pinned: false, createdAt: 1, updatedAt: 8 },
+    ];
+    const openClawStatus: OpenClawEngineStatus = { phase: 'running', version: '0.1.0', canRetry: false, message: 'gateway live' };
+
+    expect(buildProjectWorkbenchStats({ sessions, currentSessionId: 'a', openClawStatus })).toMatchObject({
+      activeSessions: 1,
+      totalSessions: 3,
+      currentStatusCopy: '运行中',
+      engineCopy: 'OpenClaw running',
+      engineStatusCopy: '需要处理',
+      engineStatusTone: 'orange',
+      latestSessionTitle: '正在处理的真实会话',
+      errorSessions: 1,
+    });
+  });
+
+  it('does not mark OpenClaw as online while it is installing, starting, or missing', () => {
+    expect(buildProjectWorkbenchStats({ openClawStatus: { phase: 'starting', version: null, canRetry: false } })).toMatchObject({
+      engineCopy: 'OpenClaw starting',
+      engineStatusCopy: '启动中',
+      engineStatusTone: 'gray',
+    });
+    expect(buildProjectWorkbenchStats({ openClawStatus: { phase: 'installing', version: null, canRetry: false } })).toMatchObject({
+      engineStatusCopy: '安装中',
+      engineStatusTone: 'gray',
+    });
+    expect(buildProjectWorkbenchStats({ openClawStatus: { phase: 'not_installed', version: null, canRetry: true } })).toMatchObject({
+      engineStatusCopy: '未安装',
+      engineStatusTone: 'orange',
+    });
   });
 
   it('keeps the responsive shell usable across small, medium, and wide window widths', () => {

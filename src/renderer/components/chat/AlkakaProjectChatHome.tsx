@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
 
-import type { CoworkSessionSummary, CoworkSessionStatus } from '../../types/cowork';
+import type { CoworkMessage, CoworkSession, CoworkSessionSummary, CoworkSessionStatus, OpenClawEngineStatus } from '../../types/cowork';
 
 import classRepAvatarUrl from '../../assets/partners/partner-class-rep.png';
 import codemanAvatarUrl from '../../assets/partners/partner-codeman.png';
@@ -213,6 +213,178 @@ export interface ProjectGroupPreview {
   starterMessage: string;
 }
 
+export interface ProjectTimelineItem {
+  id: string;
+  kind: CoworkMessage['type'];
+  speaker: string;
+  title?: string;
+  body: string;
+  bodyTruncated?: boolean;
+  timestamp: number;
+  statusTone: 'purple' | 'green' | 'orange' | 'gray';
+  avatarTone: string;
+}
+
+const MAX_TIMELINE_ITEMS = 120;
+const MAX_TIMELINE_BODY_CHARS = 4_000;
+
+const truncateTimelineBody = (value: string): { body: string; bodyTruncated?: boolean } => {
+  if (value.length <= MAX_TIMELINE_BODY_CHARS) return { body: value };
+  return {
+    body: `${value.slice(0, MAX_TIMELINE_BODY_CHARS)}\n\n…已截断 ${value.length - MAX_TIMELINE_BODY_CHARS} 个字符，完整内容仍保留在真实 Cowork session 中。`,
+    bodyTruncated: true,
+  };
+};
+
+const safeJson = (value: unknown): string => {
+  if (value === undefined || value === null) return '';
+  if (typeof value === 'string') return value;
+  try {
+    return JSON.stringify(value, null, 2);
+  } catch {
+    return String(value);
+  }
+};
+
+export const buildProjectMessageTimeline = ({
+  messages = [],
+}: {
+  messages?: CoworkMessage[];
+} = {}): ProjectTimelineItem[] => messages.slice(-MAX_TIMELINE_ITEMS).map((message) => {
+  const toolName = typeof message.metadata?.toolName === 'string' ? message.metadata.toolName : 'tool';
+  if (message.type === 'user') {
+    return {
+      id: message.id,
+      kind: message.type,
+      speaker: 'Boss（你）',
+      ...truncateTimelineBody(message.content),
+      timestamp: message.timestamp,
+      statusTone: 'purple',
+      avatarTone: avatarTones.boss,
+    };
+  }
+
+  if (message.type === 'assistant') {
+    return {
+      id: message.id,
+      kind: message.type,
+      speaker: message.metadata?.isThinking ? 'Alkaka 思考' : 'Alkaka',
+      title: message.metadata?.isThinking ? '思考过程（真实）' : undefined,
+      ...truncateTimelineBody(message.content),
+      timestamp: message.timestamp,
+      statusTone: message.metadata?.isThinking ? 'gray' : 'green',
+      avatarTone: avatarTones.rep,
+    };
+  }
+
+  if (message.type === 'tool_use') {
+    return {
+      id: message.id,
+      kind: message.type,
+      speaker: 'OpenClaw 工具',
+      title: `调用工具：${toolName}`,
+      ...truncateTimelineBody(message.content || safeJson(message.metadata?.toolInput)),
+      timestamp: message.timestamp,
+      statusTone: 'orange',
+      avatarTone: avatarTones.code,
+    };
+  }
+
+  if (message.type === 'tool_result') {
+    return {
+      id: message.id,
+      kind: message.type,
+      speaker: 'OpenClaw 结果',
+      title: `工具结果：${toolName}`,
+      ...truncateTimelineBody(message.content || safeJson(message.metadata?.toolResult)),
+      timestamp: message.timestamp,
+      statusTone: message.metadata?.isError ? 'orange' : 'green',
+      avatarTone: message.metadata?.isError ? avatarTones.guard : avatarTones.data,
+    };
+  }
+
+  return {
+    id: message.id,
+    kind: message.type,
+    speaker: '系统',
+    title: message.metadata?.isError ? '系统错误' : '系统消息',
+    ...truncateTimelineBody(message.content),
+    timestamp: message.timestamp,
+    statusTone: message.metadata?.isError ? 'orange' : 'gray',
+    avatarTone: message.metadata?.isError ? avatarTones.guard : avatarTones.boss,
+  };
+});
+
+export interface ProjectWorkbenchStats {
+  activeSessions: number;
+  totalSessions: number;
+  completedSessions: number;
+  errorSessions: number;
+  currentStatusCopy: string;
+  engineCopy: string;
+  engineStatusCopy: string;
+  engineStatusTone: 'green' | 'orange' | 'gray';
+  latestSessionTitle: string;
+  recentSessions: Array<{
+    id: string;
+    title: string;
+    status: CoworkSessionStatus;
+    statusCopy: string;
+    updatedAt: number;
+  }>;
+}
+
+export const buildProjectWorkbenchStats = ({
+  sessions = [],
+  currentSessionId = null,
+  openClawStatus = null,
+}: {
+  sessions?: CoworkSessionSummary[];
+  currentSessionId?: string | null;
+  openClawStatus?: OpenClawEngineStatus | null;
+} = {}): ProjectWorkbenchStats => {
+  const sortedSessions = [...sessions].sort((a, b) => b.updatedAt - a.updatedAt);
+  const currentSession = sessions.find((session) => session.id === currentSessionId) ?? sortedSessions[0];
+  const activeSessions = sessions.filter((session) => session.status === 'running').length;
+  const completedSessions = sessions.filter((session) => session.status === 'completed').length;
+  const errorSessions = sessions.filter((session) => session.status === 'error').length;
+  const enginePhase = openClawStatus?.phase ?? 'unknown';
+  const hasEngineError = enginePhase === 'error' || errorSessions > 0;
+  const engineStatusCopy = (() => {
+    if (hasEngineError) return '需要处理';
+    if (enginePhase === 'running') return '链路在线';
+    if (enginePhase === 'ready') return '已就绪';
+    if (enginePhase === 'starting') return '启动中';
+    if (enginePhase === 'installing') return '安装中';
+    if (enginePhase === 'not_installed') return '未安装';
+    return '状态未知';
+  })();
+  const engineStatusTone = (() => {
+    if (hasEngineError || enginePhase === 'not_installed') return 'orange';
+    if (enginePhase === 'running' || enginePhase === 'ready') return 'green';
+    return 'gray';
+  })();
+
+  return {
+    activeSessions,
+    totalSessions: sessions.length,
+    completedSessions,
+    errorSessions,
+    currentStatusCopy: currentSession ? sessionStatusCopy[currentSession.status] : '无会话',
+    engineCopy: openClawStatus ? `OpenClaw ${enginePhase}` : 'OpenClaw 状态未知',
+    engineStatusCopy,
+    engineStatusTone,
+    latestSessionTitle: currentSession?.title || '暂无真实会话',
+    recentSessions: sortedSessions.slice(0, 6).map((session) => ({
+      id: session.id,
+      title: session.title || '未命名会话',
+      status: session.status,
+      statusCopy: sessionStatusCopy[session.status],
+      updatedAt: session.updatedAt,
+    })),
+  };
+};
+
 export interface ChatResponsiveLayout {
   leftRail: 'compact' | 'expanded';
   rightPanel: 'drawer' | 'docked';
@@ -230,6 +402,11 @@ export const resolveChatResponsiveLayout = (windowWidth: number): ChatResponsive
   }
 
   return { leftRail: 'compact', rightPanel: 'drawer', mainPriority: 'primary', supportsResize: false };
+};
+
+const formatTimelineTime = (timestamp: number): string => {
+  const date = new Date(timestamp);
+  return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
 };
 
 const formatSessionDate = (timestamp: number): string => {
@@ -286,16 +463,6 @@ const taskRows = [
   ['最终审核与质量把控', '大监（御前监督使）', avatarTones.guard],
 ] as const;
 
-const partners = [
-  ['小课代表（课代表）', '整理中', '整理日报结构和素材', 92, avatarTones.rep, 'purple'],
-  ['项目管理（项目管理）', '规划中', '制定任务计划中', 78, avatarTones.pm, 'orange'],
-  ['大监（御前监督使）', '执行中', '监督任务执行质量', 65, avatarTones.guard, 'green'],
-  ['情报姬（情报员）', '执行中', '收集行业情报中', 62, avatarTones.intel, 'green'],
-  ['CodeMan（代码工人）', '执行中', '进行数据处理', 45, avatarTones.code, 'green'],
-  ['设计喵（设计师）', '待命中', '等待内容输入', null, avatarTones.design, 'gray'],
-  ['数据君（数据分析师）', '执行中', '数据分析进行中', 58, avatarTones.data, 'green'],
-  ['管管（项目管理）', '规划中', '制定任务计划中', 78, avatarTones.pm, 'orange'],
-] as const;
 
 const LEFT_RAIL_COLLAPSED_WIDTH = 76;
 const LEFT_RAIL_DEFAULT_WIDTH = 280;
@@ -316,10 +483,16 @@ export interface AlkakaProjectChatHomeProps {
   onSubmitMessage?: (message: string) => SubmitResult | Promise<SubmitResult>;
   onRequestNewChat?: () => void;
   onOpenConversation?: (sessionId: string) => unknown | Promise<unknown>;
+  onStopCurrentSession?: () => unknown | Promise<unknown>;
+  onDeleteCurrentSession?: () => unknown | Promise<unknown>;
+  onToggleCurrentSessionPin?: () => unknown | Promise<unknown>;
+  onRenameCurrentSession?: () => unknown | Promise<unknown>;
   shouldFocusComposer?: boolean;
   recentSessions?: CoworkSessionSummary[];
   unreadSessionIds?: string[];
   currentSessionId?: string | null;
+  currentSession?: CoworkSession | null;
+  openClawStatus?: OpenClawEngineStatus | null;
   now?: number;
 }
 
@@ -333,48 +506,54 @@ export const resolveComposerSubmitMessage = (value: string): string | null => {
 export const shouldClearComposerAfterSubmit = (result: SubmitResult): boolean => result !== false;
 
 
-const RightDashboardContent = () => (
+const RightDashboardContent = ({ stats }: { stats: ProjectWorkbenchStats }) => (
   <>
-    <SectionCard title="伙伴团队运行状态" action={<StatusPill tone="green">系统正常</StatusPill>}>
+    <SectionCard title="伙伴团队运行状态" action={<StatusPill tone={stats.engineStatusTone}>{stats.engineStatusCopy}</StatusPill>}>
       <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-2xl bg-[#F8FAFF] p-3"><div className="text-xs text-[#6B7280]">活跃伙伴</div><div className="mt-1 text-2xl font-black">3 / 8</div><div className="text-xs text-[#9CA3AF]">3 个伙伴正在工作</div><div className="mt-3 flex -space-x-2"><Avatar name="小课代表" tone={avatarTones.rep} size="sm" {...getPartnerAvatar('小课代表')} /><Avatar name="情报姬" tone={avatarTones.intel} size="sm" {...getPartnerAvatar('情报姬')} /><Avatar name="CodeMan" tone={avatarTones.code} size="sm" {...getPartnerAvatar('CodeMan')} /><span className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-[#EEF0FF] text-[10px] font-bold text-[#5B4BFF]">+5</span></div></div>
-        <div className="rounded-2xl bg-[#F8FAFF] p-3"><div className="text-xs text-[#6B7280]">当前状态</div><div className="mt-1 text-lg font-black">深度工作中</div><div className="text-xs text-[#9CA3AF]">任务推进顺利</div></div>
+        <div className="rounded-2xl bg-[#F8FAFF] p-3"><div className="text-xs text-[#6B7280]">活跃会话</div><div className="mt-1 text-2xl font-black">{stats.activeSessions} / {stats.totalSessions}</div><div className="text-xs text-[#9CA3AF]">{stats.currentStatusCopy} · {stats.latestSessionTitle}</div><div className="mt-3 flex -space-x-2"><Avatar name="小课代表" tone={avatarTones.rep} size="sm" {...getPartnerAvatar('小课代表')} /><Avatar name="情报姬" tone={avatarTones.intel} size="sm" {...getPartnerAvatar('情报姬')} /><Avatar name="CodeMan" tone={avatarTones.code} size="sm" {...getPartnerAvatar('CodeMan')} /></div></div>
+        <div className="rounded-2xl bg-[#F8FAFF] p-3"><div className="text-xs text-[#6B7280]">OpenClaw</div><div className="mt-1 text-lg font-black">{stats.engineCopy}</div><div className="text-xs text-[#9CA3AF]">完成 {stats.completedSessions} · 异常 {stats.errorSessions}</div></div>
       </div>
     </SectionCard>
 
-    <SectionCard title="资源使用情况" action={<span className="rounded-full border border-[#E6E9F2] px-2 py-1 text-xs text-[#6B7280]">今日⌄</span>}>
+    <SectionCard title="真实链路状态" action={<span className="rounded-full border border-[#E6E9F2] px-2 py-1 text-xs text-[#6B7280]">Cowork</span>}>
       <div className="space-y-3">
-        {[['Token 用量', '1.23M / 5M', '24.6%', 24.6], ['费用预估', '$0.42 / $5', '8.4%', 8.4], ['API 调用', '428 / 2000', '21.4%', 21.4]].map(([label, value, pct, n]) => (
+        {[
+          ['全部会话', `${stats.totalSessions}`, stats.totalSessions > 0 ? 100 : 0],
+          ['运行中', `${stats.activeSessions}`, stats.totalSessions > 0 ? (stats.activeSessions / stats.totalSessions) * 100 : 0],
+          ['已完成', `${stats.completedSessions}`, stats.totalSessions > 0 ? (stats.completedSessions / stats.totalSessions) * 100 : 0],
+          ['异常', `${stats.errorSessions}`, stats.totalSessions > 0 ? (stats.errorSessions / stats.totalSessions) * 100 : 0],
+        ].map(([label, value, n]) => (
           <div key={label as string}>
-            <div className="mb-1 flex justify-between gap-2 text-xs"><span className="text-[#6B7280]">{label}</span><span className="min-w-0 truncate font-bold text-[#111827]">{value} · {pct}</span></div>
-            <ProgressBar value={Number(n)} />
+            <div className="mb-1 flex justify-between gap-2 text-xs"><span className="text-[#6B7280]">{label}</span><span className="min-w-0 truncate font-bold text-[#111827]">{value}</span></div>
+            <ProgressBar value={Number(n)} tone={label === '异常' ? 'orange' : 'purple'} />
           </div>
         ))}
-        <div className="pt-1 text-sm font-semibold text-[#5B4BFF]">查看详细使用报告</div>
+        <div className="pt-1 text-xs font-semibold text-[#5B4BFF]">{stats.engineCopy}</div>
       </div>
     </SectionCard>
 
-    <SectionCard title="伙伴状态" action={<span className="text-xs font-semibold text-[#5B4BFF]">自定义排序 ×</span>}>
+    <SectionCard title="最近真实会话" action={<span className="text-xs font-semibold text-[#5B4BFF]">SQLite</span>}>
       <div className="space-y-3">
-        {partners.map(([name, status, task, progress, tone, statusTone]) => (
-          <div key={name} className="flex min-w-0 gap-2">
-            <Avatar name={name} tone={tone} size="sm" {...getPartnerAvatar(name)} />
+        {stats.recentSessions.length > 0 ? stats.recentSessions.map((session) => (
+          <div key={session.id} className="flex min-w-0 gap-2 rounded-2xl bg-[#F8FAFF] p-2.5">
+            <Avatar name={session.title} tone={toneForSession({ id: session.id, title: session.title, status: session.status, pinned: false, createdAt: session.updatedAt, updatedAt: session.updatedAt })} size="sm" {...getPartnerAvatar(session.title)} />
             <div className="min-w-0 flex-1">
-              <div className="flex min-w-0 items-center gap-2"><span className="min-w-0 truncate text-xs font-bold">{name}</span><StatusPill tone={statusTone as 'purple' | 'green' | 'orange' | 'gray'}>{status}</StatusPill></div>
-              <div className="mt-0.5 truncate text-[11px] text-[#6B7280]">{task}</div>
-              {progress === null ? <div className="mt-1 text-[11px] text-[#9CA3AF]">Zzz</div> : <div className="mt-1 flex items-center gap-2"><div className="flex-1"><ProgressBar value={progress} tone={statusTone === 'orange' ? 'orange' : statusTone === 'green' ? 'green' : 'purple'} /></div><span className="w-8 text-right text-[11px] font-bold text-[#6B7280]">{progress}%</span></div>}
+              <div className="flex min-w-0 items-center gap-2"><span className="min-w-0 truncate text-xs font-bold">{session.title}</span><StatusPill tone="gray">{session.statusCopy}</StatusPill></div>
+              <div className="mt-0.5 truncate text-[11px] text-[#6B7280]">真实 Cowork session · {formatRelativeSessionTime(session.updatedAt)}</div>
             </div>
           </div>
-        ))}
-        <button type="button" className="w-full rounded-xl border border-[#DDDDFB] py-2 text-sm font-semibold text-[#5B4BFF]">查看全部伙伴状态</button>
+        )) : (
+          <div className="rounded-2xl bg-[#F8FAFF] p-3 text-sm text-[#6B7280]">暂无真实 Cowork 会话；发送第一条消息后这里会显示 SQLite 中的真实 session。</div>
+        )}
       </div>
     </SectionCard>
 
-    <SectionCard title="快捷操作">
-      <div className="grid grid-cols-2 gap-2">
-        {['新建任务', '任务看板', '日报生成', '文件管理', '代码执行', '数据分析'].map((action) => <button key={action} type="button" className="rounded-xl border border-[#E6E9F2] bg-[#F8FAFF] px-3 py-3 text-left text-sm font-semibold hover:border-[#DDDDFB] hover:text-[#5B4BFF]">{action}</button>)}
+    <SectionCard title="真实能力入口">
+      <div className="space-y-2 text-sm text-[#6B7280]">
+        <div className="rounded-xl border border-[#E6E9F2] bg-[#F8FAFF] px-3 py-3">继续当前会话：底部输入框调用 Cowork/OpenClaw continueSession</div>
+        <div className="rounded-xl border border-[#E6E9F2] bg-[#F8FAFF] px-3 py-3">切换会话：左侧真实 session 行调用 coworkService.loadSession</div>
+        <div className="rounded-xl border border-[#E6E9F2] bg-[#F8FAFF] px-3 py-3">桌宠状态：主进程从真实 Cowork session 状态推导</div>
       </div>
-      <div className="mt-3 text-sm font-semibold text-[#5B4BFF]">查看全部伙伴状态</div>
     </SectionCard>
   </>
 );
@@ -385,10 +564,16 @@ const AlkakaProjectChatHome = ({
   onSubmitMessage,
   onRequestNewChat,
   onOpenConversation,
+  onStopCurrentSession,
+  onDeleteCurrentSession,
+  onToggleCurrentSessionPin,
+  onRenameCurrentSession,
   shouldFocusComposer = false,
   recentSessions = [],
   unreadSessionIds = [],
   currentSessionId = null,
+  currentSession = null,
+  openClawStatus = null,
   now,
 }: AlkakaProjectChatHomeProps) => {
   const composerRef = useRef<HTMLTextAreaElement>(null);
@@ -401,6 +586,10 @@ const AlkakaProjectChatHome = ({
   const [rightDashboardWidth, setRightDashboardWidth] = useState(RIGHT_DASHBOARD_DEFAULT_WIDTH);
   const recentConversations = buildRecentConversationItems({ sessions: recentSessions, unreadSessionIds, currentSessionId, now });
   const projectPreview = buildProjectGroupPreview({ sessions: recentSessions, currentSessionId, now });
+  const projectTimeline = buildProjectMessageTimeline({ messages: currentSession?.messages ?? [] });
+  const hasRealTimeline = projectTimeline.length > 0;
+  const hasOpenedRealSession = currentSession !== null;
+  const workbenchStats = buildProjectWorkbenchStats({ sessions: recentSessions, currentSessionId, openClawStatus });
 
   useEffect(() => {
     if (shouldFocusComposer) {
@@ -463,6 +652,15 @@ const AlkakaProjectChatHome = ({
       console.error('[AlkakaProjectChatHome] Failed to open conversation:', error);
     });
   };
+
+  const runCurrentSessionAction = (label: string, action?: () => unknown | Promise<unknown>) => {
+    if (!action) return;
+    void Promise.resolve(action()).catch((error) => {
+      console.error(`[AlkakaProjectChatHome] Failed to ${label}:`, error);
+    });
+  };
+
+  const hasCurrentSessionActions = Boolean(currentSession && (onStopCurrentSession || onDeleteCurrentSession || onToggleCurrentSessionPin || onRenameCurrentSession));
 
   const renderRecentConversationRows = () => recentConversations.map((chat) => {
     const content = (
@@ -578,9 +776,17 @@ const AlkakaProjectChatHome = ({
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-2 text-[#6B7280]">
+            {hasCurrentSessionActions ? (
+              <div className="flex shrink-0 flex-wrap items-center gap-2">
+                {currentSession?.status === 'running' && onStopCurrentSession ? <button type="button" aria-label="停止当前真实 Cowork 会话" onClick={() => runCurrentSessionAction('stop current session', onStopCurrentSession)} className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-600 shadow-sm">停止会话</button> : null}
+                {onToggleCurrentSessionPin ? <button type="button" aria-label={currentSession?.pinned ? '取消置顶当前真实 Cowork 会话' : '置顶当前真实 Cowork 会话'} onClick={() => runCurrentSessionAction('toggle current session pin', onToggleCurrentSessionPin)} className="rounded-xl border border-[#E6E9F2] bg-white px-2.5 py-2 text-sm shadow-sm">{currentSession?.pinned ? '取消置顶' : '置顶'}</button> : null}
+                {onRenameCurrentSession ? <button type="button" aria-label="重命名当前真实 Cowork 会话" onClick={() => runCurrentSessionAction('rename current session', onRenameCurrentSession)} className="rounded-xl border border-[#E6E9F2] bg-white px-2.5 py-2 text-sm shadow-sm">重命名</button> : null}
+                {onDeleteCurrentSession ? <button type="button" aria-label="删除当前真实 Cowork 会话" onClick={() => runCurrentSessionAction('delete current session', onDeleteCurrentSession)} className="rounded-xl border border-[#E6E9F2] bg-white px-2.5 py-2 text-sm shadow-sm">删除</button> : null}
+              </div>
+            ) : null}
             {['⌕', '☆'].map((item) => <button key={item} type="button" className="rounded-xl border border-[#E6E9F2] bg-white px-2.5 py-2 text-sm shadow-sm">{item}</button>)}
             <button type="button" onClick={() => setIsWorkbenchOpen(true)} className="rounded-xl border border-[#DDDDFB] bg-white px-3 py-2 text-sm font-semibold text-[#5B4BFF] shadow-sm xl:hidden">工作台</button>
-            {['▣', '👥 8', '⋯'].map((item) => <button key={item} type="button" className="hidden rounded-xl border border-[#E6E9F2] bg-white px-2.5 py-2 text-sm shadow-sm md:inline-flex">{item}</button>)}
+            {['▣', `👥 ${workbenchStats.totalSessions}`, '⋯'].map((item) => <button key={item} type="button" className="hidden rounded-xl border border-[#E6E9F2] bg-white px-2.5 py-2 text-sm shadow-sm md:inline-flex">{item}</button>)}
           </div>
         </header>
 
@@ -596,6 +802,32 @@ const AlkakaProjectChatHome = ({
           </div>
 
           <div className="space-y-5 pb-4">
+            {hasRealTimeline ? projectTimeline.map((item) => (
+              <section key={item.id} className="flex gap-3">
+                <Avatar name={item.speaker} tone={item.avatarTone} size="lg" {...getPartnerAvatar(item.speaker)} />
+                <div className="min-w-0 max-w-full xl:max-w-[720px] flex-1">
+                  <div className="mb-2 flex min-w-0 flex-wrap items-center gap-2">
+                    <span className="font-bold">{item.speaker}</span>
+                    <span className="text-xs text-[#9CA3AF]">{formatTimelineTime(item.timestamp)}</span>
+                    <StatusPill tone={item.statusTone}>{item.kind}</StatusPill>
+                  </div>
+                  <div className={`rounded-[18px] border px-4 py-3 text-sm leading-6 shadow-sm ${item.kind === 'tool_use' || item.kind === 'tool_result' ? 'border-[#CFE3FF] bg-[#F6FAFF]' : 'border-[#E6E9F2] bg-white'}`}>
+                    {item.title ? <div className="mb-2 font-bold text-[#34316F]">{item.title}</div> : null}
+                    <div className="whitespace-pre-wrap break-words">{item.body}</div>
+                    {item.bodyTruncated ? <div className="mt-2 text-xs font-semibold text-[#5B4BFF]">已在列表中截断，完整内容保留在真实 Cowork 会话记录中。</div> : null}
+                  </div>
+                </div>
+              </section>
+            )) : hasOpenedRealSession ? (
+              <section className="flex gap-3">
+                <Avatar name="OpenClaw" tone={avatarTones.boss} size="lg" />
+                <div className="min-w-0 max-w-full xl:max-w-[720px] flex-1">
+                  <div className="mb-2 flex min-w-0 flex-wrap items-center gap-2"><span className="font-bold">OpenClaw 会话</span><StatusPill tone="gray">真实空态</StatusPill></div>
+                  <div className="rounded-[18px] border border-[#E6E9F2] bg-white px-4 py-3 text-sm leading-6 text-[#6B7280] shadow-sm">这个真实 Cowork 会话还没有消息。你可以在底部输入框继续发送，消息会走 Cowork/OpenClaw continueSession 链路。</div>
+                </div>
+              </section>
+            ) : (
+              <>
             <section className="flex gap-3">
               <Avatar name="Boss" tone={avatarTones.boss} size="lg" />
               <div className="min-w-0 max-w-full xl:max-w-[720px] flex-1">
@@ -661,6 +893,8 @@ const AlkakaProjectChatHome = ({
                 </div>
               </div>
             </section>
+              </>
+            )}
           </div>
         </div>
 
@@ -710,7 +944,7 @@ const AlkakaProjectChatHome = ({
               <span className="text-xs font-bold text-[#6B7280]">可拖动调整宽度</span>
               <button type="button" aria-label="折叠右侧工作台" onClick={() => setIsRightDashboardCollapsed(true)} className="rounded-xl border border-[#E6E9F2] bg-white px-2.5 py-1.5 text-xs font-semibold text-[#5B4BFF] shadow-sm">折叠</button>
             </div>
-            <RightDashboardContent />
+            <RightDashboardContent stats={workbenchStats} />
           </>
         )}
       </aside>
@@ -743,7 +977,7 @@ const AlkakaProjectChatHome = ({
               <h2 className="text-sm font-bold text-[#111827]">伙伴工作台</h2>
               <button type="button" onClick={() => setIsWorkbenchOpen(false)} className="rounded-xl border border-[#E6E9F2] px-3 py-1.5 text-sm font-semibold text-[#6B7280]">关闭</button>
             </div>
-            <RightDashboardContent />
+            <RightDashboardContent stats={workbenchStats} />
           </aside>
         </div>
       ) : null}

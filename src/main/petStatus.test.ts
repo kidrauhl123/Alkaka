@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
-import { createPetReadyStatusFromRecentSessions, createPetStatusSnapshot } from './petStatus';
+import { createPetReadyStatusFromRecentSessions, createPetStatusFromCoworkActivity, createPetStatusSnapshot } from './petStatus';
 
 describe('createPetStatusSnapshot', () => {
   test('creates safe pet snapshots with default messages for cowork phases', () => {
@@ -65,6 +65,45 @@ describe('createPetReadyStatusFromRecentSessions', () => {
       { id: '   ', title: '空 id' },
     ])).toEqual({
       phase: 'ready',
+      message: '准备好对话',
+    });
+  });
+});
+
+
+describe('createPetStatusFromCoworkActivity', () => {
+  test('uses a real running Cowork session as the desktop-pet working status', () => {
+    expect(createPetStatusFromCoworkActivity([
+      { id: 'done-old', title: '已经完成', status: 'completed', updatedAt: 100 },
+      { id: 'running-new', title: '真实 OpenClaw 会话', status: 'running', updatedAt: 300 },
+    ])).toEqual({
+      phase: 'working',
+      sessionId: 'running-new',
+      title: '真实 OpenClaw 会话',
+      message: 'Alkaka 正在处理…',
+    });
+  });
+
+  test('surfaces real errored sessions before plain ready fallbacks', () => {
+    expect(createPetStatusFromCoworkActivity([
+      { id: 'ready-old', title: '普通会话', status: 'idle', updatedAt: 100 },
+      { id: 'error-new', title: '失败会话', status: 'error', updatedAt: 200 },
+    ])).toMatchObject({
+      phase: 'error',
+      sessionId: 'error-new',
+      title: '失败会话',
+      message: 'AI 对话遇到问题',
+    });
+  });
+
+  test('falls back to latest resumable session when no active work exists', () => {
+    expect(createPetStatusFromCoworkActivity([
+      { id: 'completed-new', title: '刚完成的问题', status: 'completed', updatedAt: 300 },
+      { id: 'idle-old', title: '旧问题', status: 'idle', updatedAt: 100 },
+    ])).toEqual({
+      phase: 'ready',
+      sessionId: 'completed-new',
+      title: '刚完成的问题',
       message: '准备好对话',
     });
   });

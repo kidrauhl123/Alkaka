@@ -22,7 +22,6 @@ import type { CoworkImageAttachment, CoworkSession, OpenClawEngineStatus } from 
 import AlkakaProjectChatHome from '../chat/AlkakaProjectChatHome';
 import type { SettingsOpenOptions } from '../Settings';
 import WindowTitleBar from '../window/WindowTitleBar';
-import CoworkSessionDetail from './CoworkSessionDetail';
 
 export interface CoworkViewProps {
   onRequestAppSettings?: (options?: SettingsOpenOptions) => void;
@@ -35,7 +34,7 @@ export interface CoworkViewProps {
   petOpenedSessionId?: string | null;
 }
 
-const CoworkView: React.FC<CoworkViewProps> = ({ onRequestAppSettings, onShowSkills, isSidebarCollapsed, onToggleSidebar, onNewChat, updateBadge, petOpenedSessionId }) => {
+const CoworkView: React.FC<CoworkViewProps> = ({ onRequestAppSettings, onNewChat, petOpenedSessionId }) => {
   const dispatch = useDispatch();
   const [isInitialized, setIsInitialized] = useState(false);
   const [openClawStatus, setOpenClawStatus] = useState<OpenClawEngineStatus | null>(null);
@@ -56,7 +55,9 @@ const CoworkView: React.FC<CoworkViewProps> = ({ onRequestAppSettings, onShowSki
   const recentSessions = useSelector(selectCoworkSessions);
   const unreadSessionIds = useSelector(selectUnreadSessionIds);
   const currentSessionId = useSelector(selectCurrentSessionId);
-  const homeDraftPrompt = useSelector((state: RootState) => selectDraftPrompts(state).__home__ || '');
+  const draftPrompts = useSelector(selectDraftPrompts);
+  const activeDraftKey = currentSession?.id ?? '__home__';
+  const activeDraftPrompt = draftPrompts[activeDraftKey] || '';
   const config = useSelector(selectCoworkConfig);
   const isOpenClawEngine = useSelector(selectIsOpenClawEngine);
 
@@ -372,16 +373,40 @@ const CoworkView: React.FC<CoworkViewProps> = ({ onRequestAppSettings, onShowSki
     if (currentSession.id.startsWith('temp-') && pendingStartRef.current) {
       pendingStartRef.current.cancelled = true;
       pendingStartRef.current.cancellationAction = 'stop';
+      dispatch(updateSessionStatus({ sessionId: currentSession.id, status: 'idle' }));
+      dispatch(setStreaming(false));
+      return;
     }
     await coworkService.stopSession(currentSession.id);
   };
 
-  const handleDeleteSession = async (sessionId: string) => {
-    if (sessionId.startsWith('temp-') && pendingStartRef.current) {
+  const handleDeleteSession = async () => {
+    if (!currentSession) return;
+    const confirmed = window.confirm(`确定删除真实 Cowork 会话「${currentSession.title || '未命名会话'}」吗？此操作会删除本地会话记录，不能撤销。`);
+    if (!confirmed) return;
+    if (currentSession.id.startsWith('temp-') && pendingStartRef.current) {
       pendingStartRef.current.cancelled = true;
       pendingStartRef.current.cancellationAction = 'delete';
+      dispatch(clearCurrentSession());
+      dispatch(setStreaming(false));
+      return;
     }
-    await coworkService.deleteSession(sessionId);
+    const deleted = await coworkService.deleteSession(currentSession.id);
+    if (deleted) {
+      dispatch(clearCurrentSession());
+    }
+  };
+
+  const handleToggleSessionPin = async () => {
+    if (!currentSession) return;
+    await coworkService.setSessionPinned(currentSession.id, !currentSession.pinned);
+  };
+
+  const handleRenameSession = async () => {
+    if (!currentSession) return;
+    const nextTitle = window.prompt('重命名当前 Cowork 会话', currentSession.title);
+    if (nextTitle === null) return;
+    await coworkService.renameSession(currentSession.id, nextTitle);
   };
 
   useEffect(() => {
@@ -482,37 +507,19 @@ const CoworkView: React.FC<CoworkViewProps> = ({ onRequestAppSettings, onShowSki
     </div>
   ) : null;
 
-  // When there's a current session, show the session detail view
-  if (currentSession) {
-    const openedFromPet = petOpenedSessionId === currentSession.id;
-    return (
-      <div className="flex-1 flex flex-col h-full">
-        {engineStatusBanner}
-        {openedFromPet ? (
-          <div className="shrink-0 px-4 py-2 text-xs bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-200 border-b border-amber-200/70 dark:border-amber-800/50">
-            🐣 从桌宠快速对话跳转而来
-          </div>
-        ) : null}
-        <CoworkSessionDetail
-          onManageSkills={() => onShowSkills?.()}
-          onContinue={handleContinueSession}
-          onStop={handleStopSession}
-          onDeleteSession={handleDeleteSession}
-          onNavigateHome={() => dispatch(clearCurrentSession())}
-          isSidebarCollapsed={isSidebarCollapsed}
-          onToggleSidebar={onToggleSidebar}
-          onNewChat={onNewChat}
-          updateBadge={updateBadge}
-        />
-      </div>
-    );
-  }
+  const openedFromPet = currentSession ? petOpenedSessionId === currentSession.id : false;
 
-  // Home view - no current session. This intentionally replaces the old Cowork landing card with
-  // the reference-image Alkaka Chat workspace: three columns, project group chat, and AI team dashboard.
+  // Alkaka Chat workspace: the shell stays active for both the home state and an opened real Cowork session.
+  // When a session is selected, the main timeline renders currentSession.messages and the composer continues
+  // that real OpenClaw/Cowork session instead of falling back to fake operational cards.
   return (
     <div className="relative flex h-full flex-1 flex-col overflow-hidden">
       {engineStatusBanner}
+      {openedFromPet ? (
+        <div className="shrink-0 px-4 py-2 text-xs bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-200 border-b border-amber-200/70 dark:border-amber-800/50">
+          🐣 从桌宠快速对话跳转而来
+        </div>
+      ) : null}
       <div className="relative min-h-0 flex-1 overflow-hidden">
         <div className="draggable pointer-events-none absolute right-2 top-2 z-20 flex items-center rounded-xl bg-white/70 px-1.5 py-1 shadow-sm backdrop-blur">
           <div className="non-draggable pointer-events-auto">
@@ -520,19 +527,26 @@ const CoworkView: React.FC<CoworkViewProps> = ({ onRequestAppSettings, onShowSki
           </div>
         </div>
         <AlkakaProjectChatHome
-          composerValue={homeDraftPrompt}
-          onComposerChange={(draft) => dispatch(setDraftPrompt({ sessionId: '__home__', draft }))}
+          composerValue={activeDraftPrompt}
+          onComposerChange={(draft) => dispatch(setDraftPrompt({ sessionId: activeDraftKey, draft }))}
           onRequestNewChat={() => {
+            dispatch(clearCurrentSession());
             dispatch(setDraftPrompt({ sessionId: '__home__', draft: '' }));
             onNewChat?.();
             setIsComposerRequested(true);
           }}
-          shouldFocusComposer={isComposerRequested || homeDraftPrompt.trim().length > 0}
+          shouldFocusComposer={isComposerRequested || activeDraftPrompt.trim().length > 0}
           recentSessions={recentSessions}
           unreadSessionIds={unreadSessionIds}
           currentSessionId={currentSessionId}
+          currentSession={currentSession}
+          openClawStatus={openClawStatus}
           onOpenConversation={recentSessions.length > 0 ? (sessionId) => coworkService.loadSession(sessionId) : undefined}
-          onSubmitMessage={(message) => handleStartSession(message)}
+          onStopCurrentSession={currentSession ? handleStopSession : undefined}
+          onDeleteCurrentSession={currentSession ? handleDeleteSession : undefined}
+          onToggleCurrentSessionPin={currentSession ? handleToggleSessionPin : undefined}
+          onRenameCurrentSession={currentSession ? handleRenameSession : undefined}
+          onSubmitMessage={(message) => currentSession ? handleContinueSession(message) : handleStartSession(message)}
         />
       </div>
     </div>

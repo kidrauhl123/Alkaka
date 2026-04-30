@@ -161,12 +161,14 @@ npx vitest run src/renderer/components/chat/chatWorkspaceLayout.test.ts
 
 ## Task 7: 端到端验证与文档更新
 
-### Checkpoint 2026-04-30: 首页最近对话与主对话区接入真实 Cowork sessions
+### Checkpoint 2026-04-30: 首页最近对话、主对话真实消息流与桌宠状态联动
 
 - `AlkakaProjectChatHome` 新增 `buildRecentConversationItems()`，把真实 `CoworkSessionSummary[]` 映射到左栏最近对话，保留 pinned、未读、当前会话高亮和相对更新时间。
 - `AlkakaProjectChatHome` 新增 `buildProjectGroupPreview()`，把同一组真实 sessions 映射为中间主聊天区的项目组/会话预览：标题、`OpenClaw 会话预览`、创建时间、状态 pill、置顶对话和最近更新时间都来自真实 session summary；没有真实 sessions 时才回退 AI 日报项目组示例。
-- `CoworkView` 无当前 session 的首页会把 Redux 中的 `sessions`、`unreadSessionIds`、`currentSessionId` 传入 `AlkakaProjectChatHome`；真实会话行点击后调用 `coworkService.loadSession(sessionId)` 打开对应 Cowork session，首页 composer 仍沿用 `handleStartSession(message)`，继续进入真实 Cowork/OpenClaw session。
-- Verified: `npx vitest run src/renderer/components/chat/AlkakaProjectChatHome.test.ts`、桌宠 4 个回归测试、`npm run compile:electron -- --pretty false`、`npm run build`、`git diff --check` passed。
+- `AlkakaProjectChatHome` 新增 `buildProjectMessageTimeline()` 与 `buildProjectWorkbenchStats()`：打开真实 session 后优先渲染 `currentSession.messages`（user / assistant / system / tool_use / tool_result），真实 current session 消息为空时显示真实空态；右侧工作台核心统计来自真实 sessions/currentSessionId/OpenClaw status，并移除固定资源用量假指标。
+- `CoworkView` 保持 Alkaka Chat shell 承载首页和已打开 session：真实会话行点击后调用 `coworkService.loadSession(sessionId)`，首页 composer 调用 `handleStartSession(message)`，已打开 session composer 调用 `handleContinueSession(message)`，running 会话保留真实 `stopSession`、置顶、重命名、删除入口，不走假数据链路。
+- 桌宠 main 状态新增 `createPetStatusFromCoworkActivity()`：从 SQLite Cowork 最近 session 真实状态推导 working/error/ready，避免 ready 状态只显示静态默认。
+- Verified: `npx vitest run src/renderer/components/chat/AlkakaProjectChatHome.test.ts src/renderer/components/pet/petTaskJump.test.ts src/renderer/components/pet/petState.test.ts src/main/petStatus.test.ts src/renderer/components/pet/petQuickTask.test.ts`、`npm run compile:electron -- --pretty false`、`npm run build`、`git diff --check` passed。
 
 **Objective:** 确认聊天软件方向的 UI 重构没有破坏 Electron/OpenClaw runtime 和桌宠基础交互。
 

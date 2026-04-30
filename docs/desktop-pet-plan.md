@@ -73,7 +73,23 @@
 - 每个可验收 checkpoint 必须同步更新本文件的“当前真实进度”和阶段表，记录验证命令、截图/日志证据、commit SHA 与下一步。
 - 只要涉及产品方向、阶段优先级或验收口径变化，也必须在本文件落地，避免进度只停留在对话里。
 
-### 当前 checkpoint（2026-04-30 10:48 CST）
+### 当前 checkpoint（2026-04-30 12:10 CST）
+
+- 当前分支：`main`（本 checkpoint 待提交后记录 SHA）。
+- 最新功能范围：**Alkaka Chat 真实 Cowork/OpenClaw 消息流与桌宠状态接入**。
+- 已完成到：`AlkakaProjectChatHome` 新增真实消息时间线 mapper，把 `CoworkMessage[]` 映射为项目组聊天流；支持 `user / assistant / system / tool_use / tool_result`，工具调用与工具结果作为真实消息卡显示。打开真实 current session 但消息为空时显示真实空态，不再回退到 AI 日报示例。
+- `CoworkView` 不再在打开真实 session 后切回旧详情页，而是保持 Alkaka Chat 三栏 shell：左栏继续显示真实最近会话，主聊天区接 `currentSession.messages`，composer 对首页调用 `handleStartSession()`、对已打开 session 调用 `handleContinueSession()`，继续走真实 Cowork/OpenClaw start/continue 链路；打开 running 会话后保留真实停止、置顶、重命名、删除入口，避免旧详情页关键 runtime 操作回归。
+- 右侧工作台核心状态接真实 `sessions`、`currentSessionId` 和 `OpenClawEngineStatus`：活跃/总数/完成/异常 session、当前状态、OpenClaw phase、最新会话标题都由真实状态推导；顶部成员计数改为真实 session 总数。
+- 桌宠 ready 状态从“只找最近会话”升级为 `createPetStatusFromCoworkActivity()`：优先显示真实 running session 为 working，其次显示 error session，再回退到最近可恢复 session，保持桌宠和真实 Cowork/OpenClaw activity 联动。
+- 桌宠形象、真实像素命中、透明区穿透、单击/双击行为和窗口位置逻辑未改动。
+- 验证命令：
+  - `npx vitest run src/renderer/components/chat/AlkakaProjectChatHome.test.ts src/renderer/components/pet/petTaskJump.test.ts src/renderer/components/pet/petState.test.ts src/main/petStatus.test.ts src/renderer/components/pet/petQuickTask.test.ts`：5 files / 40 tests passed。
+  - `npm run compile:electron -- --pretty false`：通过。
+  - `npm run build`：通过。
+  - `git diff --check`：通过。
+- 下一优先级：把右侧“资源使用情况 / 伙伴状态 / 快捷操作”进一步替换为真实 OpenClaw telemetry、权限请求、产物/文件与执行日志，不再长期保留静态示例块。
+
+### 上一 checkpoint（2026-04-30 10:48 CST）
 
 - 当前分支：`main`（本 checkpoint 待提交后记录 SHA）。
 - 最新功能范围：**Alkaka Chat 首页响应式分栏与工作台折叠修复**。
