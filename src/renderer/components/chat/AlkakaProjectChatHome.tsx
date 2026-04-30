@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
 
 import type { CoworkSessionSummary, CoworkSessionStatus } from '../../types/cowork';
 
@@ -84,11 +84,11 @@ const StatusPill = ({ children, tone = 'purple' }: { children: ReactNode; tone?:
     gray: 'bg-[#F3F4F6] text-[#6B7280]',
   }[tone];
 
-  return <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${toneClass}`}>{children}</span>;
+  return <span className={`inline-flex shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${toneClass}`}>{children}</span>;
 };
 
 const SectionCard = ({ title, action, children, className = '' }: { title: string; action?: ReactNode; children: ReactNode; className?: string }) => (
-  <section className={`rounded-[22px] border border-[#E6E9F2] bg-white p-4 shadow-[0_18px_45px_rgba(71,85,105,0.07)] ${className}`}>
+  <section className={`min-w-0 rounded-[22px] border border-[#E6E9F2] bg-white p-4 shadow-[0_18px_45px_rgba(71,85,105,0.07)] ${className}`}>
     <div className="mb-3 flex items-center justify-between gap-3">
       <h3 className="text-sm font-bold text-[#111827]">{title}</h3>
       {action}
@@ -213,6 +213,25 @@ export interface ProjectGroupPreview {
   starterMessage: string;
 }
 
+export interface ChatResponsiveLayout {
+  leftRail: 'compact' | 'expanded';
+  rightPanel: 'drawer' | 'docked';
+  mainPriority: 'primary' | 'balanced';
+  supportsResize: boolean;
+}
+
+export const resolveChatResponsiveLayout = (windowWidth: number): ChatResponsiveLayout => {
+  if (windowWidth >= 1280) {
+    return { leftRail: 'expanded', rightPanel: 'docked', mainPriority: 'balanced', supportsResize: true };
+  }
+
+  if (windowWidth >= 1024) {
+    return { leftRail: 'expanded', rightPanel: 'drawer', mainPriority: 'primary', supportsResize: true };
+  }
+
+  return { leftRail: 'compact', rightPanel: 'drawer', mainPriority: 'primary', supportsResize: false };
+};
+
 const formatSessionDate = (timestamp: number): string => {
   const date = new Date(timestamp);
   const year = date.getFullYear();
@@ -278,6 +297,17 @@ const partners = [
   ['管管（项目管理）', '规划中', '制定任务计划中', 78, avatarTones.pm, 'orange'],
 ] as const;
 
+const LEFT_RAIL_COLLAPSED_WIDTH = 76;
+const LEFT_RAIL_DEFAULT_WIDTH = 280;
+const LEFT_RAIL_MIN_WIDTH = 232;
+const LEFT_RAIL_MAX_WIDTH = 360;
+const RIGHT_DASHBOARD_COLLAPSED_WIDTH = 56;
+const RIGHT_DASHBOARD_DEFAULT_WIDTH = 342;
+const RIGHT_DASHBOARD_MIN_WIDTH = 300;
+const RIGHT_DASHBOARD_MAX_WIDTH = 460;
+
+const clamp = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value));
+
 type SubmitResult = boolean | void;
 
 export interface AlkakaProjectChatHomeProps {
@@ -302,6 +332,53 @@ export const resolveComposerSubmitMessage = (value: string): string | null => {
 
 export const shouldClearComposerAfterSubmit = (result: SubmitResult): boolean => result !== false;
 
+
+const RightDashboardContent = () => (
+  <>
+    <SectionCard title="伙伴团队运行状态" action={<StatusPill tone="green">系统正常</StatusPill>}>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="rounded-2xl bg-[#F8FAFF] p-3"><div className="text-xs text-[#6B7280]">活跃伙伴</div><div className="mt-1 text-2xl font-black">3 / 8</div><div className="text-xs text-[#9CA3AF]">3 个伙伴正在工作</div><div className="mt-3 flex -space-x-2"><Avatar name="小课代表" tone={avatarTones.rep} size="sm" {...getPartnerAvatar('小课代表')} /><Avatar name="情报姬" tone={avatarTones.intel} size="sm" {...getPartnerAvatar('情报姬')} /><Avatar name="CodeMan" tone={avatarTones.code} size="sm" {...getPartnerAvatar('CodeMan')} /><span className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-[#EEF0FF] text-[10px] font-bold text-[#5B4BFF]">+5</span></div></div>
+        <div className="rounded-2xl bg-[#F8FAFF] p-3"><div className="text-xs text-[#6B7280]">当前状态</div><div className="mt-1 text-lg font-black">深度工作中</div><div className="text-xs text-[#9CA3AF]">任务推进顺利</div></div>
+      </div>
+    </SectionCard>
+
+    <SectionCard title="资源使用情况" action={<span className="rounded-full border border-[#E6E9F2] px-2 py-1 text-xs text-[#6B7280]">今日⌄</span>}>
+      <div className="space-y-3">
+        {[['Token 用量', '1.23M / 5M', '24.6%', 24.6], ['费用预估', '$0.42 / $5', '8.4%', 8.4], ['API 调用', '428 / 2000', '21.4%', 21.4]].map(([label, value, pct, n]) => (
+          <div key={label as string}>
+            <div className="mb-1 flex justify-between gap-2 text-xs"><span className="text-[#6B7280]">{label}</span><span className="min-w-0 truncate font-bold text-[#111827]">{value} · {pct}</span></div>
+            <ProgressBar value={Number(n)} />
+          </div>
+        ))}
+        <div className="pt-1 text-sm font-semibold text-[#5B4BFF]">查看详细使用报告</div>
+      </div>
+    </SectionCard>
+
+    <SectionCard title="伙伴状态" action={<span className="text-xs font-semibold text-[#5B4BFF]">自定义排序 ×</span>}>
+      <div className="space-y-3">
+        {partners.map(([name, status, task, progress, tone, statusTone]) => (
+          <div key={name} className="flex min-w-0 gap-2">
+            <Avatar name={name} tone={tone} size="sm" {...getPartnerAvatar(name)} />
+            <div className="min-w-0 flex-1">
+              <div className="flex min-w-0 items-center gap-2"><span className="min-w-0 truncate text-xs font-bold">{name}</span><StatusPill tone={statusTone as 'purple' | 'green' | 'orange' | 'gray'}>{status}</StatusPill></div>
+              <div className="mt-0.5 truncate text-[11px] text-[#6B7280]">{task}</div>
+              {progress === null ? <div className="mt-1 text-[11px] text-[#9CA3AF]">Zzz</div> : <div className="mt-1 flex items-center gap-2"><div className="flex-1"><ProgressBar value={progress} tone={statusTone === 'orange' ? 'orange' : statusTone === 'green' ? 'green' : 'purple'} /></div><span className="w-8 text-right text-[11px] font-bold text-[#6B7280]">{progress}%</span></div>}
+            </div>
+          </div>
+        ))}
+        <button type="button" className="w-full rounded-xl border border-[#DDDDFB] py-2 text-sm font-semibold text-[#5B4BFF]">查看全部伙伴状态</button>
+      </div>
+    </SectionCard>
+
+    <SectionCard title="快捷操作">
+      <div className="grid grid-cols-2 gap-2">
+        {['新建任务', '任务看板', '日报生成', '文件管理', '代码执行', '数据分析'].map((action) => <button key={action} type="button" className="rounded-xl border border-[#E6E9F2] bg-[#F8FAFF] px-3 py-3 text-left text-sm font-semibold hover:border-[#DDDDFB] hover:text-[#5B4BFF]">{action}</button>)}
+      </div>
+      <div className="mt-3 text-sm font-semibold text-[#5B4BFF]">查看全部伙伴状态</div>
+    </SectionCard>
+  </>
+);
+
 const AlkakaProjectChatHome = ({
   composerValue = '',
   onComposerChange,
@@ -315,6 +392,13 @@ const AlkakaProjectChatHome = ({
   now,
 }: AlkakaProjectChatHomeProps) => {
   const composerRef = useRef<HTMLTextAreaElement>(null);
+  const resizeCleanupRef = useRef<(() => void) | null>(null);
+  const [isWorkbenchOpen, setIsWorkbenchOpen] = useState(false);
+  const [isConversationDrawerOpen, setIsConversationDrawerOpen] = useState(false);
+  const [isLeftRailCollapsed, setIsLeftRailCollapsed] = useState(false);
+  const [leftRailWidth, setLeftRailWidth] = useState(LEFT_RAIL_DEFAULT_WIDTH);
+  const [isRightDashboardCollapsed, setIsRightDashboardCollapsed] = useState(false);
+  const [rightDashboardWidth, setRightDashboardWidth] = useState(RIGHT_DASHBOARD_DEFAULT_WIDTH);
   const recentConversations = buildRecentConversationItems({ sessions: recentSessions, unreadSessionIds, currentSessionId, now });
   const projectPreview = buildProjectGroupPreview({ sessions: recentSessions, currentSessionId, now });
 
@@ -323,6 +407,44 @@ const AlkakaProjectChatHome = ({
       composerRef.current?.focus();
     }
   }, [shouldFocusComposer]);
+
+  useEffect(() => () => {
+    resizeCleanupRef.current?.();
+  }, []);
+
+  const beginPanelResize = useCallback((panel: 'left' | 'right', event: ReactPointerEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    resizeCleanupRef.current?.();
+    const startX = event.clientX;
+    const startWidth = panel === 'left' ? leftRailWidth : rightDashboardWidth;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    const handlePointerMove = (moveEvent: PointerEvent) => {
+      const delta = moveEvent.clientX - startX;
+      if (panel === 'left') {
+        setIsLeftRailCollapsed(false);
+        setLeftRailWidth(clamp(startWidth + delta, LEFT_RAIL_MIN_WIDTH, LEFT_RAIL_MAX_WIDTH));
+      } else {
+        setIsRightDashboardCollapsed(false);
+        setRightDashboardWidth(clamp(startWidth - delta, RIGHT_DASHBOARD_MIN_WIDTH, RIGHT_DASHBOARD_MAX_WIDTH));
+      }
+    };
+
+    const cleanupResize = () => {
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', cleanupResize);
+      window.removeEventListener('pointercancel', cleanupResize);
+      resizeCleanupRef.current = null;
+    };
+
+    resizeCleanupRef.current = cleanupResize;
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', cleanupResize, { once: true });
+    window.addEventListener('pointercancel', cleanupResize, { once: true });
+  }, [leftRailWidth, rightDashboardWidth]);
 
   const handleSubmit = async () => {
     const message = resolveComposerSubmitMessage(composerValue);
@@ -336,21 +458,55 @@ const AlkakaProjectChatHome = ({
 
   const handleOpenConversation = (sessionId: string) => {
     if (!onOpenConversation) return;
+    setIsConversationDrawerOpen(false);
     void Promise.resolve(onOpenConversation(sessionId)).catch((error) => {
       console.error('[AlkakaProjectChatHome] Failed to open conversation:', error);
     });
   };
 
+  const renderRecentConversationRows = () => recentConversations.map((chat) => {
+    const content = (
+      <>
+        <Avatar name={chat.title} tone={chat.tone} {...getPartnerAvatar(chat.title)} />
+        <div className="min-w-0 flex-1 text-left">
+          <div className="flex items-center gap-2">
+            <span className="truncate text-sm font-bold">{chat.title}</span>
+            <span className="ml-auto shrink-0 text-[11px] text-[#9CA3AF]">{chat.time}</span>
+          </div>
+          <div className="mt-0.5 flex items-center gap-2 text-xs text-[#6B7280]">
+            <span className="min-w-0 flex-1 truncate">{chat.preview}</span>
+            {'pin' in chat && chat.pin ? <span className="text-[#7C3AED]">⌖</span> : null}
+            {'unread' in chat && chat.unread ? <span className="rounded-full bg-[#5B4BFF] px-1.5 text-[10px] font-bold text-white">{chat.unread}</span> : null}
+          </div>
+        </div>
+      </>
+    );
+
+    const rowClassName = `flex w-full gap-2 rounded-2xl p-2.5 ${chat.selected ? 'bg-[#F1EFFF] shadow-sm' : 'hover:bg-white'}`;
+    return onOpenConversation ? (
+      <button key={chat.id} type="button" aria-label={`打开对话：${chat.title}`} onClick={() => handleOpenConversation(chat.id)} className={rowClassName}>
+        {content}
+      </button>
+    ) : (
+      <div key={chat.id} className={rowClassName}>
+        {content}
+      </div>
+    );
+  });
+
   return (
     <div className="alkaka-project-chat-shell flex h-full min-h-0 overflow-hidden bg-[#F7F8FC] text-[#111827]">
-      <aside className="alkaka-left-sidebar flex w-[318px] shrink-0 flex-col border-r border-[#E6E9F2] bg-[#FBFCFF] px-4 py-4">
-        <div className="mb-5 flex items-center gap-3">
+      <aside
+        className="alkaka-left-sidebar relative flex w-[76px] shrink-0 flex-col border-r border-[#E6E9F2] bg-[#FBFCFF] px-2 py-4 transition-[width] lg:w-[var(--alkaka-left-width)] lg:px-4"
+        style={{ '--alkaka-left-width': `${isLeftRailCollapsed ? LEFT_RAIL_COLLAPSED_WIDTH : leftRailWidth}px` } as CSSProperties}
+      >
+        <div className="mb-5 flex items-center justify-center gap-3 lg:justify-start">
           <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-gradient-to-br from-[#3B5BFF] to-[#7C3AED] text-lg font-black text-white shadow-[0_12px_28px_rgba(91,75,255,0.3)]">A</div>
-          <div className="flex items-center gap-1 text-xl font-extrabold tracking-tight">Alkaka Chat <span className="text-sm text-[#9CA3AF]">⌄</span></div>
+          <div className={`${isLeftRailCollapsed ? 'hidden' : 'hidden lg:flex'} min-w-0 items-center gap-1 truncate text-xl font-extrabold tracking-tight`}>Alkaka Chat <span className="text-sm text-[#9CA3AF]">⌄</span></div>
         </div>
 
-        <button type="button" onClick={onRequestNewChat} className="mb-3 h-10 rounded-xl bg-gradient-to-r from-[#3B5BFF] to-[#7C3AED] text-sm font-bold text-white shadow-[0_14px_28px_rgba(91,75,255,0.24)]">+ 新建对话</button>
-        <div className="mb-4 flex h-10 items-center gap-2 rounded-xl border border-[#E6E9F2] bg-white px-3 text-sm text-[#9CA3AF] shadow-sm">
+        <button type="button" onClick={onRequestNewChat} aria-label="新建对话" className="mb-3 h-10 rounded-xl bg-gradient-to-r from-[#3B5BFF] to-[#7C3AED] text-sm font-bold text-white shadow-[0_14px_28px_rgba(91,75,255,0.24)]"><span className={isLeftRailCollapsed ? '' : 'lg:hidden'}>+</span><span className={isLeftRailCollapsed ? 'hidden' : 'hidden lg:inline'}>+ 新建对话</span></button>
+        <div className={`${isLeftRailCollapsed ? 'hidden' : 'hidden lg:flex'} mb-4 h-10 items-center gap-2 rounded-xl border border-[#E6E9F2] bg-white px-3 text-sm text-[#9CA3AF] shadow-sm`}>
           <span>⌕</span>
           <span className="flex-1 truncate">搜索对话、伙伴或消息</span>
           <kbd className="rounded-md border border-[#E6E9F2] bg-[#F8FAFF] px-1.5 py-0.5 text-[11px] text-[#6B7280]">⌘K</kbd>
@@ -358,58 +514,32 @@ const AlkakaProjectChatHome = ({
 
         <nav className="space-y-1 border-b border-[#E6E9F2] pb-4">
           {navItems.map(([icon, label, badge, active]) => (
-            <div key={label} className={`relative flex h-9 items-center gap-3 rounded-xl px-3 text-sm font-semibold ${active ? 'bg-[#F1EFFF] text-[#5B4BFF]' : 'text-[#4B5563] hover:bg-white'}`}>
+            <div key={label} title={label} className={`relative flex h-9 items-center justify-center gap-3 rounded-xl px-3 text-sm font-semibold ${isLeftRailCollapsed ? '' : 'lg:justify-start'} ${active ? 'bg-[#F1EFFF] text-[#5B4BFF]' : 'text-[#4B5563] hover:bg-white'}`}>
               {active ? <span className="absolute left-0 top-2 h-5 w-1 rounded-r-full bg-[#5B4BFF]" /> : null}
-              <span className="w-5 text-center text-base">{icon}</span>
-              <span className="flex-1">{label}</span>
-              {badge ? <span className="rounded-full bg-[#ECEBFF] px-2 py-0.5 text-[11px] text-[#5B4BFF]">{badge}</span> : null}
+              <span className="w-5 shrink-0 text-center text-base">{icon}</span>
+              <span className={`${isLeftRailCollapsed ? 'hidden' : 'hidden lg:block'} min-w-0 flex-1 truncate`}>{label}</span>
+              {badge ? <span className={`${isLeftRailCollapsed ? 'hidden' : 'hidden lg:inline-flex'} rounded-full bg-[#ECEBFF] px-2 py-0.5 text-[11px] text-[#5B4BFF]`}>{badge}</span> : null}
             </div>
           ))}
         </nav>
 
-        <div className="mt-4 min-h-0 flex-1 overflow-hidden">
-          <div className="mb-3 flex items-center justify-between">
+        <button type="button" aria-label="打开最近对话" onClick={() => setIsConversationDrawerOpen(true)} className="mt-4 flex h-10 items-center justify-center rounded-xl border border-[#E6E9F2] bg-white text-base text-[#5B4BFF] shadow-sm lg:hidden">💬</button>
+
+        <div className={`${isLeftRailCollapsed ? 'hidden' : 'hidden lg:flex'} mt-4 min-h-0 flex-1 flex-col overflow-hidden`}>
+          <div className="mb-3 flex shrink-0 items-center justify-between">
             <h3 className="text-sm font-bold">最近对话</h3>
           </div>
-          <div className="mb-3 flex gap-1.5 text-xs">
+          <div className="mb-3 flex shrink-0 gap-1.5 text-xs">
             {['全部', '群聊', '私聊', '收藏'].map((filter, index) => (
               <span key={filter} className={`rounded-full px-2.5 py-1 ${index === 0 ? 'border border-[#DDDDFB] bg-[#F1EFFF] text-[#5B4BFF]' : 'text-[#6B7280]'}`}>{filter}</span>
             ))}
           </div>
-          <div className="space-y-1.5 overflow-y-auto pr-1">
-            {recentConversations.map((chat) => {
-              const content = (
-                <>
-                  <Avatar name={chat.title} tone={chat.tone} {...getPartnerAvatar(chat.title)} />
-                  <div className="min-w-0 flex-1 text-left">
-                    <div className="flex items-center gap-2">
-                      <span className="truncate text-sm font-bold">{chat.title}</span>
-                      <span className="ml-auto shrink-0 text-[11px] text-[#9CA3AF]">{chat.time}</span>
-                    </div>
-                    <div className="mt-0.5 flex items-center gap-2 text-xs text-[#6B7280]">
-                      <span className="min-w-0 flex-1 truncate">{chat.preview}</span>
-                      {'pin' in chat && chat.pin ? <span className="text-[#7C3AED]">⌖</span> : null}
-                      {'unread' in chat && chat.unread ? <span className="rounded-full bg-[#5B4BFF] px-1.5 text-[10px] font-bold text-white">{chat.unread}</span> : null}
-                    </div>
-                  </div>
-                </>
-              );
-
-              const rowClassName = `flex w-full gap-2 rounded-2xl p-2.5 ${chat.selected ? 'bg-[#F1EFFF] shadow-sm' : 'hover:bg-white'}`;
-              return onOpenConversation ? (
-                <button key={chat.id} type="button" aria-label={`打开对话：${chat.title}`} onClick={() => handleOpenConversation(chat.id)} className={rowClassName}>
-                  {content}
-                </button>
-              ) : (
-                <div key={chat.id} className={rowClassName}>
-                  {content}
-                </div>
-              );
-            })}
+          <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto pr-1 pb-2">
+            {renderRecentConversationRows()}
           </div>
         </div>
 
-        <div className="mt-4 flex items-center gap-3 rounded-[18px] border border-[#E6E9F2] bg-white p-3 shadow-sm">
+        <div className={`${isLeftRailCollapsed ? 'hidden' : 'hidden lg:flex'} mt-4 items-center gap-3 rounded-[18px] border border-[#E6E9F2] bg-white p-3 shadow-sm`}>
           <Avatar name="Boss" tone={avatarTones.boss} />
           <div className="min-w-0 flex-1">
             <div className="truncate text-sm font-bold">Boss（你） <span className="text-amber-400">♛</span></div>
@@ -417,28 +547,45 @@ const AlkakaProjectChatHome = ({
           </div>
           <span className="text-[#9CA3AF]">⚙</span>
         </div>
+
+        <button
+          type="button"
+          aria-label={isLeftRailCollapsed ? '展开左侧栏' : '折叠左侧栏'}
+          onClick={() => setIsLeftRailCollapsed((value) => !value)}
+          className="absolute bottom-3 right-2 hidden h-8 w-8 items-center justify-center rounded-full border border-[#E6E9F2] bg-white text-xs font-bold text-[#5B4BFF] shadow-sm lg:flex"
+        >
+          {isLeftRailCollapsed ? '›' : '‹'}
+        </button>
+        <button
+          type="button"
+          aria-label="拖动调整左侧栏宽度"
+          onPointerDown={(event) => beginPanelResize('left', event)}
+          className="absolute -right-1 top-0 hidden h-full w-2 cursor-col-resize touch-none bg-transparent hover:bg-[#DDDDFB]/60 lg:block"
+        />
       </aside>
 
-      <main className="alkaka-main-chat flex min-w-0 flex-1 flex-col bg-[#F7F8FC]">
-        <header className="flex h-[76px] shrink-0 items-center justify-between border-b border-[#E6E9F2] bg-white/90 px-6 backdrop-blur">
-          <div className="flex items-center gap-4">
-            <div className="flex -space-x-3">
+      <main className="alkaka-main-chat flex min-w-0 flex-1 flex-col overflow-x-hidden bg-[#F7F8FC]">
+        <header className="flex min-h-[72px] shrink-0 flex-wrap items-center justify-between gap-3 border-b border-[#E6E9F2] bg-white/90 px-3 py-3 backdrop-blur sm:px-4 lg:px-6">
+          <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+            <div className="hidden -space-x-3 sm:flex">
               <Avatar name="Boss" tone={avatarTones.boss} size="lg" />
               <Avatar name="小课代表" tone={avatarTones.rep} size="lg" {...getPartnerAvatar('小课代表')} />
               <Avatar name="情报姬" tone={avatarTones.intel} size="lg" {...getPartnerAvatar('情报姬')} />
             </div>
-            <div>
-              <div className="flex items-center gap-2"><h1 className="text-xl font-extrabold">{projectPreview.title}</h1><StatusPill>{projectPreview.statusCopy}</StatusPill></div>
-              <div className="mt-1 text-xs text-[#6B7280]">{projectPreview.subtitle}</div>
+            <div className="min-w-0">
+              <div className="flex min-w-0 items-center gap-2"><h1 className="min-w-0 truncate text-lg font-extrabold sm:text-xl">{projectPreview.title}</h1><StatusPill>{projectPreview.statusCopy}</StatusPill></div>
+              <div className="mt-1 truncate text-xs text-[#6B7280]">{projectPreview.subtitle}</div>
             </div>
           </div>
-          <div className="flex items-center gap-2 text-[#6B7280]">
-            {['⌕', '☆', '▣', '👥 8', '⋯'].map((item) => <button key={item} type="button" className="rounded-xl border border-[#E6E9F2] bg-white px-2.5 py-2 text-sm shadow-sm">{item}</button>)}
+          <div className="flex shrink-0 items-center gap-2 text-[#6B7280]">
+            {['⌕', '☆'].map((item) => <button key={item} type="button" className="rounded-xl border border-[#E6E9F2] bg-white px-2.5 py-2 text-sm shadow-sm">{item}</button>)}
+            <button type="button" onClick={() => setIsWorkbenchOpen(true)} className="rounded-xl border border-[#DDDDFB] bg-white px-3 py-2 text-sm font-semibold text-[#5B4BFF] shadow-sm xl:hidden">工作台</button>
+            {['▣', '👥 8', '⋯'].map((item) => <button key={item} type="button" className="hidden rounded-xl border border-[#E6E9F2] bg-white px-2.5 py-2 text-sm shadow-sm md:inline-flex">{item}</button>)}
           </div>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
-          <div aria-label={`Boss 置顶了${projectPreview.isDemo ? '任务' : '对话'}：${projectPreview.pinnedSubject}`} className="mb-5 flex items-center gap-3 rounded-[18px] border border-[#DDDDFB] bg-[#F1EFFF] px-4 py-3 shadow-sm">
+        <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-3 py-4 sm:px-6">
+          <div aria-label={`Boss 置顶了${projectPreview.isDemo ? '任务' : '对话'}：${projectPreview.pinnedSubject}`} className="mb-5 flex flex-wrap items-center gap-3 rounded-[18px] border border-[#DDDDFB] bg-[#F1EFFF] px-4 py-3 shadow-sm">
             <span className="text-[#5B4BFF]">📌</span>
             <div className="min-w-0 flex-1">
               <div className="text-sm font-semibold">Boss 置顶了{projectPreview.isDemo ? '任务' : '对话'}：<span className="text-[#5B4BFF]">{projectPreview.pinnedSubject}</span></div>
@@ -451,8 +598,8 @@ const AlkakaProjectChatHome = ({
           <div className="space-y-5 pb-4">
             <section className="flex gap-3">
               <Avatar name="Boss" tone={avatarTones.boss} size="lg" />
-              <div className="max-w-[720px]">
-                <div className="mb-2 flex items-center gap-2"><span className="font-bold">Boss（群主）</span><span className="text-xs text-[#9CA3AF]">09:30</span></div>
+              <div className="min-w-0 max-w-full xl:max-w-[720px] flex-1">
+                <div className="mb-2 flex min-w-0 flex-wrap items-center gap-2"><span className="font-bold">Boss（群主）</span><span className="text-xs text-[#9CA3AF]">09:30</span></div>
                 <div className="rounded-[18px] border border-[#E6E9F2] bg-white px-4 py-3 text-sm leading-6 shadow-sm">{projectPreview.starterMessage}</div>
                 <div className="mt-2 flex gap-2 text-xs"><span className="rounded-full border border-[#E6E9F2] bg-white px-2 py-1">👍 3</span><span className="rounded-full border border-[#E6E9F2] bg-white px-2 py-1">🔥 2</span><span className="rounded-full border border-[#E6E9F2] bg-white px-2 py-1">☺</span></div>
               </div>
@@ -460,8 +607,8 @@ const AlkakaProjectChatHome = ({
 
             <section className="flex gap-3">
               <Avatar name="小课代表" tone={avatarTones.rep} size="lg" {...getPartnerAvatar('小课代表')} />
-              <div className="max-w-[720px] flex-1">
-                <div className="mb-2 flex items-center gap-2"><span className="font-bold">小课代表（课代表）</span><span className="text-xs text-[#9CA3AF]">09:31</span><StatusPill>整理中</StatusPill></div>
+              <div className="min-w-0 max-w-full xl:max-w-[720px] flex-1">
+                <div className="mb-2 flex min-w-0 flex-wrap items-center gap-2"><span className="font-bold">小课代表（课代表）</span><span className="text-xs text-[#9CA3AF]">09:31</span><StatusPill>整理中</StatusPill></div>
                 <div className="rounded-[20px] border border-[#DDDDFB] bg-gradient-to-br from-white to-[#F7F5FF] p-4 shadow-sm">
                   <div className="mb-2 flex items-center justify-between"><h3 className="font-bold text-[#34316F]">课代表总结（已理解）</h3><span className="text-[#7C3AED]">∞</span></div>
                   <p className="text-sm leading-6 text-[#374151]">需要生成一份今日 AI 行业日报，关注：</p>
@@ -474,29 +621,29 @@ const AlkakaProjectChatHome = ({
 
             <section className="flex gap-3">
               <Avatar name="管" tone={avatarTones.pm} size="lg" />
-              <div className="max-w-[720px] flex-1">
-                <div className="mb-2 flex items-center gap-2"><span className="font-bold">项目管理</span><StatusPill tone="orange">项目管理</StatusPill><span className="text-xs text-[#9CA3AF]">09:31</span><StatusPill tone="orange">规划中</StatusPill></div>
+              <div className="min-w-0 max-w-full xl:max-w-[720px] flex-1">
+                <div className="mb-2 flex min-w-0 flex-wrap items-center gap-2"><span className="font-bold">项目管理</span><StatusPill tone="orange">项目管理</StatusPill><span className="text-xs text-[#9CA3AF]">09:31</span><StatusPill tone="orange">规划中</StatusPill></div>
                 <div className="rounded-[20px] border border-[#F7D7B6] bg-gradient-to-br from-white to-[#FFF8EF] p-4 shadow-sm">
                   <h3 className="mb-3 font-bold text-[#7C3F12]">任务拆解与分配</h3>
                   <div className="grid gap-2">
                     {taskRows.map(([task, assignee, tone], index) => (
-                      <div key={task} className="flex items-center gap-3 rounded-xl bg-white/75 px-3 py-2 text-sm">
-                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#FFF3E6] text-xs font-bold text-[#EA7A1A]">{index + 1}</span>
+                      <div key={task} className="flex min-w-0 items-center gap-2 rounded-xl bg-white/75 px-3 py-2 text-sm sm:gap-3">
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#FFF3E6] text-xs font-bold text-[#EA7A1A]">{index + 1}</span>
                         <span className="min-w-0 flex-1 truncate">{task}</span>
                         <Avatar name={assignee} tone={tone} size="sm" {...getPartnerAvatar(assignee)} />
-                        <span className="text-[#6B7280]">{assignee}</span>
+                        <span className="hidden min-w-0 truncate text-[#6B7280] sm:inline">{assignee}</span>
                       </div>
                     ))}
                   </div>
-                  <div className="mt-3 flex justify-between text-sm"><span className="text-[#6B7280]">预计完成时间：今天 10:00</span><span className="font-semibold text-[#EA7A1A]">查看甘特图 &gt;</span></div>
+                  <div className="mt-3 flex flex-wrap justify-between gap-2 text-sm"><span className="text-[#6B7280]">预计完成时间：今天 10:00</span><span className="font-semibold text-[#EA7A1A]">查看甘特图 &gt;</span></div>
                 </div>
               </div>
             </section>
 
             <section className="flex gap-3">
               <Avatar name="情报姬" tone={avatarTones.intel} size="lg" {...getPartnerAvatar('情报姬')} />
-              <div className="max-w-[720px] flex-1">
-                <div className="mb-2 flex items-center gap-2"><span className="font-bold">情报姬（情报员）</span><span className="text-xs text-[#9CA3AF]">09:32</span><StatusPill tone="green">执行中</StatusPill></div>
+              <div className="min-w-0 max-w-full xl:max-w-[720px] flex-1">
+                <div className="mb-2 flex min-w-0 flex-wrap items-center gap-2"><span className="font-bold">情报姬（情报员）</span><span className="text-xs text-[#9CA3AF]">09:32</span><StatusPill tone="green">执行中</StatusPill></div>
                 <div className="rounded-[18px] border border-[#E6E9F2] bg-white px-4 py-3 text-sm shadow-sm">我来收集最新的 Agent 应用动态和产品发布。</div>
                 <div className="mt-2 rounded-[16px] border border-[#DDDDFB] bg-[#F7F5FF] px-4 py-3 text-sm"><div className="flex justify-between font-semibold"><span>思考过程（已折叠）</span><span className="text-[#5B4BFF]">展开 &gt;</span></div><div className="mt-1 text-xs text-[#6B7280]">关键词：Agent、AI应用、产品发布、行业动态、融资...</div></div>
               </div>
@@ -504,12 +651,12 @@ const AlkakaProjectChatHome = ({
 
             <section className="flex gap-3">
               <Avatar name="CodeMan" tone={avatarTones.code} size="lg" {...getPartnerAvatar('CodeMan')} />
-              <div className="max-w-[720px] flex-1">
-                <div className="mb-2 flex items-center gap-2"><span className="font-bold">CodeMan（代码工人）</span><span className="text-xs text-[#9CA3AF]">09:33</span><StatusPill tone="green">执行中</StatusPill></div>
+              <div className="min-w-0 max-w-full xl:max-w-[720px] flex-1">
+                <div className="mb-2 flex min-w-0 flex-wrap items-center gap-2"><span className="font-bold">CodeMan（代码工人）</span><span className="text-xs text-[#9CA3AF]">09:33</span><StatusPill tone="green">执行中</StatusPill></div>
                 <div className="rounded-[18px] border border-[#E6E9F2] bg-white px-4 py-3 text-sm shadow-sm">我来处理相关数据清洗和趋势分析，构建可视化图表。</div>
                 <div className="mt-2 rounded-[16px] border border-[#CFE3FF] bg-[#F6FAFF] px-4 py-3 text-sm">
                   <div className="flex justify-between font-semibold"><span>执行代码（已折叠）</span><span className="text-[#5B4BFF]">查看日志</span></div>
-                  <div className="mt-2 flex items-center gap-2 text-xs text-[#6B7280]"><code className="rounded-md bg-white px-2 py-1 font-mono text-[#374151]">analysis/report_generator.py</code><span>运行中</span><span className="ml-auto font-bold text-[#5B4BFF]">62%</span></div>
+                  <div className="mt-2 flex min-w-0 flex-wrap items-center gap-2 text-xs text-[#6B7280]"><code className="min-w-0 max-w-full truncate rounded-md bg-white px-2 py-1 font-mono text-[#374151]">analysis/report_generator.py</code><span>运行中</span><span className="ml-auto font-bold text-[#5B4BFF]">62%</span></div>
                   <div className="mt-2"><ProgressBar value={62} /></div>
                 </div>
               </div>
@@ -517,8 +664,8 @@ const AlkakaProjectChatHome = ({
           </div>
         </div>
 
-        <div className="shrink-0 border-t border-[#E6E9F2] bg-white/85 px-6 py-4 backdrop-blur">
-          <div className="rounded-[22px] border border-[#DDDDFB] bg-white p-3 shadow-[0_18px_45px_rgba(71,85,105,0.10)]">
+        <div className="shrink-0 border-t border-[#E6E9F2] bg-white/85 px-3 py-3 backdrop-blur sm:px-6 sm:py-4">
+          <div className="min-w-0 rounded-[22px] border border-[#DDDDFB] bg-white p-3 shadow-[0_18px_45px_rgba(71,85,105,0.10)]">
             <textarea
               ref={composerRef}
               value={composerValue}
@@ -534,7 +681,7 @@ const AlkakaProjectChatHome = ({
               placeholder="向所有人发送消息，@ 伙伴 或 / 指令"
               className="min-h-[48px] w-full resize-none rounded-2xl border-0 bg-transparent px-2 py-2 text-sm text-[#111827] outline-none placeholder:text-[#9CA3AF]"
             />
-            <div className="mt-2 flex items-center gap-2">
+            <div className="mt-2 flex min-w-0 flex-wrap items-center gap-2">
               {['提交', '任务', '文件', '代码块', '知识库', '更多'].map((chip) => <button key={chip} type="button" className="rounded-full border border-[#E6E9F2] px-3 py-1.5 text-xs font-semibold text-[#6B7280] hover:border-[#DDDDFB] hover:text-[#5B4BFF]">{chip}</button>)}
               <div className="ml-auto flex items-center gap-2 text-[#6B7280]"><button type="button">☺</button><button type="button">⚡</button><button type="button" onClick={() => void handleSubmit()} disabled={!resolveComposerSubmitMessage(composerValue)} className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[#3B5BFF] to-[#7C3AED] text-white shadow-lg disabled:cursor-not-allowed disabled:opacity-45">➤</button></div>
             </div>
@@ -542,49 +689,64 @@ const AlkakaProjectChatHome = ({
         </div>
       </main>
 
-      <aside className="alkaka-right-dashboard flex w-[342px] shrink-0 flex-col gap-4 overflow-y-auto border-l border-[#E6E9F2] bg-[#FBFCFF] p-4">
-        <SectionCard title="伙伴团队运行状态" action={<StatusPill tone="green">系统正常</StatusPill>}>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-2xl bg-[#F8FAFF] p-3"><div className="text-xs text-[#6B7280]">活跃伙伴</div><div className="mt-1 text-2xl font-black">3 / 8</div><div className="text-xs text-[#9CA3AF]">3 个伙伴正在工作</div><div className="mt-3 flex -space-x-2"><Avatar name="小课代表" tone={avatarTones.rep} size="sm" {...getPartnerAvatar('小课代表')} /><Avatar name="情报姬" tone={avatarTones.intel} size="sm" {...getPartnerAvatar('情报姬')} /><Avatar name="CodeMan" tone={avatarTones.code} size="sm" {...getPartnerAvatar('CodeMan')} /><span className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-[#EEF0FF] text-[10px] font-bold text-[#5B4BFF]">+5</span></div></div>
-            <div className="rounded-2xl bg-[#F8FAFF] p-3"><div className="text-xs text-[#6B7280]">当前状态</div><div className="mt-1 text-lg font-black">深度工作中</div><div className="text-xs text-[#9CA3AF]">任务推进顺利</div></div>
+      <aside
+        className="alkaka-right-dashboard relative hidden w-[var(--alkaka-right-width)] shrink-0 flex-col gap-4 overflow-y-auto overflow-x-hidden border-l border-[#E6E9F2] bg-[#FBFCFF] p-3 transition-[width] xl:flex"
+        style={{ '--alkaka-right-width': `${isRightDashboardCollapsed ? RIGHT_DASHBOARD_COLLAPSED_WIDTH : rightDashboardWidth}px` } as CSSProperties}
+      >
+        <button
+          type="button"
+          aria-label="拖动调整右侧工作台宽度"
+          onPointerDown={(event) => beginPanelResize('right', event)}
+          className="absolute -left-1 top-0 hidden h-full w-2 cursor-col-resize touch-none bg-transparent hover:bg-[#DDDDFB]/60 xl:block"
+        />
+        {isRightDashboardCollapsed ? (
+          <div className="flex h-full flex-col items-center gap-3 pt-2">
+            <button type="button" aria-label="展开右侧工作台" onClick={() => setIsRightDashboardCollapsed(false)} className="flex h-9 w-9 items-center justify-center rounded-full border border-[#DDDDFB] bg-white text-sm font-bold text-[#5B4BFF] shadow-sm">‹</button>
+            <span className="[writing-mode:vertical-rl] text-xs font-bold tracking-widest text-[#6B7280]">伙伴工作台</span>
           </div>
-        </SectionCard>
-
-        <SectionCard title="资源使用情况" action={<span className="rounded-full border border-[#E6E9F2] px-2 py-1 text-xs text-[#6B7280]">今日⌄</span>}>
-          <div className="space-y-3">
-            {[['Token 用量', '1.23M / 5M', '24.6%', 24.6], ['费用预估', '$0.42 / $5', '8.4%', 8.4], ['API 调用', '428 / 2000', '21.4%', 21.4]].map(([label, value, pct, n]) => (
-              <div key={label as string}>
-                <div className="mb-1 flex justify-between text-xs"><span className="text-[#6B7280]">{label}</span><span className="font-bold text-[#111827]">{value} · {pct}</span></div>
-                <ProgressBar value={Number(n)} />
-              </div>
-            ))}
-            <div className="pt-1 text-sm font-semibold text-[#5B4BFF]">查看详细使用报告</div>
-          </div>
-        </SectionCard>
-
-        <SectionCard title="伙伴状态" action={<span className="text-xs font-semibold text-[#5B4BFF]">自定义排序 ×</span>}>
-          <div className="space-y-3">
-            {partners.map(([name, status, task, progress, tone, statusTone]) => (
-              <div key={name} className="flex gap-2">
-                <Avatar name={name} tone={tone} size="sm" {...getPartnerAvatar(name)} />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2"><span className="truncate text-xs font-bold">{name}</span><StatusPill tone={statusTone as 'purple' | 'green' | 'orange' | 'gray'}>{status}</StatusPill></div>
-                  <div className="mt-0.5 truncate text-[11px] text-[#6B7280]">{task}</div>
-                  {progress === null ? <div className="mt-1 text-[11px] text-[#9CA3AF]">Zzz</div> : <div className="mt-1 flex items-center gap-2"><div className="flex-1"><ProgressBar value={progress} tone={statusTone === 'orange' ? 'orange' : statusTone === 'green' ? 'green' : 'purple'} /></div><span className="w-8 text-right text-[11px] font-bold text-[#6B7280]">{progress}%</span></div>}
-                </div>
-              </div>
-            ))}
-            <button type="button" className="w-full rounded-xl border border-[#DDDDFB] py-2 text-sm font-semibold text-[#5B4BFF]">查看全部伙伴状态</button>
-          </div>
-        </SectionCard>
-
-        <SectionCard title="快捷操作">
-          <div className="grid grid-cols-2 gap-2">
-            {['新建任务', '任务看板', '日报生成', '文件管理', '代码执行', '数据分析'].map((action) => <button key={action} type="button" className="rounded-xl border border-[#E6E9F2] bg-[#F8FAFF] px-3 py-3 text-left text-sm font-semibold hover:border-[#DDDDFB] hover:text-[#5B4BFF]">{action}</button>)}
-          </div>
-          <div className="mt-3 text-sm font-semibold text-[#5B4BFF]">查看全部伙伴状态</div>
-        </SectionCard>
+        ) : (
+          <>
+            <div className="flex items-center justify-between gap-2 px-1">
+              <span className="text-xs font-bold text-[#6B7280]">可拖动调整宽度</span>
+              <button type="button" aria-label="折叠右侧工作台" onClick={() => setIsRightDashboardCollapsed(true)} className="rounded-xl border border-[#E6E9F2] bg-white px-2.5 py-1.5 text-xs font-semibold text-[#5B4BFF] shadow-sm">折叠</button>
+            </div>
+            <RightDashboardContent />
+          </>
+        )}
       </aside>
+
+      {isConversationDrawerOpen ? (
+        <div className="fixed inset-0 z-40 flex bg-slate-950/30 backdrop-blur-sm lg:hidden" role="dialog" aria-modal="true" aria-label="最近对话">
+          <button type="button" aria-label="关闭最近对话遮罩" className="absolute inset-0 cursor-default" onClick={() => setIsConversationDrawerOpen(false)} />
+          <aside className="relative z-10 flex h-full w-[min(340px,calc(100vw-40px))] flex-col overflow-y-auto overflow-x-hidden border-r border-[#E6E9F2] bg-[#FBFCFF] p-4 shadow-2xl">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-sm font-bold text-[#111827]">最近对话</h2>
+              <button type="button" onClick={() => setIsConversationDrawerOpen(false)} className="rounded-xl border border-[#E6E9F2] px-3 py-1.5 text-sm font-semibold text-[#6B7280]">关闭</button>
+            </div>
+            <div className="mb-3 flex gap-1.5 text-xs">
+              {['全部', '群聊', '私聊', '收藏'].map((filter, index) => (
+                <span key={filter} className={`rounded-full px-2.5 py-1 ${index === 0 ? 'border border-[#DDDDFB] bg-[#F1EFFF] text-[#5B4BFF]' : 'text-[#6B7280]'}`}>{filter}</span>
+              ))}
+            </div>
+            <div className="space-y-1.5 overflow-y-auto pr-1">
+              {renderRecentConversationRows()}
+            </div>
+          </aside>
+        </div>
+      ) : null}
+
+      {isWorkbenchOpen ? (
+        <div className="fixed inset-0 z-40 flex justify-end bg-slate-950/30 backdrop-blur-sm xl:hidden" role="dialog" aria-modal="true" aria-label="伙伴工作台">
+          <button type="button" aria-label="关闭工作台遮罩" className="absolute inset-0 cursor-default" onClick={() => setIsWorkbenchOpen(false)} />
+          <aside className="relative z-10 flex h-full w-[min(380px,calc(100vw-76px))] flex-col gap-4 overflow-y-auto overflow-x-hidden border-l border-[#E6E9F2] bg-[#FBFCFF] p-4 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-bold text-[#111827]">伙伴工作台</h2>
+              <button type="button" onClick={() => setIsWorkbenchOpen(false)} className="rounded-xl border border-[#E6E9F2] px-3 py-1.5 text-sm font-semibold text-[#6B7280]">关闭</button>
+            </div>
+            <RightDashboardContent />
+          </aside>
+        </div>
+      ) : null}
     </div>
   );
 };

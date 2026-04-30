@@ -6,6 +6,7 @@ import AlkakaProjectChatHome, {
   buildProjectGroupPreview,
   buildRecentConversationItems,
   defaultPartnerAvatarAssets,
+  resolveChatResponsiveLayout,
   resolveComposerSubmitMessage,
   shouldClearComposerAfterSubmit,
 } from './AlkakaProjectChatHome';
@@ -217,6 +218,25 @@ describe('AlkakaProjectChatHome reference-image redesign', () => {
     expect(sessionHtml).toContain('Boss 置顶了对话：真实中间会话');
     expect(sessionHtml).toContain('运行中 · 最近更新于 1分钟前');
     expect(sessionHtml).not.toContain('Boss 置顶了任务：生成今日 AI 行业日报');
+  });
+
+  it('keeps the responsive shell usable across small, medium, and wide window widths', () => {
+    expect(resolveChatResponsiveLayout(900)).toEqual({ leftRail: 'compact', rightPanel: 'drawer', mainPriority: 'primary', supportsResize: false });
+    expect(resolveChatResponsiveLayout(1180)).toEqual({ leftRail: 'expanded', rightPanel: 'drawer', mainPriority: 'primary', supportsResize: true });
+    expect(resolveChatResponsiveLayout(1360)).toEqual({ leftRail: 'expanded', rightPanel: 'docked', mainPriority: 'balanced', supportsResize: true });
+
+    expect(html).toContain('lg:w-[var(--alkaka-left-width)]');
+    expect(html).toContain('w-[76px]');
+    expect(html).toContain('w-[var(--alkaka-right-width)]');
+    expect(html).toContain('aria-label="拖动调整左侧栏宽度"');
+    expect(html).toContain('aria-label="拖动调整右侧工作台宽度"');
+    expect(html).toContain('aria-label="折叠右侧工作台"');
+    expect(html).toContain('xl:flex');
+    expect(html).toContain('xl:hidden');
+    expect(html).toContain('aria-label="打开最近对话"');
+    expect(html).toContain('lg:hidden');
+    expect(html).toContain('overflow-x-hidden');
+    expect(html).toContain('flex-wrap');
   });
 
   it('keeps drafts when submission is rejected and clears only after accepted submit results', () => {

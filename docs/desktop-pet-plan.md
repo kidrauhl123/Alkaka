@@ -73,7 +73,24 @@
 - 每个可验收 checkpoint 必须同步更新本文件的“当前真实进度”和阶段表，记录验证命令、截图/日志证据、commit SHA 与下一步。
 - 只要涉及产品方向、阶段优先级或验收口径变化，也必须在本文件落地，避免进度只停留在对话里。
 
-### 当前 checkpoint（2026-04-30 09:38 CST）
+### 当前 checkpoint（2026-04-30 10:48 CST）
+
+- 当前分支：`main`（本 checkpoint 待提交后记录 SHA）。
+- 最新功能范围：**Alkaka Chat 首页响应式分栏与工作台折叠修复**。
+- 已完成到：`AlkakaProjectChatHome` 从固定三栏改为可拉伸布局：小窗左侧收敛为 76px 图标 rail，并保留“最近对话”抽屉入口以继续打开真实 session；≥1024px 展开左栏；≥1280px docked 显示右侧工作台；小/中窗口右侧工作台折叠为顶部“工作台”按钮，避免挤压主聊天。
+- 主聊天区补齐 `min-w-0`、`overflow-x-hidden`、顶部 header `flex-wrap`、消息卡片/置顶条 flex wrap、底部 composer chip `flex-wrap`，防止页面级横向溢出和按钮/chip 重叠。
+- 真实链路：`CoworkView` 无当前 session 的首页仍把 `sessions`、`unreadSessionIds`、`currentSessionId` 传入 `AlkakaProjectChatHome`；真实会话行点击仍调用 `coworkService.loadSession(sessionId)`；首页 composer 仍调用 `handleStartSession(message)`，继续进入现有 Cowork/OpenClaw session 创建链路。
+- 桌宠形象、真实像素命中、透明区穿透、单击/双击行为和窗口位置逻辑未改动。
+- 验证命令：
+  - `npx vitest run src/renderer/components/chat/AlkakaProjectChatHome.test.ts src/renderer/components/pet/petTaskJump.test.ts src/renderer/components/pet/petState.test.ts src/main/petStatus.test.ts src/renderer/components/pet/petQuickTask.test.ts`：5 files / 29 tests passed。
+  - `npm run compile:electron -- --pretty false`：通过。
+  - `npm run build`：通过。
+  - `git diff --check`：通过。
+  - `npm run electron:dev:openclaw`：真实运行链路保持 live；OpenClaw `/health` 返回 `200 {"ok":true,"status":"live"}`，Vite `/` 返回 `200`。
+  - 临时 Electron BrowserWindow 组件 harness screenshots + DOM metrics：760px / 1180px / 1440px 三档均 `hasHorizontalOverflow=false`；760px 为紧凑左栏 + 工作台折叠入口，1180px 为展开左栏 + 工作台抽屉入口，1440px 为展开左栏 + docked 右工作台；harness 文件已移除。
+- 下一优先级：继续把当前只是 summary 级别的中间预览推进为真实 Cowork messages / tool cards 渲染，并补 `CoworkView` integration 测试。
+
+### 上一 checkpoint（2026-04-30 09:38 CST）
 
 - 当前分支：`main`（未提交工作区；本 checkpoint 待提交后记录 SHA）。
 - 最新功能范围：**Alkaka Chat 首页主对话区接入真实 Cowork 会话预览 checkpoint**。
