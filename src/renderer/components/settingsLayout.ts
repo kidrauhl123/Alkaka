@@ -1,8 +1,11 @@
-export const SETTINGS_OVERLAY_CLASSNAME = 'fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-2 sm:p-4';
+export const SETTINGS_OVERLAY_CLASSNAME = [
+  'fixed inset-x-0 bottom-0 top-0 z-50 modal-backdrop flex items-start justify-center',
+  'px-2 pb-2 pt-[44px] sm:px-4 sm:pb-4 sm:pt-[52px]',
+].join(' ');
 
 export const SETTINGS_MODAL_CLASSNAME = [
   'relative flex flex-col md:flex-row w-full max-w-[1180px]',
-  'h-[calc(100vh-1rem)] sm:h-[82vh] max-h-[calc(100vh-1rem)] sm:max-h-[820px]',
+  'h-[calc(100vh-52px)] sm:h-[calc(100vh-68px)] max-h-[calc(100vh-52px)] sm:max-h-[820px]',
   'rounded-2xl border border-[#E7E2FF] bg-[#FBFAFF] shadow-[0_24px_80px_rgba(91,75,255,0.18)] overflow-hidden modal-content',
 ].join(' ');
 

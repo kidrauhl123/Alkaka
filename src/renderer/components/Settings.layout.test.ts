@@ -9,11 +9,14 @@ import {
 
 describe('Settings Alkaka Chat shell layout', () => {
   it('uses a responsive chat-style overlay instead of the legacy fixed desktop modal', () => {
-    expect(SETTINGS_OVERLAY_CLASSNAME).toContain('p-2');
-    expect(SETTINGS_OVERLAY_CLASSNAME).toContain('sm:p-4');
+    expect(SETTINGS_OVERLAY_CLASSNAME).toContain('px-2');
+    expect(SETTINGS_OVERLAY_CLASSNAME).toContain('pt-[44px]');
+    expect(SETTINGS_OVERLAY_CLASSNAME).toContain('items-start');
+    expect(SETTINGS_OVERLAY_CLASSNAME).toContain('sm:px-4');
     expect(SETTINGS_MODAL_CLASSNAME).toContain('w-full');
     expect(SETTINGS_MODAL_CLASSNAME).toContain('max-w-[1180px]');
-    expect(SETTINGS_MODAL_CLASSNAME).toContain('max-h-[calc(100vh-1rem)]');
+    expect(SETTINGS_MODAL_CLASSNAME).toContain('h-[calc(100vh-52px)]');
+    expect(SETTINGS_MODAL_CLASSNAME).toContain('max-h-[calc(100vh-52px)]');
     expect(SETTINGS_MODAL_CLASSNAME).not.toContain('w-[900px]');
     expect(SETTINGS_MODAL_CLASSNAME).not.toContain('h-[80vh]');
   });
