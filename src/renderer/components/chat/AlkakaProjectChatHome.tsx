@@ -83,13 +83,8 @@ const ProgressBar = ({ value, tone = 'purple' }: { value: number; tone?: 'purple
 };
 
 const navItems = [
-  ['💬', '对话', null, true],
-  ['✅', '任务中心', null, false],
-  ['🗂', '项目空间', null, false],
-  ['📚', '知识库', null, false],
-  ['📎', '文件', null, false],
-  ['📅', '日历', null, false],
-  ['⚙️', '设置', null, false],
+  { label: 'Skill', shortLabel: 'SK', active: false, action: 'skills' },
+  { label: '设置', shortLabel: '设', active: false, action: 'settings' },
 ] as const;
 
 export interface RecentConversationItem {
@@ -428,6 +423,8 @@ export interface AlkakaProjectChatHomeProps {
   onComposerChange?: (value: string) => void;
   onSubmitMessage?: (message: string) => SubmitResult | Promise<SubmitResult>;
   onRequestNewChat?: () => void;
+  onRequestSkills?: () => void;
+  onRequestAppSettings?: () => void;
   onOpenConversation?: (sessionId: string) => unknown | Promise<unknown>;
   onStopCurrentSession?: () => unknown | Promise<unknown>;
   onDeleteCurrentSession?: () => unknown | Promise<unknown>;
@@ -507,6 +504,8 @@ const AlkakaProjectChatHome = ({
   onComposerChange,
   onSubmitMessage,
   onRequestNewChat,
+  onRequestSkills,
+  onRequestAppSettings,
   onOpenConversation,
   onStopCurrentSession,
   onDeleteCurrentSession,
@@ -666,17 +665,33 @@ const AlkakaProjectChatHome = ({
         </div>
 
         <nav className="space-y-1 border-b border-[#E6E9F2] pb-4">
-          {navItems.map(([icon, label, badge, active]) => (
-            <div key={label} title={label} className={`relative flex h-9 items-center justify-center gap-3 rounded-xl px-3 text-sm font-semibold ${isLeftRailCollapsed ? '' : 'lg:justify-start'} ${active ? 'bg-[#F1EFFF] text-[#5B4BFF]' : 'text-[#4B5563] hover:bg-white'}`}>
-              {active ? <span className="absolute left-0 top-2 h-5 w-1 rounded-r-full bg-[#5B4BFF]" /> : null}
-              <span className="w-5 shrink-0 text-center text-base">{icon}</span>
-              <span className={`${isLeftRailCollapsed ? 'hidden' : 'hidden lg:block'} min-w-0 flex-1 truncate`}>{label}</span>
-              {badge ? <span className={`${isLeftRailCollapsed ? 'hidden' : 'hidden lg:inline-flex'} rounded-full bg-[#ECEBFF] px-2 py-0.5 text-[11px] text-[#5B4BFF]`}>{badge}</span> : null}
-            </div>
-          ))}
+          {navItems.map((item) => {
+            const handleNavItemClick = () => {
+              if (item.action === 'skills') {
+                onRequestSkills?.();
+              }
+              if (item.action === 'settings') {
+                onRequestAppSettings?.();
+              }
+            };
+
+            return (
+              <button
+                key={item.label}
+                type="button"
+                title={item.label}
+                onClick={handleNavItemClick}
+                className={`relative flex h-9 w-full items-center justify-center gap-3 rounded-xl px-3 text-sm font-semibold ${isLeftRailCollapsed ? '' : 'lg:justify-start'} ${item.active ? 'bg-[#F1EFFF] text-[#5B4BFF]' : 'text-[#4B5563] hover:bg-white'}`}
+              >
+                {item.active ? <span className="absolute left-0 top-2 h-5 w-1 rounded-r-full bg-[#5B4BFF]" /> : null}
+                <span className="w-6 shrink-0 text-center text-[11px] font-extrabold tracking-tight text-[#5B4BFF]">{item.shortLabel}</span>
+                <span className={`${isLeftRailCollapsed ? 'hidden' : 'hidden lg:block'} min-w-0 flex-1 truncate text-left`}>{item.label}</span>
+              </button>
+            );
+          })}
         </nav>
 
-        <button type="button" aria-label="打开最近对话" onClick={() => setIsConversationDrawerOpen(true)} className="mt-4 flex h-10 items-center justify-center rounded-xl border border-[#E6E9F2] bg-white text-base text-[#5B4BFF] shadow-sm lg:hidden">💬</button>
+        <button type="button" aria-label="打开最近对话" onClick={() => setIsConversationDrawerOpen(true)} className="mt-4 flex h-10 items-center justify-center rounded-xl border border-[#E6E9F2] bg-white text-xs font-bold text-[#5B4BFF] shadow-sm lg:hidden">最近</button>
 
         <div className={`${isLeftRailCollapsed ? 'hidden' : 'hidden lg:flex'} mt-4 min-h-0 flex-1 flex-col overflow-hidden`}>
           <div className="mb-3 flex shrink-0 items-center justify-between">
@@ -695,10 +710,10 @@ const AlkakaProjectChatHome = ({
         <div className={`${isLeftRailCollapsed ? 'hidden' : 'hidden lg:flex'} mt-4 items-center gap-3 rounded-[18px] border border-[#E6E9F2] bg-white p-3 shadow-sm`}>
           <Avatar name="Boss" tone={avatarTones.boss} />
           <div className="min-w-0 flex-1">
-            <div className="truncate text-sm font-bold">Boss（你） <span className="text-amber-400">♛</span></div>
+            <div className="truncate text-sm font-bold">Boss（你）</div>
             <div className="mt-0.5 flex items-center gap-1.5 text-xs text-[#059669]"><span className="h-2 w-2 rounded-full bg-[#10B981]" />在线</div>
           </div>
-          <span className="text-[#9CA3AF]">⚙</span>
+          <button type="button" onClick={() => onRequestAppSettings?.()} className="rounded-lg px-2 py-1 text-xs font-semibold text-[#6B7280] hover:bg-[#F1EFFF] hover:text-[#5B4BFF]">设置</button>
         </div>
 
         <button

@@ -34,7 +34,7 @@ export interface CoworkViewProps {
   petOpenedSessionId?: string | null;
 }
 
-const CoworkView: React.FC<CoworkViewProps> = ({ onRequestAppSettings, onNewChat, petOpenedSessionId }) => {
+const CoworkView: React.FC<CoworkViewProps> = ({ onRequestAppSettings, onShowSkills, onNewChat, petOpenedSessionId }) => {
   const dispatch = useDispatch();
   const [isInitialized, setIsInitialized] = useState(false);
   const [openClawStatus, setOpenClawStatus] = useState<OpenClawEngineStatus | null>(null);
@@ -535,6 +535,8 @@ const CoworkView: React.FC<CoworkViewProps> = ({ onRequestAppSettings, onNewChat
             onNewChat?.();
             setIsComposerRequested(true);
           }}
+          onRequestAppSettings={() => onRequestAppSettings?.({ initialTab: 'general' })}
+          onRequestSkills={onShowSkills}
           shouldFocusComposer={isComposerRequested || activeDraftPrompt.trim().length > 0}
           recentSessions={recentSessions}
           unreadSessionIds={unreadSessionIds}

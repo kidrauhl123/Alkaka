@@ -30,13 +30,13 @@ describe('AlkakaProjectChatHome reference-image redesign', () => {
     [
       '新建对话',
       '搜索对话或消息',
-      '对话',
-      '任务中心',
-      '项目空间',
+      'Skill',
+      '设置',
       '最近对话',
       '暂无真实 Cowork 会话',
       'Boss（你）',
     ].forEach((copy) => expect(html).toContain(copy));
+    ['任务中心', '项目空间', '日历', '💬', '✅', '🗂', '📚', '📎', '📅', '⚙️'].forEach((copy) => expect(html).not.toContain(copy));
   });
 
   it('renders a real empty home state instead of fake project groups or fake agents', () => {
