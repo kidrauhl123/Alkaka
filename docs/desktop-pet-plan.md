@@ -73,20 +73,20 @@
 - 每个可验收 checkpoint 必须同步更新本文件的“当前真实进度”和阶段表，记录验证命令、截图/日志证据、commit SHA 与下一步。
 - 只要涉及产品方向、阶段优先级或验收口径变化，也必须在本文件落地，避免进度只停留在对话里。
 
-### 当前 checkpoint（2026-04-30 08:18 CST）
+### 当前 checkpoint（2026-04-30 09:38 CST）
 
 - 当前分支：`main`（未提交工作区；本 checkpoint 待提交后记录 SHA）。
-- 最新功能范围：**Alkaka Chat 首页接入真实 Cowork 会话 checkpoint**。
-- 已完成到：在参考图风格 `AlkakaProjectChatHome` 基础上，把左侧“最近对话”从固定 demo 列表推进为真实数据优先：`buildRecentConversationItems()` 会把 Redux 中的 `CoworkSessionSummary[]` 映射为最近对话项，保留 pinned 排序、未读标记、当前会话高亮和相对更新时间；没有真实会话时才回退到 AI 日报等示例内容。
+- 最新功能范围：**Alkaka Chat 首页主对话区接入真实 Cowork 会话预览 checkpoint**。
+- 已完成到：在参考图风格 `AlkakaProjectChatHome` 基础上，左侧“最近对话”继续优先消费真实 Redux Cowork session summaries；本轮新增 `buildProjectGroupPreview()`，把中间主聊天区从固定 AI 日报项目组进一步推进为真实 session 预览：有真实会话时展示真实标题、`OpenClaw 会话预览`、创建时间、运行状态、置顶对话和最近更新时间；没有真实会话时才回退到 AI 日报示例内容。
 - 真实链路：`CoworkView` 无当前 session 的首页会把 `sessions`、`unreadSessionIds`、`currentSessionId` 传入 `AlkakaProjectChatHome`；真实会话行点击后调用 `coworkService.loadSession(sessionId)` 打开对应 Cowork session；首页 composer 仍调用 `handleStartSession(message)`，继续进入现有 Cowork/OpenClaw session 创建链路，不是纯截图 harness 或孤立前端假输入。
 - 桌宠形象、真实像素命中、透明区穿透、单击/双击行为和窗口位置逻辑未改动。
 - 验证命令：
-  - `npx vitest run src/renderer/components/chat/AlkakaProjectChatHome.test.ts`：1 file / 11 tests passed。
-  - `npx vitest run src/renderer/components/pet/petTaskJump.test.ts src/renderer/components/pet/petState.test.ts src/main/petStatus.test.ts src/renderer/components/pet/petQuickTask.test.ts`：4 files / 15 tests passed。
+  - `npx vitest run src/renderer/components/chat/AlkakaProjectChatHome.test.ts`：1 file / 13 tests passed。
+  - `npx vitest run src/renderer/components/chat/AlkakaProjectChatHome.test.ts src/renderer/components/pet/petTaskJump.test.ts src/renderer/components/pet/petState.test.ts src/main/petStatus.test.ts src/renderer/components/pet/petQuickTask.test.ts`：5 files / 28 tests passed。
   - `npm run compile:electron -- --pretty false`：通过。
   - `npm run build`：通过。
   - `git diff --check`：通过。
-- 下一优先级：继续把项目组/单聊的真实 session detail 也改成聊天软件语义，把静态 AI 日报群聊示例逐步替换为真实 Cowork message/card 渲染。
+- 下一优先级：继续把当前只是 summary 级别的中间预览推进为真实 Cowork messages / tool cards 渲染，并补 `CoworkView` integration 测试。
 
 ### 上一 checkpoint（2026-04-29 19:53 CST）
 

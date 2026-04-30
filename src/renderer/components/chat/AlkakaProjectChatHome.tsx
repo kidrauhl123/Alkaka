@@ -203,6 +203,61 @@ export const buildRecentConversationItems = ({
     }));
 };
 
+export interface ProjectGroupPreview {
+  isDemo: boolean;
+  title: string;
+  subtitle: string;
+  pinnedSubject: string;
+  pinnedGoal: string;
+  statusCopy: string;
+  starterMessage: string;
+}
+
+const formatSessionDate = (timestamp: number): string => {
+  const date = new Date(timestamp);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+export const buildProjectGroupPreview = ({
+  sessions = [],
+  currentSessionId = null,
+  now = Date.now(),
+}: {
+  sessions?: CoworkSessionSummary[];
+  currentSessionId?: string | null;
+  now?: number;
+} = {}): ProjectGroupPreview => {
+  if (sessions.length === 0) {
+    return {
+      isDemo: true,
+      title: 'AI日报项目组',
+      subtitle: '8位伙伴 · 创建于 2024-06-01',
+      pinnedSubject: '生成今日 AI 行业日报',
+      pinnedGoal: '目标：全面、准确、有洞察的日报，10:00 前完成',
+      statusCopy: '项目组',
+      starterMessage,
+    };
+  }
+
+  const sortedSessions = [...sessions].sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.updatedAt - a.updatedAt);
+  const featuredSession = sortedSessions.find((session) => session.id === currentSessionId) ?? sortedSessions[0];
+  const statusCopy = sessionStatusCopy[featuredSession.status];
+  const relativeUpdatedAt = formatRelativeSessionTime(featuredSession.updatedAt, now);
+
+  return {
+    isDemo: false,
+    title: featuredSession.title || '未命名项目组',
+    subtitle: `OpenClaw 会话预览 · 创建于 ${formatSessionDate(featuredSession.createdAt)}`,
+    pinnedSubject: featuredSession.title || '未命名项目组',
+    pinnedGoal: `${statusCopy} · 最近更新于 ${relativeUpdatedAt}`,
+    statusCopy,
+    starterMessage: `各位，继续推进「${featuredSession.title || '未命名项目组'}」。请基于已有 Cowork 会话上下文同步最新进展。`,
+  };
+};
+
 const taskRows = [
   ['Agent 相关动态收集', '情报姬', avatarTones.intel],
   ['模型相关进展跟踪', '数据君', avatarTones.data],
@@ -261,6 +316,7 @@ const AlkakaProjectChatHome = ({
 }: AlkakaProjectChatHomeProps) => {
   const composerRef = useRef<HTMLTextAreaElement>(null);
   const recentConversations = buildRecentConversationItems({ sessions: recentSessions, unreadSessionIds, currentSessionId, now });
+  const projectPreview = buildProjectGroupPreview({ sessions: recentSessions, currentSessionId, now });
 
   useEffect(() => {
     if (shouldFocusComposer) {
@@ -372,8 +428,8 @@ const AlkakaProjectChatHome = ({
               <Avatar name="情报姬" tone={avatarTones.intel} size="lg" {...getPartnerAvatar('情报姬')} />
             </div>
             <div>
-              <div className="flex items-center gap-2"><h1 className="text-xl font-extrabold">AI日报项目组</h1><StatusPill>项目组</StatusPill></div>
-              <div className="mt-1 text-xs text-[#6B7280]">8位伙伴 · 创建于 2024-06-01</div>
+              <div className="flex items-center gap-2"><h1 className="text-xl font-extrabold">{projectPreview.title}</h1><StatusPill>{projectPreview.statusCopy}</StatusPill></div>
+              <div className="mt-1 text-xs text-[#6B7280]">{projectPreview.subtitle}</div>
             </div>
           </div>
           <div className="flex items-center gap-2 text-[#6B7280]">
@@ -382,11 +438,11 @@ const AlkakaProjectChatHome = ({
         </header>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
-          <div aria-label="Boss 置顶了任务：生成今日 AI 行业日报" className="mb-5 flex items-center gap-3 rounded-[18px] border border-[#DDDDFB] bg-[#F1EFFF] px-4 py-3 shadow-sm">
+          <div aria-label={`Boss 置顶了${projectPreview.isDemo ? '任务' : '对话'}：${projectPreview.pinnedSubject}`} className="mb-5 flex items-center gap-3 rounded-[18px] border border-[#DDDDFB] bg-[#F1EFFF] px-4 py-3 shadow-sm">
             <span className="text-[#5B4BFF]">📌</span>
             <div className="min-w-0 flex-1">
-              <div className="text-sm font-semibold">Boss 置顶了任务：<span className="text-[#5B4BFF]">生成今日 AI 行业日报</span></div>
-              <div className="mt-0.5 text-xs text-[#6B7280]">目标：全面、准确、有洞察的日报，10:00 前完成</div>
+              <div className="text-sm font-semibold">Boss 置顶了{projectPreview.isDemo ? '任务' : '对话'}：<span className="text-[#5B4BFF]">{projectPreview.pinnedSubject}</span></div>
+              <div className="mt-0.5 text-xs text-[#6B7280]">{projectPreview.pinnedGoal}</div>
             </div>
             <button type="button" className="text-sm font-semibold text-[#5B4BFF]">查看详情</button>
             <button type="button" className="text-[#9CA3AF]">×</button>
@@ -397,7 +453,7 @@ const AlkakaProjectChatHome = ({
               <Avatar name="Boss" tone={avatarTones.boss} size="lg" />
               <div className="max-w-[720px]">
                 <div className="mb-2 flex items-center gap-2"><span className="font-bold">Boss（群主）</span><span className="text-xs text-[#9CA3AF]">09:30</span></div>
-                <div className="rounded-[18px] border border-[#E6E9F2] bg-white px-4 py-3 text-sm leading-6 shadow-sm">{starterMessage}</div>
+                <div className="rounded-[18px] border border-[#E6E9F2] bg-white px-4 py-3 text-sm leading-6 shadow-sm">{projectPreview.starterMessage}</div>
                 <div className="mt-2 flex gap-2 text-xs"><span className="rounded-full border border-[#E6E9F2] bg-white px-2 py-1">👍 3</span><span className="rounded-full border border-[#E6E9F2] bg-white px-2 py-1">🔥 2</span><span className="rounded-full border border-[#E6E9F2] bg-white px-2 py-1">☺</span></div>
               </div>
             </section>

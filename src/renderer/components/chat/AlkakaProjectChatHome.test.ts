@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 
 import AlkakaProjectChatHome, {
+  buildProjectGroupPreview,
   buildRecentConversationItems,
   defaultPartnerAvatarAssets,
   resolveComposerSubmitMessage,
@@ -164,6 +165,58 @@ describe('AlkakaProjectChatHome reference-image redesign', () => {
     expect(sessionHtml).toContain('运行中 · 最近更新');
     expect(sessionHtml).toContain('aria-label="打开对话：真实 OpenClaw 会话"');
     expect(sessionHtml).not.toContain('小课代表：已整理今日AI行业日报初稿');
+  });
+
+  it('builds the main chat project preview from real Cowork sessions when available', () => {
+    const sessions: CoworkSessionSummary[] = [
+      {
+        id: 'older',
+        title: '旧项目会话',
+        status: 'completed',
+        pinned: false,
+        createdAt: 1_714_440_000_000,
+        updatedAt: 1_714_440_100_000,
+      },
+      {
+        id: 'live',
+        title: '真实 OpenClaw 项目组',
+        status: 'running',
+        pinned: true,
+        createdAt: 1_714_541_100_000,
+        updatedAt: 1_714_541_234_000,
+      },
+    ];
+
+    expect(buildProjectGroupPreview({ sessions, currentSessionId: 'missing', now: 1_714_541_300_000 })).toMatchObject({
+      isDemo: false,
+      title: '真实 OpenClaw 项目组',
+      subtitle: 'OpenClaw 会话预览 · 创建于 2024-05-01',
+      pinnedSubject: '真实 OpenClaw 项目组',
+      pinnedGoal: '运行中 · 最近更新于 1分钟前',
+      statusCopy: '运行中',
+    });
+  });
+
+  it('renders the main chat area from a real Cowork session preview instead of the static AI daily project when sessions exist', () => {
+    const sessionHtml = renderToStaticMarkup(React.createElement(AlkakaProjectChatHome, {
+      recentSessions: [
+        {
+          id: 'real-main-session',
+          title: '真实中间会话',
+          status: 'running',
+          pinned: false,
+          createdAt: 1_714_541_100_000,
+          updatedAt: 1_714_541_234_000,
+        },
+      ],
+      now: 1_714_541_300_000,
+    }));
+
+    expect(sessionHtml).toContain('真实中间会话');
+    expect(sessionHtml).toContain('OpenClaw 会话预览');
+    expect(sessionHtml).toContain('Boss 置顶了对话：真实中间会话');
+    expect(sessionHtml).toContain('运行中 · 最近更新于 1分钟前');
+    expect(sessionHtml).not.toContain('Boss 置顶了任务：生成今日 AI 行业日报');
   });
 
   it('keeps drafts when submission is rejected and clears only after accepted submit results', () => {
