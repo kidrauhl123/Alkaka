@@ -161,12 +161,12 @@ npx vitest run src/renderer/components/chat/chatWorkspaceLayout.test.ts
 
 ## Task 7: 端到端验证与文档更新
 
-### Checkpoint 2026-04-30: 首页最近对话、主对话真实消息流与桌宠状态联动
+### Checkpoint 2026-04-30: 真实空白首页、最近对话、主对话真实消息流与桌宠状态联动
 
-- `AlkakaProjectChatHome` 新增 `buildRecentConversationItems()`，把真实 `CoworkSessionSummary[]` 映射到左栏最近对话，保留 pinned、未读、当前会话高亮和相对更新时间。
-- `AlkakaProjectChatHome` 新增 `buildProjectGroupPreview()`，把同一组真实 sessions 映射为中间主聊天区的项目组/会话预览：标题、`OpenClaw 会话预览`、创建时间、状态 pill、置顶对话和最近更新时间都来自真实 session summary；没有真实 sessions 时才回退 AI 日报项目组示例。
-- `AlkakaProjectChatHome` 新增 `buildProjectMessageTimeline()` 与 `buildProjectWorkbenchStats()`：打开真实 session 后优先渲染 `currentSession.messages`（user / assistant / system / tool_use / tool_result），真实 current session 消息为空时显示真实空态；右侧工作台核心统计来自真实 sessions/currentSessionId/OpenClaw status，并移除固定资源用量假指标。
-- `CoworkView` 保持 Alkaka Chat shell 承载首页和已打开 session：真实会话行点击后调用 `coworkService.loadSession(sessionId)`，首页 composer 调用 `handleStartSession(message)`，已打开 session composer 调用 `handleContinueSession(message)`，running 会话保留真实 `stopSession`、置顶、重命名、删除入口，不走假数据链路。
+- `AlkakaProjectChatHome` 新增 `buildRecentConversationItems()`，把真实 `CoworkSessionSummary[]` 映射到左栏最近对话，保留 pinned、未读、当前会话高亮和相对更新时间；没有真实 sessions 时返回空列表，不再回退示例对话。
+- `AlkakaProjectChatHome` 新增 `buildProjectGroupPreview()`，把同一组真实 sessions 映射为中间主聊天区的会话预览：标题、`OpenClaw 会话预览`、创建时间、状态 pill、置顶对话和最近更新时间都来自真实 session summary；没有真实 sessions 时显示“暂无真实 Cowork 会话”的空白首页和新建提示。
+- `AlkakaProjectChatHome` 新增 `buildProjectMessageTimeline()` 与 `buildProjectWorkbenchStats()`：打开真实 session 后优先渲染 `currentSession.messages`（user / assistant / system / tool_use / tool_result），真实 current session 消息为空时显示真实空态；右侧工作台核心统计来自真实 sessions/currentSessionId/OpenClaw status，并移除固定资源用量假指标、默认伙伴头像和假成员。
+- `CoworkView` 保持 Alkaka Chat shell 承载首页和已打开 session：真实会话行点击后调用 `coworkService.loadSession(sessionId)`，首页 composer 调用 `handleStartSession(message)` 新建真实 Cowork/OpenClaw session，已打开 session composer 调用 `handleContinueSession(message)`，running 会话保留真实 `stopSession`、置顶、重命名、删除入口，不走假数据链路。
 - 桌宠 main 状态新增 `createPetStatusFromCoworkActivity()`：从 SQLite Cowork 最近 session 真实状态推导 working/error/ready，避免 ready 状态只显示静态默认。
 - Verified: `npx vitest run src/renderer/components/chat/AlkakaProjectChatHome.test.ts src/renderer/components/pet/petTaskJump.test.ts src/renderer/components/pet/petState.test.ts src/main/petStatus.test.ts src/renderer/components/pet/petQuickTask.test.ts`、`npm run compile:electron -- --pretty false`、`npm run build`、`git diff --check` passed。
 

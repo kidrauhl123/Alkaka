@@ -2,22 +2,6 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties, type Poin
 
 import type { CoworkMessage, CoworkSession, CoworkSessionSummary, CoworkSessionStatus, OpenClawEngineStatus } from '../../types/cowork';
 
-import classRepAvatarUrl from '../../assets/partners/partner-class-rep.png';
-import codemanAvatarUrl from '../../assets/partners/partner-codeman.png';
-import dataAnalystAvatarUrl from '../../assets/partners/partner-data-analyst.png';
-import designCatAvatarUrl from '../../assets/partners/partner-design-cat.png';
-import intelScoutAvatarUrl from '../../assets/partners/partner-intel-scout.png';
-import reviewerAvatarUrl from '../../assets/partners/partner-reviewer.png';
-
-export const defaultPartnerAvatarAssets = {
-  classRep: classRepAvatarUrl,
-  intelScout: intelScoutAvatarUrl,
-  codeman: codemanAvatarUrl,
-  designCat: designCatAvatarUrl,
-  dataAnalyst: dataAnalystAvatarUrl,
-  reviewer: reviewerAvatarUrl,
-} as const;
-
 interface AvatarProps {
   name: string;
   tone: string;
@@ -61,20 +45,7 @@ const avatarTones = {
   guard: 'bg-gradient-to-br from-red-400 via-orange-500 to-amber-500',
 };
 
-const partnerAvatarByRole = {
-  小课代表: { imageSrc: defaultPartnerAvatarAssets.classRep, imageAlt: '小课代表 伙伴头像' },
-  情报姬: { imageSrc: defaultPartnerAvatarAssets.intelScout, imageAlt: '情报姬 伙伴头像' },
-  CodeMan: { imageSrc: defaultPartnerAvatarAssets.codeman, imageAlt: 'CodeMan 伙伴头像' },
-  设计喵: { imageSrc: defaultPartnerAvatarAssets.designCat, imageAlt: '设计喵 伙伴头像' },
-  数据君: { imageSrc: defaultPartnerAvatarAssets.dataAnalyst, imageAlt: '数据君 伙伴头像' },
-  审核官: { imageSrc: defaultPartnerAvatarAssets.reviewer, imageAlt: '审核官 伙伴头像' },
-  大监: { imageSrc: defaultPartnerAvatarAssets.reviewer, imageAlt: '审核官 伙伴头像' },
-} as const;
-
-const getPartnerAvatar = (name: string): Pick<AvatarProps, 'imageSrc' | 'imageAlt'> => {
-  const match = Object.entries(partnerAvatarByRole).find(([role]) => name.includes(role));
-  return match?.[1] ?? {};
-};
+const getPartnerAvatar = (_name: string): Pick<AvatarProps, 'imageSrc' | 'imageAlt'> => ({});
 
 const StatusPill = ({ children, tone = 'purple' }: { children: ReactNode; tone?: 'purple' | 'green' | 'orange' | 'gray' }) => {
   const toneClass = {
@@ -113,8 +84,7 @@ const ProgressBar = ({ value, tone = 'purple' }: { value: number; tone?: 'purple
 
 const navItems = [
   ['💬', '对话', null, true],
-  ['🧑‍🤝‍🧑', '伙伴', null, false],
-  ['✅', '任务中心', '12', false],
+  ['✅', '任务中心', null, false],
   ['🗂', '项目空间', null, false],
   ['📚', '知识库', null, false],
   ['📎', '文件', null, false],
@@ -132,15 +102,6 @@ export interface RecentConversationItem {
   pin?: boolean;
   unread?: string;
 }
-
-const demoConversations: RecentConversationItem[] = [
-  { id: 'demo-ai-daily', title: 'AI日报项目组', preview: '小课代表：已整理今日AI行业日报初稿', time: '10:45', tone: avatarTones.rep, selected: true, pin: true },
-  { id: 'demo-product-rd', title: '产品研发群', preview: 'CodeMan：接口文档已更新', time: '09:32', tone: avatarTones.code, unread: '5' },
-  { id: 'demo-intel', title: '情报收集小队', preview: '情报姬：找到3篇相关论文', time: '昨天', tone: avatarTones.intel },
-  { id: 'demo-codeman', title: 'CodeMan（代码工人）', preview: '我：帮我处理权限校验的问题', time: '昨天', tone: avatarTones.code },
-  { id: 'demo-design-cat', title: '设计喵（设计师）', preview: '我：做个日报的图表视觉', time: '昨天', tone: avatarTones.design },
-  { id: 'demo-guard', title: '大监（御前监督使）', preview: '我：任务进度如何了？', time: '前天', tone: avatarTones.guard },
-];
 
 const sessionStatusCopy: Record<CoworkSessionStatus, string> = {
   idle: '待启动',
@@ -163,13 +124,8 @@ const formatRelativeSessionTime = (updatedAt: number, now = Date.now()): string 
 };
 
 const toneForSession = (session: CoworkSessionSummary): string => {
-  const title = session.title;
-  if (title.includes('CodeMan') || title.includes('代码')) return avatarTones.code;
-  if (title.includes('情报')) return avatarTones.intel;
-  if (title.includes('设计')) return avatarTones.design;
-  if (title.includes('数据')) return avatarTones.data;
-  if (title.includes('审核') || title.includes('大监')) return avatarTones.guard;
   if (session.status === 'running') return avatarTones.rep;
+  if (session.status === 'completed') return avatarTones.data;
   if (session.status === 'error') return avatarTones.guard;
   return avatarTones.boss;
 };
@@ -185,7 +141,7 @@ export const buildRecentConversationItems = ({
   currentSessionId?: string | null;
   now?: number;
 } = {}): RecentConversationItem[] => {
-  if (sessions.length === 0) return demoConversations;
+  if (sessions.length === 0) return [];
 
   const unread = new Set(unreadSessionIds);
   return [...sessions]
@@ -428,13 +384,13 @@ export const buildProjectGroupPreview = ({
 } = {}): ProjectGroupPreview => {
   if (sessions.length === 0) {
     return {
-      isDemo: true,
-      title: 'AI日报项目组',
-      subtitle: '8位伙伴 · 创建于 2024-06-01',
-      pinnedSubject: '生成今日 AI 行业日报',
-      pinnedGoal: '目标：全面、准确、有洞察的日报，10:00 前完成',
-      statusCopy: '项目组',
-      starterMessage,
+      isDemo: false,
+      title: '暂无真实 Cowork 会话',
+      subtitle: '空白工作区 · 尚未创建任何真实会话',
+      pinnedSubject: '还没有真实 Cowork 会话',
+      pinnedGoal: '发送第一条消息会创建真实 Cowork/OpenClaw 会话',
+      statusCopy: '空白',
+      starterMessage: '',
     };
   }
 
@@ -453,16 +409,6 @@ export const buildProjectGroupPreview = ({
     starterMessage: `各位，继续推进「${featuredSession.title || '未命名项目组'}」。请基于已有 Cowork 会话上下文同步最新进展。`,
   };
 };
-
-const taskRows = [
-  ['Agent 相关动态收集', '情报姬', avatarTones.intel],
-  ['模型相关进展跟踪', '数据君', avatarTones.data],
-  ['融资信息收集', '情报姬', avatarTones.intel],
-  ['数据整理与分析', 'CodeMan', avatarTones.code],
-  ['日报撰写与排版', '设计喵', avatarTones.design],
-  ['最终审核与质量把控', '大监（御前监督使）', avatarTones.guard],
-] as const;
-
 
 const LEFT_RAIL_COLLAPSED_WIDTH = 76;
 const LEFT_RAIL_DEFAULT_WIDTH = 280;
@@ -496,8 +442,6 @@ export interface AlkakaProjectChatHomeProps {
   now?: number;
 }
 
-const starterMessage = '各位，开始做今天的 AI 行业日报，重点关注 Agent、模型、融资这三个方向。';
-
 export const resolveComposerSubmitMessage = (value: string): string | null => {
   const normalized = value.trim();
   return normalized.length > 0 ? normalized : null;
@@ -508,9 +452,9 @@ export const shouldClearComposerAfterSubmit = (result: SubmitResult): boolean =>
 
 const RightDashboardContent = ({ stats }: { stats: ProjectWorkbenchStats }) => (
   <>
-    <SectionCard title="伙伴团队运行状态" action={<StatusPill tone={stats.engineStatusTone}>{stats.engineStatusCopy}</StatusPill>}>
+    <SectionCard title="Cowork 运行状态" action={<StatusPill tone={stats.engineStatusTone}>{stats.engineStatusCopy}</StatusPill>}>
       <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-2xl bg-[#F8FAFF] p-3"><div className="text-xs text-[#6B7280]">活跃会话</div><div className="mt-1 text-2xl font-black">{stats.activeSessions} / {stats.totalSessions}</div><div className="text-xs text-[#9CA3AF]">{stats.currentStatusCopy} · {stats.latestSessionTitle}</div><div className="mt-3 flex -space-x-2"><Avatar name="小课代表" tone={avatarTones.rep} size="sm" {...getPartnerAvatar('小课代表')} /><Avatar name="情报姬" tone={avatarTones.intel} size="sm" {...getPartnerAvatar('情报姬')} /><Avatar name="CodeMan" tone={avatarTones.code} size="sm" {...getPartnerAvatar('CodeMan')} /></div></div>
+        <div className="rounded-2xl bg-[#F8FAFF] p-3"><div className="text-xs text-[#6B7280]">活跃会话</div><div className="mt-1 text-2xl font-black">{stats.activeSessions} / {stats.totalSessions}</div><div className="text-xs text-[#9CA3AF]">{stats.currentStatusCopy} · {stats.latestSessionTitle}</div><div className="mt-3 text-xs text-[#9CA3AF]">无真实会话时不预置任何伙伴或智能体</div></div>
         <div className="rounded-2xl bg-[#F8FAFF] p-3"><div className="text-xs text-[#6B7280]">OpenClaw</div><div className="mt-1 text-lg font-black">{stats.engineCopy}</div><div className="text-xs text-[#9CA3AF]">完成 {stats.completedSessions} · 异常 {stats.errorSessions}</div></div>
       </div>
     </SectionCard>
@@ -662,35 +606,46 @@ const AlkakaProjectChatHome = ({
 
   const hasCurrentSessionActions = Boolean(currentSession && (onStopCurrentSession || onDeleteCurrentSession || onToggleCurrentSessionPin || onRenameCurrentSession));
 
-  const renderRecentConversationRows = () => recentConversations.map((chat) => {
-    const content = (
-      <>
-        <Avatar name={chat.title} tone={chat.tone} {...getPartnerAvatar(chat.title)} />
-        <div className="min-w-0 flex-1 text-left">
-          <div className="flex items-center gap-2">
-            <span className="truncate text-sm font-bold">{chat.title}</span>
-            <span className="ml-auto shrink-0 text-[11px] text-[#9CA3AF]">{chat.time}</span>
-          </div>
-          <div className="mt-0.5 flex items-center gap-2 text-xs text-[#6B7280]">
-            <span className="min-w-0 flex-1 truncate">{chat.preview}</span>
-            {'pin' in chat && chat.pin ? <span className="text-[#7C3AED]">⌖</span> : null}
-            {'unread' in chat && chat.unread ? <span className="rounded-full bg-[#5B4BFF] px-1.5 text-[10px] font-bold text-white">{chat.unread}</span> : null}
-          </div>
+  const renderRecentConversationRows = () => {
+    if (recentConversations.length === 0) {
+      return (
+        <div className="rounded-2xl border border-dashed border-[#D8DBF6] bg-white/70 p-3 text-xs leading-5 text-[#6B7280]">
+          <div className="font-bold text-[#4B5563]">还没有真实对话</div>
+          <div className="mt-1">点击新建对话，或在下方发送第一条消息创建真实 Cowork/OpenClaw 会话。</div>
         </div>
-      </>
-    );
+      );
+    }
 
-    const rowClassName = `flex w-full gap-2 rounded-2xl p-2.5 ${chat.selected ? 'bg-[#F1EFFF] shadow-sm' : 'hover:bg-white'}`;
-    return onOpenConversation ? (
-      <button key={chat.id} type="button" aria-label={`打开对话：${chat.title}`} onClick={() => handleOpenConversation(chat.id)} className={rowClassName}>
-        {content}
-      </button>
-    ) : (
-      <div key={chat.id} className={rowClassName}>
-        {content}
-      </div>
-    );
-  });
+    return recentConversations.map((chat) => {
+      const content = (
+        <>
+          <Avatar name={chat.title} tone={chat.tone} {...getPartnerAvatar(chat.title)} />
+          <div className="min-w-0 flex-1 text-left">
+            <div className="flex items-center gap-2">
+              <span className="truncate text-sm font-bold">{chat.title}</span>
+              <span className="ml-auto shrink-0 text-[11px] text-[#9CA3AF]">{chat.time}</span>
+            </div>
+            <div className="mt-0.5 flex items-center gap-2 text-xs text-[#6B7280]">
+              <span className="min-w-0 flex-1 truncate">{chat.preview}</span>
+              {'pin' in chat && chat.pin ? <span className="text-[#7C3AED]">⌖</span> : null}
+              {'unread' in chat && chat.unread ? <span className="rounded-full bg-[#5B4BFF] px-1.5 text-[10px] font-bold text-white">{chat.unread}</span> : null}
+            </div>
+          </div>
+        </>
+      );
+
+      const rowClassName = `flex w-full gap-2 rounded-2xl p-2.5 ${chat.selected ? 'bg-[#F1EFFF] shadow-sm' : 'hover:bg-white'}`;
+      return onOpenConversation ? (
+        <button key={chat.id} type="button" aria-label={`打开对话：${chat.title}`} onClick={() => handleOpenConversation(chat.id)} className={rowClassName}>
+          {content}
+        </button>
+      ) : (
+        <div key={chat.id} className={rowClassName}>
+          {content}
+        </div>
+      );
+    });
+  };
 
   return (
     <div className="alkaka-project-chat-shell flex h-full min-h-0 overflow-hidden bg-[#F7F8FC] text-[#111827]">
@@ -706,7 +661,7 @@ const AlkakaProjectChatHome = ({
         <button type="button" onClick={onRequestNewChat} aria-label="新建对话" className="mb-3 h-10 rounded-xl bg-gradient-to-r from-[#3B5BFF] to-[#7C3AED] text-sm font-bold text-white shadow-[0_14px_28px_rgba(91,75,255,0.24)]"><span className={isLeftRailCollapsed ? '' : 'lg:hidden'}>+</span><span className={isLeftRailCollapsed ? 'hidden' : 'hidden lg:inline'}>+ 新建对话</span></button>
         <div className={`${isLeftRailCollapsed ? 'hidden' : 'hidden lg:flex'} mb-4 h-10 items-center gap-2 rounded-xl border border-[#E6E9F2] bg-white px-3 text-sm text-[#9CA3AF] shadow-sm`}>
           <span>⌕</span>
-          <span className="flex-1 truncate">搜索对话、伙伴或消息</span>
+          <span className="flex-1 truncate">搜索对话或消息</span>
           <kbd className="rounded-md border border-[#E6E9F2] bg-[#F8FAFF] px-1.5 py-0.5 text-[11px] text-[#6B7280]">⌘K</kbd>
         </div>
 
@@ -767,8 +722,7 @@ const AlkakaProjectChatHome = ({
           <div className="flex min-w-0 items-center gap-3 sm:gap-4">
             <div className="hidden -space-x-3 sm:flex">
               <Avatar name="Boss" tone={avatarTones.boss} size="lg" />
-              <Avatar name="小课代表" tone={avatarTones.rep} size="lg" {...getPartnerAvatar('小课代表')} />
-              <Avatar name="情报姬" tone={avatarTones.intel} size="lg" {...getPartnerAvatar('情报姬')} />
+              {recentConversations.slice(0, 2).map((chat) => <Avatar key={chat.id} name={chat.title} tone={chat.tone} size="lg" />)}
             </div>
             <div className="min-w-0">
               <div className="flex min-w-0 items-center gap-2"><h1 className="min-w-0 truncate text-lg font-extrabold sm:text-xl">{projectPreview.title}</h1><StatusPill>{projectPreview.statusCopy}</StatusPill></div>
@@ -827,73 +781,17 @@ const AlkakaProjectChatHome = ({
                 </div>
               </section>
             ) : (
-              <>
-            <section className="flex gap-3">
-              <Avatar name="Boss" tone={avatarTones.boss} size="lg" />
-              <div className="min-w-0 max-w-full xl:max-w-[720px] flex-1">
-                <div className="mb-2 flex min-w-0 flex-wrap items-center gap-2"><span className="font-bold">Boss（群主）</span><span className="text-xs text-[#9CA3AF]">09:30</span></div>
-                <div className="rounded-[18px] border border-[#E6E9F2] bg-white px-4 py-3 text-sm leading-6 shadow-sm">{projectPreview.starterMessage}</div>
-                <div className="mt-2 flex gap-2 text-xs"><span className="rounded-full border border-[#E6E9F2] bg-white px-2 py-1">👍 3</span><span className="rounded-full border border-[#E6E9F2] bg-white px-2 py-1">🔥 2</span><span className="rounded-full border border-[#E6E9F2] bg-white px-2 py-1">☺</span></div>
-              </div>
-            </section>
-
-            <section className="flex gap-3">
-              <Avatar name="小课代表" tone={avatarTones.rep} size="lg" {...getPartnerAvatar('小课代表')} />
-              <div className="min-w-0 max-w-full xl:max-w-[720px] flex-1">
-                <div className="mb-2 flex min-w-0 flex-wrap items-center gap-2"><span className="font-bold">小课代表（课代表）</span><span className="text-xs text-[#9CA3AF]">09:31</span><StatusPill>整理中</StatusPill></div>
-                <div className="rounded-[20px] border border-[#DDDDFB] bg-gradient-to-br from-white to-[#F7F5FF] p-4 shadow-sm">
-                  <div className="mb-2 flex items-center justify-between"><h3 className="font-bold text-[#34316F]">课代表总结（已理解）</h3><span className="text-[#7C3AED]">∞</span></div>
-                  <p className="text-sm leading-6 text-[#374151]">需要生成一份今日 AI 行业日报，关注：</p>
-                  <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm text-[#374151]"><li>Agent 相关动态</li><li>模型相关进展</li><li>融资信息</li></ol>
-                  <p className="mt-2 text-sm leading-6 text-[#374151]">我已拆解任务，分配给相关伙伴跟进，预计 10:00 前初稿完成。</p>
-                  <div className="mt-3 text-right text-sm font-semibold text-[#5B4BFF]">查看任务详情 &gt;</div>
-                </div>
-              </div>
-            </section>
-
-            <section className="flex gap-3">
-              <Avatar name="管" tone={avatarTones.pm} size="lg" />
-              <div className="min-w-0 max-w-full xl:max-w-[720px] flex-1">
-                <div className="mb-2 flex min-w-0 flex-wrap items-center gap-2"><span className="font-bold">项目管理</span><StatusPill tone="orange">项目管理</StatusPill><span className="text-xs text-[#9CA3AF]">09:31</span><StatusPill tone="orange">规划中</StatusPill></div>
-                <div className="rounded-[20px] border border-[#F7D7B6] bg-gradient-to-br from-white to-[#FFF8EF] p-4 shadow-sm">
-                  <h3 className="mb-3 font-bold text-[#7C3F12]">任务拆解与分配</h3>
-                  <div className="grid gap-2">
-                    {taskRows.map(([task, assignee, tone], index) => (
-                      <div key={task} className="flex min-w-0 items-center gap-2 rounded-xl bg-white/75 px-3 py-2 text-sm sm:gap-3">
-                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#FFF3E6] text-xs font-bold text-[#EA7A1A]">{index + 1}</span>
-                        <span className="min-w-0 flex-1 truncate">{task}</span>
-                        <Avatar name={assignee} tone={tone} size="sm" {...getPartnerAvatar(assignee)} />
-                        <span className="hidden min-w-0 truncate text-[#6B7280] sm:inline">{assignee}</span>
-                      </div>
-                    ))}
+              <section className="flex gap-3">
+                <Avatar name="Alkaka" tone={avatarTones.boss} size="lg" />
+                <div className="min-w-0 max-w-full xl:max-w-[720px] flex-1">
+                  <div className="mb-2 flex min-w-0 flex-wrap items-center gap-2"><span className="font-bold">Alkaka</span><StatusPill tone="gray">真实空白</StatusPill></div>
+                  <div className="rounded-[22px] border border-[#DDDDFB] bg-white px-5 py-5 text-sm leading-6 text-[#374151] shadow-sm">
+                    <div className="text-base font-bold text-[#111827]">暂无真实 Cowork 会话</div>
+                    <p className="mt-2 text-[#6B7280]">这里不会预置假的伙伴、智能体或项目组。发送第一条消息会创建真实 Cowork/OpenClaw 会话，创建后左侧会出现真实 session，主聊天区会显示真实消息流。</p>
+                    <button type="button" onClick={() => composerRef.current?.focus()} className="mt-4 rounded-xl bg-gradient-to-r from-[#3B5BFF] to-[#7C3AED] px-4 py-2 text-sm font-bold text-white shadow-[0_14px_28px_rgba(91,75,255,0.24)]">向 Alkaka 发送第一条消息</button>
                   </div>
-                  <div className="mt-3 flex flex-wrap justify-between gap-2 text-sm"><span className="text-[#6B7280]">预计完成时间：今天 10:00</span><span className="font-semibold text-[#EA7A1A]">查看甘特图 &gt;</span></div>
                 </div>
-              </div>
-            </section>
-
-            <section className="flex gap-3">
-              <Avatar name="情报姬" tone={avatarTones.intel} size="lg" {...getPartnerAvatar('情报姬')} />
-              <div className="min-w-0 max-w-full xl:max-w-[720px] flex-1">
-                <div className="mb-2 flex min-w-0 flex-wrap items-center gap-2"><span className="font-bold">情报姬（情报员）</span><span className="text-xs text-[#9CA3AF]">09:32</span><StatusPill tone="green">执行中</StatusPill></div>
-                <div className="rounded-[18px] border border-[#E6E9F2] bg-white px-4 py-3 text-sm shadow-sm">我来收集最新的 Agent 应用动态和产品发布。</div>
-                <div className="mt-2 rounded-[16px] border border-[#DDDDFB] bg-[#F7F5FF] px-4 py-3 text-sm"><div className="flex justify-between font-semibold"><span>思考过程（已折叠）</span><span className="text-[#5B4BFF]">展开 &gt;</span></div><div className="mt-1 text-xs text-[#6B7280]">关键词：Agent、AI应用、产品发布、行业动态、融资...</div></div>
-              </div>
-            </section>
-
-            <section className="flex gap-3">
-              <Avatar name="CodeMan" tone={avatarTones.code} size="lg" {...getPartnerAvatar('CodeMan')} />
-              <div className="min-w-0 max-w-full xl:max-w-[720px] flex-1">
-                <div className="mb-2 flex min-w-0 flex-wrap items-center gap-2"><span className="font-bold">CodeMan（代码工人）</span><span className="text-xs text-[#9CA3AF]">09:33</span><StatusPill tone="green">执行中</StatusPill></div>
-                <div className="rounded-[18px] border border-[#E6E9F2] bg-white px-4 py-3 text-sm shadow-sm">我来处理相关数据清洗和趋势分析，构建可视化图表。</div>
-                <div className="mt-2 rounded-[16px] border border-[#CFE3FF] bg-[#F6FAFF] px-4 py-3 text-sm">
-                  <div className="flex justify-between font-semibold"><span>执行代码（已折叠）</span><span className="text-[#5B4BFF]">查看日志</span></div>
-                  <div className="mt-2 flex min-w-0 flex-wrap items-center gap-2 text-xs text-[#6B7280]"><code className="min-w-0 max-w-full truncate rounded-md bg-white px-2 py-1 font-mono text-[#374151]">analysis/report_generator.py</code><span>运行中</span><span className="ml-auto font-bold text-[#5B4BFF]">62%</span></div>
-                  <div className="mt-2"><ProgressBar value={62} /></div>
-                </div>
-              </div>
-            </section>
-              </>
+              </section>
             )}
           </div>
         </div>
@@ -911,8 +809,8 @@ const AlkakaProjectChatHome = ({
                 }
               }}
               rows={2}
-              aria-label="向所有人发送消息"
-              placeholder="向所有人发送消息，@ 伙伴 或 / 指令"
+              aria-label="向 Alkaka 发送消息"
+              placeholder="向 Alkaka 发送消息，创建或继续真实 Cowork 会话"
               className="min-h-[48px] w-full resize-none rounded-2xl border-0 bg-transparent px-2 py-2 text-sm text-[#111827] outline-none placeholder:text-[#9CA3AF]"
             />
             <div className="mt-2 flex min-w-0 flex-wrap items-center gap-2">
@@ -936,7 +834,7 @@ const AlkakaProjectChatHome = ({
         {isRightDashboardCollapsed ? (
           <div className="flex h-full flex-col items-center gap-3 pt-2">
             <button type="button" aria-label="展开右侧工作台" onClick={() => setIsRightDashboardCollapsed(false)} className="flex h-9 w-9 items-center justify-center rounded-full border border-[#DDDDFB] bg-white text-sm font-bold text-[#5B4BFF] shadow-sm">‹</button>
-            <span className="[writing-mode:vertical-rl] text-xs font-bold tracking-widest text-[#6B7280]">伙伴工作台</span>
+            <span className="[writing-mode:vertical-rl] text-xs font-bold tracking-widest text-[#6B7280]">工作台</span>
           </div>
         ) : (
           <>
@@ -970,11 +868,11 @@ const AlkakaProjectChatHome = ({
       ) : null}
 
       {isWorkbenchOpen ? (
-        <div className="fixed inset-0 z-40 flex justify-end bg-slate-950/30 backdrop-blur-sm xl:hidden" role="dialog" aria-modal="true" aria-label="伙伴工作台">
+        <div className="fixed inset-0 z-40 flex justify-end bg-slate-950/30 backdrop-blur-sm xl:hidden" role="dialog" aria-modal="true" aria-label="工作台">
           <button type="button" aria-label="关闭工作台遮罩" className="absolute inset-0 cursor-default" onClick={() => setIsWorkbenchOpen(false)} />
           <aside className="relative z-10 flex h-full w-[min(380px,calc(100vw-76px))] flex-col gap-4 overflow-y-auto overflow-x-hidden border-l border-[#E6E9F2] bg-[#FBFCFF] p-4 shadow-2xl">
             <div className="flex items-center justify-between">
-              <h2 className="text-sm font-bold text-[#111827]">伙伴工作台</h2>
+              <h2 className="text-sm font-bold text-[#111827]">工作台</h2>
               <button type="button" onClick={() => setIsWorkbenchOpen(false)} className="rounded-xl border border-[#E6E9F2] px-3 py-1.5 text-sm font-semibold text-[#6B7280]">关闭</button>
             </div>
             <RightDashboardContent stats={workbenchStats} />

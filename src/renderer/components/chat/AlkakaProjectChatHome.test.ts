@@ -7,7 +7,6 @@ import AlkakaProjectChatHome, {
   buildProjectMessageTimeline,
   buildProjectWorkbenchStats,
   buildRecentConversationItems,
-  defaultPartnerAvatarAssets,
   resolveChatResponsiveLayout,
   resolveComposerSubmitMessage,
   shouldClearComposerAfterSubmit,
@@ -30,33 +29,45 @@ describe('AlkakaProjectChatHome reference-image redesign', () => {
   it('matches the reference image information architecture', () => {
     [
       '新建对话',
-      '搜索对话、伙伴或消息',
+      '搜索对话或消息',
       '对话',
-      '伙伴',
       '任务中心',
       '项目空间',
       '最近对话',
-      'AI日报项目组',
+      '暂无真实 Cowork 会话',
       'Boss（你）',
     ].forEach((copy) => expect(html).toContain(copy));
   });
 
-  it('shows the AI daily report project group chat with rich operational cards', () => {
+  it('renders a real empty home state instead of fake project groups or fake agents', () => {
     [
+      '暂无真实 Cowork 会话',
+      '发送第一条消息会创建真实 Cowork/OpenClaw 会话',
+      '向 Alkaka 发送第一条消息',
+      '向 Alkaka 发送消息，创建或继续真实 Cowork 会话',
+      '还没有真实对话',
+      '点击新建对话，或在下方发送第一条消息创建真实 Cowork/OpenClaw 会话。',
+    ].forEach((copy) => expect(html).toContain(copy));
+    [
+      'AI日报项目组',
       'Boss 置顶了任务：生成今日 AI 行业日报',
       '课代表总结（已理解）',
       '任务拆解与分配',
       '思考过程（已折叠）',
       '执行代码（已折叠）',
       'analysis/report_generator.py',
-      '62%',
-      '向所有人发送消息，@ 伙伴 或 / 指令',
-    ].forEach((copy) => expect(html).toContain(copy));
+      '小课代表',
+      '情报姬',
+      'CodeMan',
+      '设计喵',
+      '大监',
+      '项目管理',
+    ].forEach((copy) => expect(html).not.toContain(copy));
   });
 
   it('renders the right-side dashboard with real Cowork/OpenClaw state instead of fake usage metrics', () => {
     [
-      '伙伴团队运行状态',
+      'Cowork 运行状态',
       '状态未知',
       '活跃会话',
       '真实链路状态',
@@ -87,16 +98,7 @@ describe('AlkakaProjectChatHome reference-image redesign', () => {
     expect(resolveComposerSubmitMessage('   ')).toBeNull();
   });
 
-  it('uses generated partner avatar assets instead of gradient-letter placeholders for default partners', () => {
-    expect(defaultPartnerAvatarAssets).toMatchObject({
-      classRep: expect.stringContaining('partner-class-rep'),
-      intelScout: expect.stringContaining('partner-intel-scout'),
-      codeman: expect.stringContaining('partner-codeman'),
-      designCat: expect.stringContaining('partner-design-cat'),
-      dataAnalyst: expect.stringContaining('partner-data-analyst'),
-      reviewer: expect.stringContaining('partner-reviewer'),
-    });
-
+  it('does not render built-in fake partner assets when no real Cowork data exists', () => {
     [
       '小课代表 伙伴头像',
       '情报姬 伙伴头像',
@@ -104,12 +106,13 @@ describe('AlkakaProjectChatHome reference-image redesign', () => {
       '设计喵 伙伴头像',
       '数据君 伙伴头像',
       '审核官 伙伴头像',
-    ].forEach((alt) => expect(html).toContain(alt));
-    expect(html).not.toContain('搜索对话、智能体或消息');
-    expect(html).toContain('搜索对话、伙伴或消息');
+      '搜索对话、智能体或消息',
+      '搜索对话、伙伴或消息',
+    ].forEach((copy) => expect(html).not.toContain(copy));
+    expect(html).toContain('搜索对话或消息');
   });
 
-  it('maps real Cowork session summaries into recent conversations before falling back to demo content', () => {
+  it('maps real Cowork session summaries into recent conversations and returns empty when none exist', () => {
     const sessions: CoworkSessionSummary[] = [
       {
         id: 's1',
@@ -200,7 +203,7 @@ describe('AlkakaProjectChatHome reference-image redesign', () => {
     });
   });
 
-  it('renders the main chat area from a real Cowork session preview instead of the static AI daily project when sessions exist', () => {
+  it('renders the main chat area from a real Cowork session preview when sessions exist', () => {
     const sessionHtml = renderToStaticMarkup(React.createElement(AlkakaProjectChatHome, {
       recentSessions: [
         {
