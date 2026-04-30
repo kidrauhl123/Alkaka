@@ -37,9 +37,15 @@ import IMSettings from './im/IMSettings';
 import EmailSkillConfig from './skills/EmailSkillConfig';
 import {
   SETTINGS_CONTENT_CLASSNAME,
+  SETTINGS_CONTENT_HEADER_CLASSNAME,
+  SETTINGS_FOOTER_CLASSNAME,
+  SETTINGS_FORM_BODY_CLASSNAME,
   SETTINGS_MODAL_CLASSNAME,
   SETTINGS_OVERLAY_CLASSNAME,
   SETTINGS_SIDEBAR_CLASSNAME,
+  SETTINGS_SIDEBAR_HEADER_CLASSNAME,
+  SETTINGS_SIDEBAR_NAV_CLASSNAME,
+  SETTINGS_SIDEBAR_TAB_CLASSNAME,
 } from './settingsLayout';
 import ThemedSelect from './ui/ThemedSelect';
 
@@ -2536,11 +2542,11 @@ const Settings: React.FC<SettingsProps> = ({ onClose, initialTab, notice, notice
         return (
           <div className="space-y-8">
             {/* Language Section */}
-            <div className="flex items-center justify-between">
-              <h4 className="text-sm font-medium text-foreground">
+            <div className="flex items-center justify-between gap-3">
+              <h4 className="min-w-0 text-sm font-medium text-foreground break-words">
                 {i18nService.t('language')}
               </h4>
-              <div className="w-[140px] shrink-0">
+              <div className="w-[112px] min-[420px]:w-[140px] shrink-0">
                 <ThemedSelect
                   id="language"
                   value={language}
@@ -2562,8 +2568,8 @@ const Settings: React.FC<SettingsProps> = ({ onClose, initialTab, notice, notice
               <h4 className="text-sm font-medium text-foreground mb-3">
                 {i18nService.t('autoLaunch')}
               </h4>
-              <label className="flex items-center justify-between cursor-pointer">
-                <span className="text-sm text-secondary">
+              <label className="flex items-center justify-between gap-3 cursor-pointer">
+                <span className="text-sm text-secondary min-w-0 break-words">
                   {i18nService.t('autoLaunchDescription')}
                 </span>
                 <button
@@ -2611,8 +2617,8 @@ const Settings: React.FC<SettingsProps> = ({ onClose, initialTab, notice, notice
               <h4 className="text-sm font-medium text-foreground mb-3">
                 {i18nService.t('preventSleep')}
               </h4>
-              <label className="flex items-center justify-between cursor-pointer">
-                <span className="text-sm text-secondary">
+              <label className="flex items-center justify-between gap-3 cursor-pointer">
+                <span className="text-sm text-secondary min-w-0 break-words">
                   {i18nService.t('preventSleepDescription')}
                 </span>
                 <button
@@ -2660,8 +2666,8 @@ const Settings: React.FC<SettingsProps> = ({ onClose, initialTab, notice, notice
               <h4 className="text-sm font-medium text-foreground mb-3">
                 {i18nService.t('useSystemProxy')}
               </h4>
-              <label className="flex items-center justify-between cursor-pointer">
-                <span className="text-sm text-secondary">
+              <label className="flex items-center justify-between gap-3 cursor-pointer">
+                <span className="text-sm text-secondary min-w-0 break-words">
                   {i18nService.t('useSystemProxyDescription')}
                 </span>
                 <button
@@ -2690,8 +2696,8 @@ const Settings: React.FC<SettingsProps> = ({ onClose, initialTab, notice, notice
               <h4 className="text-sm font-medium text-foreground mb-3">
                 {i18nService.t('sqliteAutoBackupEnabled')}
               </h4>
-              <label className="flex items-center justify-between cursor-pointer">
-                <span className="text-sm text-secondary">
+              <label className="flex items-center justify-between gap-3 cursor-pointer">
+                <span className="text-sm text-secondary min-w-0 break-words">
                   {i18nService.t('sqliteAutoBackupEnabledDescription')}
                 </span>
                 <button
@@ -2721,8 +2727,8 @@ const Settings: React.FC<SettingsProps> = ({ onClose, initialTab, notice, notice
               <h4 className="text-sm font-medium text-foreground mb-3">
                 {i18nService.t('skipMissedJobs')}
               </h4>
-              <label className="flex items-center justify-between cursor-pointer">
-                <span className="text-sm text-secondary">
+              <label className="flex items-center justify-between gap-3 cursor-pointer">
+                <span className="text-sm text-secondary min-w-0 break-words">
                   {i18nService.t('skipMissedJobsDescription')}
                 </span>
                 <button
@@ -4045,7 +4051,7 @@ const Settings: React.FC<SettingsProps> = ({ onClose, initialTab, notice, notice
               <div className="flex items-center justify-between px-4 py-3 border-b border-border">
                 <span className="text-sm text-foreground">{i18nService.t('aboutVersion')}</span>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-secondary">{appVersion}</span>
+                  <span className="text-sm text-secondary min-w-0 break-words">{appVersion}</span>
                   {!enterpriseConfig?.disableUpdate && (
                   <button
                     type="button"
@@ -4185,23 +4191,25 @@ const Settings: React.FC<SettingsProps> = ({ onClose, initialTab, notice, notice
       >
         {/* Left sidebar */}
         <div className={SETTINGS_SIDEBAR_CLASSNAME}>
-          <div className="px-5 pt-4 pb-2 md:pt-5 md:pb-3">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8B7CF6]">Alkaka</p>
-            <h2 className="mt-1 text-lg font-semibold text-[#24212F]">{i18nService.t('settings')}</h2>
+          <div className={SETTINGS_SIDEBAR_HEADER_CLASSNAME}>
+            <p className="hidden min-[420px]:block text-xs font-semibold uppercase tracking-[0.18em] text-[#8B7CF6]">Alkaka</p>
+            <h2 className="text-base min-[420px]:mt-1 min-[420px]:text-lg font-semibold text-[#24212F]">{i18nService.t('settings')}</h2>
           </div>
-          <nav className="flex flex-row md:flex-col gap-1 px-3 pb-3 overflow-x-auto md:overflow-x-visible">
+          <nav className={SETTINGS_SIDEBAR_NAV_CLASSNAME}>
             {sidebarTabs.map((tab) => (
               <button
                 key={tab.key}
                 onClick={() => handleTabChange(tab.key)}
-                className={`flex shrink-0 items-center gap-2 md:gap-3 px-3 py-2 rounded-xl text-sm font-semibold transition-colors text-left ${
+                title={tab.label}
+                aria-label={tab.label}
+                className={`${SETTINGS_SIDEBAR_TAB_CLASSNAME} ${
                   activeTab === tab.key
                     ? 'bg-white text-[#5B4BFF] shadow-sm ring-1 ring-[#E7E2FF]'
                     : 'text-[#6B667A] hover:text-[#24212F] hover:bg-white/70'
                 }`}
               >
-                <span className="text-[#8B7CF6]">{tab.icon}</span>
-                <span className="whitespace-nowrap">{tab.label}</span>
+                <span className="text-[#8B7CF6] shrink-0">{tab.icon}</span>
+                <span className="hidden min-[520px]:inline whitespace-nowrap">{tab.label}</span>
               </button>
             ))}
           </nav>
@@ -4210,21 +4218,24 @@ const Settings: React.FC<SettingsProps> = ({ onClose, initialTab, notice, notice
         {/* Right content */}
         <div className={SETTINGS_CONTENT_CLASSNAME}>
           {/* Content header */}
-          <div className="flex justify-between items-center gap-3 px-4 sm:px-6 pt-4 sm:pt-5 pb-3 shrink-0 border-b border-[#F0ECFF]">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#A29AFB]">Settings</p>
-              <h3 className="mt-1 text-lg font-semibold text-[#24212F]">{activeTabLabel}</h3>
+          <div className={SETTINGS_CONTENT_HEADER_CLASSNAME}>
+            <div className="min-w-0">
+              <p className="hidden min-[420px]:block text-xs font-semibold uppercase tracking-[0.16em] text-[#A29AFB]">Settings</p>
+              <h3 className="min-[420px]:mt-1 text-base min-[420px]:text-lg font-semibold text-[#24212F] truncate">{activeTabLabel}</h3>
             </div>
             <button
+              type="button"
               onClick={onClose}
-              className="text-[#6B667A] hover:text-[#24212F] p-1.5 hover:bg-[#F5F2FF] rounded-lg transition-colors"
+              aria-label={i18nService.t('close')}
+              title={i18nService.t('close')}
+              className="shrink-0 text-[#6B667A] hover:text-[#24212F] p-1.5 hover:bg-[#F5F2FF] rounded-lg transition-colors"
             >
               <XMarkIcon className="h-5 w-5" />
             </button>
           </div>
 
           {noticeMessage && (
-            <div className="px-6">
+            <div className="px-3 sm:px-6">
               <ErrorMessage
                 message={noticeMessage}
                 onClose={() => setNoticeMessage(null)}
@@ -4233,7 +4244,7 @@ const Settings: React.FC<SettingsProps> = ({ onClose, initialTab, notice, notice
           )}
 
           {error && (
-            <div className="px-6">
+            <div className="px-3 sm:px-6">
               <ErrorMessage
                 message={error}
                 onClose={() => setError(null)}
@@ -4245,25 +4256,25 @@ const Settings: React.FC<SettingsProps> = ({ onClose, initialTab, notice, notice
             {/* Tab content */}
             <div
               ref={contentRef}
-              className="px-4 sm:px-6 py-4 flex-1 overflow-y-auto bg-white"
+              className={SETTINGS_FORM_BODY_CLASSNAME}
               style={{ scrollbarGutter: 'stable' }}
             >
               {renderTabContent()}
             </div>
 
             {/* Footer buttons */}
-            <div className="flex justify-end space-x-3 p-3 sm:p-4 border-[#F0ECFF] border-t bg-[#FBFAFF] shrink-0">
+            <div className={SETTINGS_FOOTER_CLASSNAME}>
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 text-foreground hover:bg-surface-raised rounded-xl transition-colors text-sm font-medium border border-border active:scale-[0.98]"
+                className="min-w-[72px] px-3 min-[420px]:px-4 py-2 text-foreground hover:bg-surface-raised rounded-xl transition-colors text-sm font-medium border border-border active:scale-[0.98]"
               >
                 {i18nService.t('cancel')}
               </button>
               <button
                 type="submit"
                 disabled={isSaving}
-                className="px-4 py-2 bg-primary hover:bg-primary-hover text-white rounded-xl transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
+                className="min-w-[72px] px-3 min-[420px]:px-4 py-2 bg-primary hover:bg-primary-hover text-white rounded-xl transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
               >
                 {isSaving ? i18nService.t('saving') : i18nService.t('save')}
               </button>
